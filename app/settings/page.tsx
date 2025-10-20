@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { GitHubClient } from "@/lib/github"
-import { setRepoConfig, getRepoConfig, clearRepoConfig } from "@/lib/cookies"
+import { getRepoConfig } from "@/lib/cookies"
+import { getUserByGithubId, upsertUserRepository, supabase } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import Link from "next/link"
 
@@ -28,7 +29,19 @@ export default async function SettingsPage() {
 
     const [owner, repo] = repoFullName.split('/')
 
-    await setRepoConfig({
+    // Get current session and user
+    const session = await auth()
+    if (!session?.user?.id) {
+      redirect('/')
+    }
+
+    const user = await getUserByGithubId(session.user.id)
+    if (!user) {
+      redirect('/')
+    }
+
+    // Update repository configuration in database
+    await upsertUserRepository(user.id, {
       owner,
       repo,
       contentPath,
@@ -42,7 +55,23 @@ export default async function SettingsPage() {
   async function disconnect() {
     "use server"
 
-    await clearRepoConfig()
+    // Get current session and user
+    const session = await auth()
+    if (!session?.user?.id) {
+      redirect('/')
+    }
+
+    const user = await getUserByGithubId(session.user.id)
+    if (!user) {
+      redirect('/')
+    }
+
+    // Delete all repository configurations for this user
+    await supabase
+      .from('repositories')
+      .delete()
+      .eq('user_id', user.id)
+
     revalidatePath('/dashboard')
     redirect('/setup')
   }

@@ -1,4 +1,5 @@
-import { cookies } from 'next/headers'
+import { auth } from './auth'
+import { getUserRepository, getUserByGithubId } from './db'
 
 export interface RepoConfig {
   owner: string
@@ -6,32 +7,52 @@ export interface RepoConfig {
   contentPath?: string // e.g., "content/posts"
 }
 
+/**
+ * Get repository configuration for the currently authenticated user
+ */
 export async function getRepoConfig(): Promise<RepoConfig | null> {
-  const cookieStore = await cookies()
-  const config = cookieStore.get('repo-config')
+  const session = await auth()
 
-  if (!config) {
+  if (!session?.user?.id) {
     return null
   }
 
-  try {
-    return JSON.parse(config.value)
-  } catch {
+  // Get user from database
+  const user = await getUserByGithubId(session.user.id)
+  if (!user) {
     return null
+  }
+
+  // Get repository configuration
+  const repository = await getUserRepository(user.id)
+  if (!repository) {
+    return null
+  }
+
+  return {
+    owner: repository.owner,
+    repo: repository.repo,
+    contentPath: repository.content_path,
   }
 }
 
+/**
+ * Set repository configuration for the currently authenticated user
+ * Note: This function is kept for backward compatibility but doesn't actually do anything.
+ * Use upsertUserRepository from lib/db.ts directly instead.
+ */
 export async function setRepoConfig(config: RepoConfig) {
-  const cookieStore = await cookies()
-  cookieStore.set('repo-config', JSON.stringify(config), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 60 * 60 * 24 * 365, // 1 year
-  })
+  // This function is now deprecated - repository configuration should be set
+  // via upsertUserRepository in lib/db.ts using the server action in setup page
+  console.warn('setRepoConfig is deprecated - use upsertUserRepository from lib/db.ts instead')
 }
 
+/**
+ * Clear repository configuration
+ * Note: This function is kept for backward compatibility but doesn't actually do anything.
+ * Repository data persists in the database.
+ */
 export async function clearRepoConfig() {
-  const cookieStore = await cookies()
-  cookieStore.delete('repo-config')
+  // This function is now deprecated - repository configuration persists in database
+  console.warn('clearRepoConfig is deprecated - repository data persists in database')
 }

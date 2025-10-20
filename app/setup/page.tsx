@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { GitHubClient } from "@/lib/github"
-import { setRepoConfig, getRepoConfig } from "@/lib/cookies"
+import { getRepoConfig } from "@/lib/cookies"
+import { getUserByGithubId, upsertUserRepository } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
 export default async function SetupPage() {
@@ -33,7 +34,19 @@ export default async function SetupPage() {
 
     const [owner, repo] = repoFullName.split('/')
 
-    await setRepoConfig({
+    // Get current session and user
+    const session = await auth()
+    if (!session?.user?.id) {
+      redirect('/')
+    }
+
+    const user = await getUserByGithubId(session.user.id)
+    if (!user) {
+      redirect('/')
+    }
+
+    // Save repository configuration to database
+    await upsertUserRepository(user.id, {
       owner,
       repo,
       contentPath,
