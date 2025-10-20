@@ -95,7 +95,7 @@ export class GitHubClient {
   async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts"): Promise<HugoPost[]> {
     const posts: HugoPost[] = []
 
-    async function traverseDirectory(path: string): Promise<void> {
+    const traverseDirectory = async (path: string): Promise<void> => {
       const contents = await this.getRepoContents(owner, repo, path)
 
       for (const item of contents) {
@@ -113,7 +113,7 @@ export class GitHubClient {
       }
     }
 
-    await traverseDirectory.call(this, contentPath)
+    await traverseDirectory(contentPath)
     return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
   }
 
@@ -146,8 +146,8 @@ export class GitHubClient {
     const slug = path.split("/").pop()?.replace(/\.(md|markdown)$/, "") || ""
 
     return {
-      title: frontmatter.title || slug,
-      date: frontmatter.date || new Date().toISOString(),
+      title: (typeof frontmatter.title === 'string' ? frontmatter.title : null) || slug,
+      date: (typeof frontmatter.date === 'string' ? frontmatter.date : null) || new Date().toISOString(),
       slug,
       content: bodyContent,
       path,
