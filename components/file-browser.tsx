@@ -8,15 +8,46 @@ interface FileBrowserProps {
   selectedPost: HugoPost | null
   onSelectPost: (post: HugoPost) => void
   onNewPost: () => void
+  onDeletePost: (post: HugoPost) => void
 }
 
-export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost }: FileBrowserProps) {
+export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost }: FileBrowserProps) {
   const [searchQuery, setSearchQuery] = useState('')
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+  const [deleteModalPost, setDeleteModalPost] = useState<HugoPost | null>(null)
 
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     post.path.toLowerCase().includes(searchQuery.toLowerCase())
   )
+
+  const handleMenuToggle = (postPath: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOpenMenuId(openMenuId === postPath ? null : postPath)
+  }
+
+  const handleEdit = (post: HugoPost, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOpenMenuId(null)
+    onSelectPost(post)
+  }
+
+  const handleDeleteClick = (post: HugoPost, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setOpenMenuId(null)
+    setDeleteModalPost(post)
+  }
+
+  const confirmDelete = () => {
+    if (deleteModalPost) {
+      onDeletePost(deleteModalPost)
+      setDeleteModalPost(null)
+    }
+  }
+
+  const cancelDelete = () => {
+    setDeleteModalPost(null)
+  }
 
   return (
     <div className="flex h-full flex-col">
@@ -50,29 +81,94 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost }: Fi
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-800">
             {filteredPosts.map((post) => (
-              <button
+              <div
                 key={post.path}
-                onClick={() => onSelectPost(post)}
-                className={`w-full px-4 py-3 text-left transition-colors ${
+                className={`relative flex items-start px-4 py-3 transition-colors ${
                   selectedPost?.path === post.path
                     ? 'bg-blue-50 dark:bg-blue-950'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
-                <div className="font-medium text-gray-900 dark:text-gray-100">
-                  {post.title}
+                <button
+                  onClick={() => onSelectPost(post)}
+                  className="flex-1 text-left"
+                >
+                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                    {post.title}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500">
+                    {new Date(post.date).toLocaleDateString()}
+                  </div>
+                  <div className="mt-1 truncate text-xs text-gray-400">
+                    {post.path}
+                  </div>
+                </button>
+
+                {/* Three-dot menu */}
+                <div className="relative ml-2">
+                  <button
+                    onClick={(e) => handleMenuToggle(post.path, e)}
+                    className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
+                    aria-label="More options"
+                  >
+                    <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown menu */}
+                  {openMenuId === post.path && (
+                    <div className="absolute right-0 mt-1 w-32 rounded-md shadow-lg bg-white dark:bg-gray-800 ring-1 ring-black ring-opacity-5 z-10">
+                      <div className="py-1">
+                        <button
+                          onClick={(e) => handleEdit(post, e)}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={(e) => handleDeleteClick(post, e)}
+                          className="block w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div className="mt-1 text-xs text-gray-500">
-                  {new Date(post.date).toLocaleDateString()}
-                </div>
-                <div className="mt-1 truncate text-xs text-gray-400">
-                  {post.path}
-                </div>
-              </button>
+              </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteModalPost && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              Delete Post?
+            </h3>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Are you sure you want to delete <strong>{deleteModalPost.title}</strong>? This action cannot be undone.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={cancelDelete}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDelete}
+                className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700"
+              >
+                Yep - I&apos;m sure
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

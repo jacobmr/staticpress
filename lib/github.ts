@@ -92,6 +92,28 @@ export class GitHubClient {
     }
   }
 
+  async deleteFile(
+    owner: string,
+    repo: string,
+    path: string,
+    message: string,
+    sha: string
+  ) {
+    try {
+      const { data } = await this.octokit.rest.repos.deleteFile({
+        owner,
+        repo,
+        path,
+        message,
+        sha,
+      })
+      return data
+    } catch (error) {
+      console.error(`Error deleting file ${path}:`, error)
+      throw error
+    }
+  }
+
   async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 10): Promise<HugoPost[]> {
     const posts: HugoPost[] = []
     let count = 0

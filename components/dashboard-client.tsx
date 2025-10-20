@@ -121,6 +121,48 @@ export function DashboardClient({ initialPosts }: DashboardClientProps) {
     }
   }
 
+  const handleDeletePost = async (post: HugoPost) => {
+    setIsSaving(true)
+    setSaveMessage('')
+
+    try {
+      const response = await fetch('/api/posts/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          path: post.path,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to delete post')
+      }
+
+      setSaveMessage(`✓ Deleted: ${post.title}`)
+
+      // Clear editor if deleted post was selected
+      if (selectedPost?.path === post.path) {
+        setSelectedPost(null)
+        setTitle('')
+        setContent('')
+      }
+
+      // Refresh posts list
+      const postsResponse = await fetch('/api/posts')
+      if (postsResponse.ok) {
+        const updatedPosts = await postsResponse.json()
+        setPosts(updatedPosts)
+      }
+    } catch (error) {
+      setSaveMessage('Error deleting post')
+      console.error(error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   return (
     <div className="flex flex-1">
       {/* Sidebar - File Browser */}
@@ -130,6 +172,7 @@ export function DashboardClient({ initialPosts }: DashboardClientProps) {
           selectedPost={selectedPost}
           onSelectPost={handleSelectPost}
           onNewPost={handleNewPost}
+          onDeletePost={handleDeletePost}
         />
       </aside>
 
