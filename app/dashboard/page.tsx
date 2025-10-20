@@ -24,13 +24,13 @@ export default async function Dashboard() {
   let posts = getCached<HugoPost[]>(cacheKey)
 
   if (!posts) {
-    // Fetch initial posts (limit to 50 for performance)
+    // Fetch initial posts (limit to 10 for performance)
     const github = new GitHubClient(session.accessToken)
     posts = await github.getHugoPosts(
       repoConfig.owner,
       repoConfig.repo,
       repoConfig.contentPath || 'content/posts',
-      50
+      10
     )
     setCached(cacheKey, posts)
   }

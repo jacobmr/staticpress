@@ -92,7 +92,7 @@ export class GitHubClient {
     }
   }
 
-  async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 50): Promise<HugoPost[]> {
+  async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 10): Promise<HugoPost[]> {
     const posts: HugoPost[] = []
     let count = 0
 
@@ -101,7 +101,17 @@ export class GitHubClient {
 
       const contents = await this.getRepoContents(owner, repo, path)
 
-      for (const item of contents) {
+      // Sort directories in reverse order (2025, 2024, etc.) to get recent posts first
+      const sortedContents = contents.sort((a, b) => {
+        // If both are directories, sort by name descending
+        if (a.type === "dir" && b.type === "dir") {
+          return b.name.localeCompare(a.name)
+        }
+        // Keep original order for files
+        return 0
+      })
+
+      for (const item of sortedContents) {
         if (count >= limit) break
 
         if (item.type === "dir") {

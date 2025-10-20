@@ -38,7 +38,7 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost }: Fi
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
         />
         <div className="mt-2 text-xs text-gray-500">
-          Showing {filteredPosts.length} of {posts.length} posts (limited to 50 most recent)
+          Showing {filteredPosts.length} of {posts.length} posts (limited to 10 most recent)
         </div>
       </div>
 

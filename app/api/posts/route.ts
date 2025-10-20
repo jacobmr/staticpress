@@ -22,7 +22,7 @@ export async function GET() {
       repoConfig.owner,
       repoConfig.repo,
       repoConfig.contentPath || 'content/posts',
-      50
+      10
     )
 
     return NextResponse.json(posts)
