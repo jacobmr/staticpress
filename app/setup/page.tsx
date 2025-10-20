@@ -65,12 +65,29 @@ export default async function SetupPage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="w-full max-w-2xl">
-        <h1 className="mb-2 text-4xl font-bold">Welcome to StaticPress</h1>
-        <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
-          Let&apos;s connect your Hugo blog repository
-        </p>
+    <div className="flex min-h-screen flex-col">
+      {/* Header with logout */}
+      <header className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          <h2 className="text-xl font-semibold">Setup</h2>
+          <form action="/api/auth/signout" method="POST">
+            <button
+              type="submit"
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            >
+              Sign Out
+            </button>
+          </form>
+        </div>
+      </header>
+
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col items-center justify-center p-8">
+        <div className="w-full max-w-2xl">
+          <h1 className="mb-2 text-4xl font-bold">Welcome to StaticPress</h1>
+          <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
+            Let&apos;s connect your Hugo blog repository
+          </p>
 
         <form action={selectRepo} className="space-y-6">
           <div>
@@ -129,6 +146,7 @@ export default async function SetupPage() {
             <li>• Changes are committed directly to your repository</li>
             <li>• Your Hugo site will rebuild automatically</li>
           </ul>
+        </div>
         </div>
       </div>
     </div>
