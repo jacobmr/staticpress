@@ -91,9 +91,9 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
               >
                 <button
                   onClick={() => onSelectPost(post)}
-                  className="flex-1 text-left"
+                  className="flex-1 text-left min-w-0"
                 >
-                  <div className="font-medium text-gray-900 dark:text-gray-100">
+                  <div className="font-medium text-gray-900 dark:text-gray-100 truncate">
                     {post.title}
                   </div>
                   <div className="mt-1 text-xs text-gray-500">
@@ -105,7 +105,7 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                 </button>
 
                 {/* Three-dot menu */}
-                <div className="relative ml-2">
+                <div className="relative ml-2 flex-shrink-0">
                   <button
                     onClick={(e) => handleMenuToggle(post.path, e)}
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
