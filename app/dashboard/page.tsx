@@ -1,8 +1,9 @@
 import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getRepoConfig } from "@/lib/cookies"
-import { GitHubClient } from "@/lib/github"
+import { GitHubClient, HugoPost } from "@/lib/github"
 import { DashboardClient } from "@/components/dashboard-client"
+import { getCached, setCached } from "@/lib/cache"
 import Link from "next/link"
 
 export default async function Dashboard() {
@@ -18,14 +19,21 @@ export default async function Dashboard() {
     redirect('/setup')
   }
 
-  // Fetch initial posts (limit to 50 for performance)
-  const github = new GitHubClient(session.accessToken)
-  const posts = await github.getHugoPosts(
-    repoConfig.owner,
-    repoConfig.repo,
-    repoConfig.contentPath || 'content/posts',
-    50
-  )
+  // Try to get cached posts first
+  const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}`
+  let posts = getCached<HugoPost[]>(cacheKey)
+
+  if (!posts) {
+    // Fetch initial posts (limit to 50 for performance)
+    const github = new GitHubClient(session.accessToken)
+    posts = await github.getHugoPosts(
+      repoConfig.owner,
+      repoConfig.repo,
+      repoConfig.contentPath || 'content/posts',
+      50
+    )
+    setCached(cacheKey, posts)
+  }
 
   return (
     <div className="flex min-h-screen flex-col">

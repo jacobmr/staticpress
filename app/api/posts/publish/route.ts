@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import { generateHugoPath, generateFrontmatter } from '@/lib/hugo'
+import { clearCache } from '@/lib/cache'
 import TurndownService from 'turndown'
 
 const turndownService = new TurndownService({
@@ -73,6 +74,9 @@ export async function POST(request: Request) {
       commitMessage,
       existingSha
     )
+
+    // Clear cache so next load gets fresh data
+    clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
 
     return NextResponse.json({
       success: true,
