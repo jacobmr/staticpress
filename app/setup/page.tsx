@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth"
+import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { GitHubClient } from "@/lib/github"
 import { getRepoConfig } from "@/lib/cookies"
@@ -21,6 +21,11 @@ export default async function SetupPage() {
   // Fetch user's repositories
   const github = new GitHubClient(session.accessToken)
   const repos = await github.getUserRepos()
+
+  async function handleSignOut() {
+    "use server"
+    await signOut({ redirectTo: '/' })
+  }
 
   async function selectRepo(formData: FormData) {
     "use server"
@@ -70,7 +75,7 @@ export default async function SetupPage() {
       <header className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <h2 className="text-xl font-semibold">Setup</h2>
-          <form action="/api/auth/signout" method="POST">
+          <form action={handleSignOut}>
             <button
               type="submit"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
