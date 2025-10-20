@@ -11,7 +11,7 @@ interface DashboardClientProps {
   repoName: string
 }
 
-export function DashboardClient({ initialPosts, repoOwner, repoName }: DashboardClientProps) {
+export function DashboardClient({ initialPosts }: DashboardClientProps) {
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
   const [title, setTitle] = useState('')

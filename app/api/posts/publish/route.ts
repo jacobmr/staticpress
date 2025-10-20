@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
-import { generateHugoPath, createHugoFrontmatter } from '@/lib/hugo'
+import { generateHugoPath, generateFrontmatter } from '@/lib/hugo'
 import TurndownService from 'turndown'
 
 const turndownService = new TurndownService({
@@ -51,28 +51,14 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create frontmatter
-    const frontmatter = createHugoFrontmatter({
+    // Create frontmatter and combine with content
+    const frontmatter = generateFrontmatter({
       title,
       date: new Date().toISOString(),
       draft,
     })
 
-    // Combine frontmatter and content
-    const fileContent = `---\n${Object.entries(frontmatter)
-      .map(([key, value]) => {
-        if (typeof value === 'boolean') {
-          return `${key}: ${value}`
-        }
-        if (typeof value === 'string') {
-          return `${key}: "${value}"`
-        }
-        if (Array.isArray(value)) {
-          return `${key}: [${value.map(v => `"${v}"`).join(', ')}]`
-        }
-        return `${key}: ${value}`
-      })
-      .join('\n')}\n---\n\n${markdownContent}`
+    const fileContent = `${frontmatter}\n\n${markdownContent}`
 
     // Commit to GitHub
     const commitMessage = path
