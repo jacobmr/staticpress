@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StaticPress
+
+**Simple, elegant web-based editor for Hugo blogs with GitHub integration**
+
+StaticPress is a WYSIWYG editor that makes it easy to write and publish blog posts to your Hugo static site. Connect your GitHub repository, write in a beautiful editor, and let StaticPress handle the Hugo file structure and Git commits automatically.
+
+## Features
+
+- 🔐 **GitHub OAuth Authentication** - Secure login with your GitHub account
+- 📁 **Repository Integration** - Connect any GitHub repository containing a Hugo blog
+- 📝 **Simple Editor** - Clean interface with just Title and Content fields  
+- 🎯 **Hugo-Aware** - Automatically follows Hugo file structure (`content/posts/YYYY/MM/slug.md`)
+- 📤 **Auto-Commit** - Changes are committed and pushed to your repository automatically
+- ⚙️ **Easy Setup** - Select your repository on first login, change it anytime in Settings
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
+- Node.js 18+ installed
+- A GitHub account
+- A Hugo blog repository on GitHub
+
+### Local Development
+
+1. Clone and install:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/jacobmr/staticpress.git
+cd staticpress
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Set up environment variables (copy `.env.example` to `.env.local` and fill in values)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Create GitHub OAuth App at https://github.com/settings/developers
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Start dev server:
+```bash
+npm run dev
+```
 
-## Learn More
+See [SETUP.md](SETUP.md) for detailed setup instructions.
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment to Vercel
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fjacobmr%2Fstaticpress)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Tech Stack
 
-## Deploy on Vercel
+- Next.js 14 + TypeScript + Tailwind CSS
+- NextAuth.js + GitHub OAuth
+- Octokit (GitHub API)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## License
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+MIT
