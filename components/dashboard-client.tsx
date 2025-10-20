@@ -4,14 +4,17 @@ import { useState } from 'react'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
 import { HugoPost } from '@/lib/github'
+import { User } from '@/lib/db'
 
 interface DashboardClientProps {
   initialPosts: HugoPost[]
   repoOwner: string
   repoName: string
+  userTier: User['subscription_tier']
+  userId: number
 }
 
-export function DashboardClient({ initialPosts }: DashboardClientProps) {
+export function DashboardClient({ initialPosts, userTier, userId }: DashboardClientProps) {
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
   const [title, setTitle] = useState('')
@@ -173,6 +176,7 @@ export function DashboardClient({ initialPosts }: DashboardClientProps) {
           onSelectPost={handleSelectPost}
           onNewPost={handleNewPost}
           onDeletePost={handleDeletePost}
+          userTier={userTier}
         />
       </aside>
 
