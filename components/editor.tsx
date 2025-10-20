@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
@@ -32,6 +33,13 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
       onChange(editor.getHTML())
     },
   })
+
+  // Update editor content when content prop changes
+  useEffect(() => {
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content)
+    }
+  }, [content, editor])
 
   if (!editor) {
     return null
