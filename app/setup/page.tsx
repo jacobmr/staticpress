@@ -36,13 +36,21 @@ export default async function SetupPage() {
 
     // Get current session and user
     const session = await auth()
-    if (!session?.user?.id) {
+    if (!session?.user?.id || !session.user.email) {
       redirect('/')
     }
 
-    const user = await getUserByGithubId(session.user.id)
+    // Get or create user (in case sign-in callback failed to create)
+    let user = await getUserByGithubId(session.user.id)
     if (!user) {
-      redirect('/')
+      // User doesn't exist yet, create it now
+      const { getOrCreateUser } = await import('@/lib/db')
+      user = await getOrCreateUser({
+        id: session.user.id,
+        email: session.user.email,
+        name: session.user.name,
+        image: session.user.image,
+      })
     }
 
     // Save repository configuration to database
