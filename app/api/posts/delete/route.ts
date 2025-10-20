@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import { clearCache } from '@/lib/cache'
+import { getUserByGithubId, logEvent } from '@/lib/db'
 
 export async function POST(request: Request) {
   try {
@@ -51,6 +52,15 @@ export async function POST(request: Request) {
 
     // Clear cache
     clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
+
+    // Log post deleted event
+    const user = await getUserByGithubId(session.user.id)
+    if (user) {
+      await logEvent('post_deleted', user.id, {
+        path,
+        file_name: fileName,
+      })
+    }
 
     return NextResponse.json({
       success: true,
