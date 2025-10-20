@@ -6,7 +6,7 @@ export interface HugoFrontmatter {
   draft?: boolean
   tags?: string[]
   categories?: string[]
-  [key: string]: any
+  [key: string]: unknown
 }
 
 /**
@@ -102,13 +102,12 @@ export function createHugoPost(frontmatter: HugoFrontmatter, content: string): s
  * Parse Hugo post to extract frontmatter and content
  */
 export function parseHugoPost(fileContent: string): {
-  frontmatter: Record<string, any>
+  frontmatter: Record<string, unknown>
   content: string
 } {
   const yamlMatch = fileContent.match(/^---\n([\s\S]*?)\n---/)
-  const tomlMatch = fileContent.match(/^\+\+\+\n([\s\S]*?)\n\+\+\+/)
 
-  let frontmatter: Record<string, any> = {}
+  const frontmatter: Record<string, unknown> = {}
   let content = fileContent
 
   if (yamlMatch) {
@@ -144,10 +143,13 @@ export function parseHugoPost(fileContent: string): {
             }
 
             // Parse booleans
-            if (value === "true") value = true as any
-            if (value === "false") value = false as any
-
-            frontmatter[currentKey] = value
+            if (value === "true") {
+              frontmatter[currentKey] = true
+            } else if (value === "false") {
+              frontmatter[currentKey] = false
+            } else {
+              frontmatter[currentKey] = value
+            }
             currentKey = ""
           }
         }

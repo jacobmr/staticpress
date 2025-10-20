@@ -120,9 +120,8 @@ export class GitHubClient {
   private parseHugoPost(content: string, path: string): HugoPost | null {
     // Parse frontmatter (YAML between --- or TOML between +++)
     const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/)
-    const tomlMatch = content.match(/^\+\+\+\n([\s\S]*?)\n\+\+\+/)
 
-    let frontmatter: Record<string, any> = {}
+    const frontmatter: Record<string, unknown> = {}
     let bodyContent = content
 
     if (yamlMatch) {

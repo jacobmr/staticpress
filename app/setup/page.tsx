@@ -48,7 +48,7 @@ export default async function SetupPage() {
       <div className="w-full max-w-2xl">
         <h1 className="mb-2 text-4xl font-bold">Welcome to StaticPress</h1>
         <p className="mb-8 text-lg text-gray-600 dark:text-gray-400">
-          Let's connect your Hugo blog repository
+          Let&apos;s connect your Hugo blog repository
         </p>
 
         <form action={selectRepo} className="space-y-6">

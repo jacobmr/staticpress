@@ -138,7 +138,7 @@ export default async function SettingsPage() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-950">
             <h2 className="mb-4 text-xl font-semibold text-red-900 dark:text-red-100">Danger Zone</h2>
             <p className="mb-4 text-sm text-red-700 dark:text-red-300">
-              Disconnecting will remove your repository configuration. You'll need to reconnect to continue using StaticPress.
+              Disconnecting will remove your repository configuration. You&apos;ll need to reconnect to continue using StaticPress.
             </p>
             <form action={disconnect}>
               <button
