@@ -18,12 +18,13 @@ export default async function Dashboard() {
     redirect('/setup')
   }
 
-  // Fetch initial posts
+  // Fetch initial posts (limit to 50 for performance)
   const github = new GitHubClient(session.accessToken)
   const posts = await github.getHugoPosts(
     repoConfig.owner,
     repoConfig.repo,
-    repoConfig.contentPath || 'content/posts'
+    repoConfig.contentPath || 'content/posts',
+    50
   )
 
   return (

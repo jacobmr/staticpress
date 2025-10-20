@@ -92,13 +92,18 @@ export class GitHubClient {
     }
   }
 
-  async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts"): Promise<HugoPost[]> {
+  async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 50): Promise<HugoPost[]> {
     const posts: HugoPost[] = []
+    let count = 0
 
     const traverseDirectory = async (path: string): Promise<void> => {
+      if (count >= limit) return
+
       const contents = await this.getRepoContents(owner, repo, path)
 
       for (const item of contents) {
+        if (count >= limit) break
+
         if (item.type === "dir") {
           await traverseDirectory(item.path)
         } else if (item.type === "file" && (item.name.endsWith(".md") || item.name.endsWith(".markdown"))) {
@@ -107,6 +112,7 @@ export class GitHubClient {
             const post = this.parseHugoPost(content, item.path)
             if (post) {
               posts.push(post)
+              count++
             }
           }
         }

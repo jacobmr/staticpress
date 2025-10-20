@@ -21,7 +21,8 @@ export async function GET() {
     const posts = await github.getHugoPosts(
       repoConfig.owner,
       repoConfig.repo,
-      repoConfig.contentPath || 'content/posts'
+      repoConfig.contentPath || 'content/posts',
+      50
     )
 
     return NextResponse.json(posts)
