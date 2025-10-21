@@ -11,10 +11,9 @@ interface DashboardClientProps {
   repoOwner: string
   repoName: string
   userTier: User['subscription_tier']
-  userId: number
 }
 
-export function DashboardClient({ initialPosts, userTier, userId }: DashboardClientProps) {
+export function DashboardClient({ initialPosts, userTier }: DashboardClientProps) {
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
   const [title, setTitle] = useState('')
@@ -66,12 +65,21 @@ export function DashboardClient({ initialPosts, userTier, userId }: DashboardCli
       const result = await response.json()
       setSaveMessage(`✓ Published: ${result.path}`)
 
-      // Refresh posts list
-      const postsResponse = await fetch('/api/posts')
-      if (postsResponse.ok) {
-        const updatedPosts = await postsResponse.json()
-        setPosts(updatedPosts)
+      const newPath: string = result.path
+      const newPost: HugoPost = {
+        title,
+        date: new Date().toISOString(),
+        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/,'') || title,
+        content,
+        path: newPath,
       }
+
+      setPosts((prev) => {
+        if (selectedPost) {
+          return prev.map((p) => (p.path === selectedPost.path ? newPost : p))
+        }
+        return [newPost, ...prev]
+      })
     } catch (error) {
       setSaveMessage('Error publishing post')
       console.error(error)
@@ -110,12 +118,21 @@ export function DashboardClient({ initialPosts, userTier, userId }: DashboardCli
       const result = await response.json()
       setSaveMessage(`✓ Draft saved: ${result.path}`)
 
-      // Refresh posts list
-      const postsResponse = await fetch('/api/posts')
-      if (postsResponse.ok) {
-        const updatedPosts = await postsResponse.json()
-        setPosts(updatedPosts)
+      const newPath: string = result.path
+      const newPost: HugoPost = {
+        title,
+        date: new Date().toISOString(),
+        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/,'') || title,
+        content,
+        path: newPath,
       }
+
+      setPosts((prev) => {
+        if (selectedPost) {
+          return prev.map((p) => (p.path === selectedPost.path ? newPost : p))
+        }
+        return [newPost, ...prev]
+      })
     } catch (error) {
       setSaveMessage('Error saving draft')
       console.error(error)
@@ -152,12 +169,6 @@ export function DashboardClient({ initialPosts, userTier, userId }: DashboardCli
         setContent('')
       }
 
-      // Refresh posts list
-      const postsResponse = await fetch('/api/posts')
-      if (postsResponse.ok) {
-        const updatedPosts = await postsResponse.json()
-        setPosts(updatedPosts)
-      }
     } catch (error) {
       setSaveMessage('Error deleting post')
       console.error(error)

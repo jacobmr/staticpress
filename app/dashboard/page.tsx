@@ -111,7 +111,6 @@ export default async function Dashboard() {
         repoOwner={repoConfig.owner}
         repoName={repoConfig.repo}
         userTier={user.subscription_tier}
-        userId={user.id}
       />
     </div>
   )

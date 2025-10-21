@@ -114,12 +114,12 @@ export class GitHubClient {
     }
   }
 
-  async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 10): Promise<HugoPost[]> {
+  async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 10, maxDepth: number = 10): Promise<HugoPost[]> {
     const posts: HugoPost[] = []
     let count = 0
 
-    const traverseDirectory = async (path: string): Promise<void> => {
-      if (count >= limit) return
+    const traverseDirectory = async (path: string, depth: number = 0): Promise<void> => {
+      if (count >= limit || depth > maxDepth) return
 
       const contents = await this.getRepoContents(owner, repo, path)
 
@@ -137,7 +137,7 @@ export class GitHubClient {
         if (count >= limit) break
 
         if (item.type === "dir") {
-          await traverseDirectory(item.path)
+          await traverseDirectory(item.path, depth + 1)
         } else if (item.type === "file" && (item.name.endsWith(".md") || item.name.endsWith(".markdown"))) {
           const content = await this.getFileContent(owner, repo, item.path)
           if (content) {
