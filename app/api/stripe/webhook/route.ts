@@ -17,8 +17,10 @@ export async function POST(req: NextRequest) {
   let event: Stripe.Event
 
   try {
+    const stripeClient = stripe()
+    
     // Verify webhook signature
-    event = stripe.webhooks.constructEvent(
+    event = stripeClient.webhooks.constructEvent(
       body,
       signature,
       process.env.STRIPE_WEBHOOK_SECRET!
@@ -203,12 +205,11 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
     : subscriptionField?.id
   if (!subscriptionId) return
 
-  // Get subscription to get user_id
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const stripeClient = stripe()
+  const subscription = await stripeClient.subscriptions.retrieve(subscriptionId)
   const userId = subscription.metadata?.user_id
 
   if (userId) {
-    // Dynamically import database functions
     const { logEvent } = await import('@/lib/db')
 
     await logEvent('payment_succeeded', parseInt(userId), {
@@ -231,12 +232,11 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
     : subscriptionField?.id
   if (!subscriptionId) return
 
-  // Get subscription to get user_id
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const stripeClient = stripe()
+  const subscription = await stripeClient.subscriptions.retrieve(subscriptionId)
   const userId = subscription.metadata?.user_id
 
   if (userId) {
-    // Dynamically import database functions
     const { logEvent } = await import('@/lib/db')
 
     await logEvent('payment_failed', parseInt(userId), {
