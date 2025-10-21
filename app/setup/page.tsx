@@ -2,7 +2,6 @@ import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { GitHubClient } from "@/lib/github"
 import { getRepoConfig } from "@/lib/cookies"
-import { getUserByGithubId, upsertUserRepository, logEvent } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
 export const dynamic = 'force-dynamic'
@@ -46,6 +45,9 @@ export default async function SetupPage() {
     if (!session?.user?.id || !session.user.email) {
       redirect('/')
     }
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, upsertUserRepository, logEvent } = await import('@/lib/db')
 
     // Get or create user (in case sign-in callback failed to create)
     let user = await getUserByGithubId(session.user.id)

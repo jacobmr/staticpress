@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { GitHubClient } from "@/lib/github"
 import { getRepoConfig } from "@/lib/cookies"
-import { getUserByGithubId, upsertUserRepository, supabase } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import Link from "next/link"
 
@@ -36,6 +35,9 @@ export default async function SettingsPage() {
     if (!session?.user?.id || !session.user.email) {
       redirect('/')
     }
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, upsertUserRepository } = await import('@/lib/db')
 
     // Get or create user (in case sign-in callback failed to create)
     let user = await getUserByGithubId(session.user.id)
@@ -71,6 +73,9 @@ export default async function SettingsPage() {
       redirect('/')
     }
 
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, getSupabaseClient } = await import('@/lib/db')
+
     // Get or create user (in case sign-in callback failed to create)
     let user = await getUserByGithubId(session.user.id)
     if (!user) {
@@ -85,6 +90,7 @@ export default async function SettingsPage() {
     }
 
     // Delete all repository configurations for this user
+    const supabase = await getSupabaseClient()
     await supabase
       .from('repositories')
       .delete()

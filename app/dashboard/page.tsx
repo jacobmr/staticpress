@@ -4,7 +4,6 @@ import { getRepoConfig } from "@/lib/cookies"
 import { GitHubClient, HugoPost } from "@/lib/github"
 import { DashboardClient } from "@/components/dashboard-client"
 import { getCached, setCached } from "@/lib/cache"
-import { getUserByGithubId } from "@/lib/db"
 import Link from "next/link"
 
 export const dynamic = 'force-dynamic'
@@ -15,6 +14,9 @@ export default async function Dashboard() {
   if (!session?.user || !session.accessToken) {
     redirect('/')
   }
+
+  // Dynamically import database functions to prevent build-time initialization
+  const { getUserByGithubId } = await import('@/lib/db')
 
   // Get user from database to check tier
   const user = await getUserByGithubId(session.user.id)

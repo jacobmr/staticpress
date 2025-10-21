@@ -1,32 +1,41 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // Lazy-initialize Supabase client to avoid build-time errors
 let _supabase: SupabaseClient | null = null
 
-function getSupabaseClient() {
-  // Skip initialization during build phase
-  if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
-    // During build, return a mock that will never be called
-    return {} as SupabaseClient
+async function getSupabase(): Promise<SupabaseClient> {
+  if (_supabase) {
+    return _supabase
   }
 
-  if (!_supabase) {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error('Missing Supabase configuration')
-    }
-
-    _supabase = createClient(supabaseUrl, supabaseKey)
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Missing Supabase configuration')
   }
+
+  // Dynamically import Supabase to prevent build-time evaluation
+  const { createClient } = await import('@supabase/supabase-js')
+  _supabase = createClient(supabaseUrl, supabaseKey)
   return _supabase
 }
 
+// Export async getter instead of direct client
+export { getSupabase as getSupabaseClient }
+
+// For backward compatibility, export a proxy (but this should be avoided at build time)
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    const client = getSupabaseClient() as unknown as Record<string, unknown>
-    return client[prop as string]
+    return (...args: unknown[]) => {
+      return getSupabase().then(client => {
+        const method = (client as unknown as Record<string, unknown>)[prop as string]
+        if (typeof method === 'function') {
+          return (method as (...args: unknown[]) => unknown).apply(client, args)
+        }
+        return method
+      })
+    }
   }
 })
 

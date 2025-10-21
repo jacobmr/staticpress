@@ -1,5 +1,4 @@
 import { auth } from '@/lib/auth'
-import { getUserByGithubId } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { PricingClient } from '@/components/pricing-client'
 import Link from 'next/link'
@@ -15,6 +14,8 @@ export default async function PricingPage() {
   let hasStripeCustomer = false
 
   if (session?.user?.id) {
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId } = await import('@/lib/db')
     const user = await getUserByGithubId(session.user.id)
     if (user) {
       userTier = user.subscription_tier
