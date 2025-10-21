@@ -4,6 +4,7 @@ import { getRepoConfig } from "@/lib/cookies"
 import { GitHubClient, HugoPost } from "@/lib/github"
 import { DashboardClient } from "@/components/dashboard-client"
 import { getCached, setCached } from "@/lib/cache"
+import { getUserByGithubId } from "@/lib/db"
 import Link from "next/link"
 
 export default async function Dashboard() {
@@ -13,24 +14,34 @@ export default async function Dashboard() {
     redirect('/')
   }
 
+  // Get user from database to check tier
+  const user = await getUserByGithubId(session.user.id)
+  if (!user) {
+    redirect('/')
+  }
+
   // Check if repository is configured
   const repoConfig = await getRepoConfig()
   if (!repoConfig) {
     redirect('/setup')
   }
 
+  // Determine post limit based on tier
+  // Free tier: 5 posts only, Paid tiers: all posts (limit 50 for performance)
+  const postLimit = user.subscription_tier === 'free' ? 5 : 50
+
   // Try to get cached posts first
-  const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}`
+  const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`
   let posts = getCached<HugoPost[]>(cacheKey)
 
   if (!posts) {
-    // Fetch initial posts (limit to 10 for performance)
+    // Fetch posts based on user's tier
     const github = new GitHubClient(session.accessToken)
     posts = await github.getHugoPosts(
       repoConfig.owner,
       repoConfig.repo,
       repoConfig.contentPath || 'content/posts',
-      10
+      postLimit
     )
     setCached(cacheKey, posts)
   }
@@ -47,6 +58,23 @@ export default async function Dashboard() {
             </span>
           </div>
           <div className="flex items-center gap-4">
+            {/* Tier Badge */}
+            <Link
+              href="/pricing"
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                user.subscription_tier === 'free'
+                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
+                  : user.subscription_tier === 'personal'
+                  ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300'
+                  : user.subscription_tier === 'smb'
+                  ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300'
+                  : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600'
+              }`}
+            >
+              {user.subscription_tier === 'free' ? 'Free' :
+               user.subscription_tier === 'personal' ? 'Personal' :
+               user.subscription_tier === 'smb' ? 'SMB' : 'Pro'}
+            </Link>
             <Link
               href="/settings"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
@@ -78,6 +106,8 @@ export default async function Dashboard() {
         initialPosts={posts}
         repoOwner={repoConfig.owner}
         repoName={repoConfig.repo}
+        userTier={user.subscription_tier}
+        userId={user.id}
       />
     </div>
   )

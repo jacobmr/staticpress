@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { HugoPost } from '@/lib/github'
+import { User } from '@/lib/db'
+import { UpgradeModal } from './upgrade-modal'
 
 interface FileBrowserProps {
   posts: HugoPost[]
@@ -9,12 +11,14 @@ interface FileBrowserProps {
   onSelectPost: (post: HugoPost) => void
   onNewPost: () => void
   onDeletePost: (post: HugoPost) => void
+  userTier: User['subscription_tier']
 }
 
-export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost }: FileBrowserProps) {
+export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost, userTier }: FileBrowserProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [deleteModalPost, setDeleteModalPost] = useState<HugoPost | null>(null)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -69,8 +73,21 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
         />
         <div className="mt-2 text-xs text-gray-500">
-          Showing {filteredPosts.length} of {posts.length} posts (limited to 10 most recent)
+          Showing {filteredPosts.length} of {posts.length} posts
+          {userTier === 'free' && (
+            <span className="text-orange-600 dark:text-orange-400 font-medium">
+              {' '}(Free: 5 most recent)
+            </span>
+          )}
         </div>
+        {userTier === 'free' && posts.length === 5 && (
+          <button
+            onClick={() => setShowUpgradeModal(true)}
+            className="mt-2 w-full rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700"
+          >
+            Upgrade to Edit All Posts
+          </button>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto">
@@ -169,6 +186,13 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
           </div>
         </div>
       )}
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        reason="post_limit"
+      />
     </div>
   )
 }

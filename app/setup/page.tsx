@@ -2,7 +2,7 @@ import { auth, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { GitHubClient } from "@/lib/github"
 import { getRepoConfig } from "@/lib/cookies"
-import { getUserByGithubId, upsertUserRepository } from "@/lib/db"
+import { getUserByGithubId, upsertUserRepository, logEvent } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
 export default async function SetupPage() {
@@ -63,6 +63,12 @@ export default async function SetupPage() {
       owner,
       repo,
       contentPath,
+    })
+
+    // Log repo bound event
+    await logEvent('repo_bound', user.id, {
+      repository: `${owner}/${repo}`,
+      content_path: contentPath,
     })
 
     revalidatePath('/dashboard')

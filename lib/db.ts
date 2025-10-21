@@ -12,7 +12,7 @@ export interface User {
   email: string
   name: string | null
   avatar_url: string | null
-  subscription_tier: 'free' | 'pro'
+  subscription_tier: 'free' | 'personal' | 'smb' | 'pro'
   subscription_status: 'active' | 'canceled' | 'expired' | null
   stripe_customer_id: string | null
   stripe_subscription_id: string | null
@@ -37,6 +37,25 @@ export interface UsageTracking {
   posts_edited_count: number
   last_reset_date: string
 }
+
+export interface AnalyticsEvent {
+  id: number
+  event_name: string
+  user_id: number | null
+  metadata: Record<string, any>
+  created_at: string
+}
+
+export type EventName =
+  | 'oauth_completed'
+  | 'repo_bound'
+  | 'first_publish'
+  | 'upgrade_modal_shown'
+  | 'upgrade_started'
+  | 'upgrade_completed'
+  | 'image_upload'
+  | 'post_published'
+  | 'post_deleted'
 
 /**
  * Get or create user by GitHub ID
@@ -220,14 +239,39 @@ export async function canUserEditPosts(userId: number): Promise<boolean> {
 
   if (error || !data) return false
 
-  // Pro users can edit unlimited posts
-  if (data.subscription_tier === 'pro') {
+  // All paid tiers (personal, smb, pro) can edit unlimited posts
+  if (data.subscription_tier !== 'free') {
     return true
   }
 
   // Free users are limited to 5 most recent posts
   // This will be enforced in the UI/API layer
   return true
+}
+
+/**
+ * Check if user has access to a specific tier feature
+ */
+export function hasFeatureAccess(
+  userTier: User['subscription_tier'],
+  feature: 'images' | 'all_posts' | 'custom_domain' | 'themes' | 'multi_repo'
+): boolean {
+  const tierLevel = {
+    free: 0,
+    personal: 1,
+    smb: 2,
+    pro: 3,
+  }
+
+  const featureRequirements = {
+    images: 1, // personal+
+    all_posts: 1, // personal+
+    custom_domain: 2, // smb+
+    themes: 2, // smb+
+    multi_repo: 3, // pro only
+  }
+
+  return tierLevel[userTier] >= featureRequirements[feature]
 }
 
 /**
@@ -256,4 +300,38 @@ export async function getUserByGithubId(githubId: string): Promise<User | null> 
 
   if (error) return null
   return data as User
+}
+
+/**
+ * Log analytics event (server-side only, no PII)
+ */
+export async function logEvent(
+  eventName: EventName,
+  userId: number | null,
+  metadata: Record<string, any> = {}
+): Promise<void> {
+  try {
+    await supabase.from('analytics_events').insert({
+      event_name: eventName,
+      user_id: userId,
+      metadata,
+    })
+  } catch (error) {
+    // Don't throw - event logging should never break the app
+    console.error('Failed to log event:', eventName, error)
+  }
+}
+
+/**
+ * Get user's subscription tier
+ */
+export async function getUserTier(userId: number): Promise<User['subscription_tier'] | null> {
+  const { data, error } = await supabase
+    .from('users')
+    .select('subscription_tier')
+    .eq('id', userId)
+    .single()
+
+  if (error || !data) return null
+  return data.subscription_tier
 }

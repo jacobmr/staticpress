@@ -3,66 +3,52 @@
 **Current Phase:** Phase 2 - Paywall Gates + Personal Tier (Weeks 1-2)
 **Goal:** Implement monetization with free tier limits + unlock Personal tier ($2.50/mo)
 
-## Week 1: Paywall Infrastructure ⚡ PRIORITY
+## Week 1: Paywall Infrastructure ✅ COMPLETE
 
-### Database Schema & Tier Management
-- [ ] Create `subscriptions` table in Supabase
-  - [ ] Fields: user_id, tier (free/personal/smb/pro), stripe_customer_id, stripe_subscription_id, status, current_period_end
-  - [ ] Add RLS policies for user-only access
-- [ ] Create `usage_limits` table (optional - for tracking post edits)
-- [ ] Add `tier` column to users/profiles table (default: 'free')
+### Database Schema & Tier Management ✅
+- [x] Create analytics_events table in Supabase with RLS policies
+- [x] Update subscription_tier to support all 4 tiers (free/personal/smb/pro)
+- [x] Add helper functions: hasFeatureAccess(), getUserTier(), logEvent()
+- [x] Migration files created in supabase/migrations/
 
-### Stripe Integration
-- [ ] Set up Stripe account + get API keys
-- [ ] Install Stripe SDK: `npm install stripe @stripe/stripe-js`
-- [ ] Create `/app/api/stripe/create-checkout-session/route.ts`
-  - [ ] Handle Personal tier checkout ($2.50/mo or $20/yr)
-  - [ ] Store customer_id and subscription_id in database
-- [ ] Create `/app/api/stripe/webhook/route.ts`
-  - [ ] Handle `checkout.session.completed`
-  - [ ] Handle `customer.subscription.updated`
-  - [ ] Handle `customer.subscription.deleted`
-  - [ ] Update user tier in database
-- [ ] Add Stripe webhook endpoint to Stripe dashboard
-- [ ] Create pricing page component (`/app/pricing/page.tsx`)
+### Stripe Integration ✅
+- [x] Install Stripe SDK: `npm install stripe @stripe/stripe-js`
+- [x] Create `/app/api/stripe/create-checkout-session/route.ts` (all 3 tiers, monthly/yearly)
+- [x] Create `/app/api/stripe/create-portal-session/route.ts` (billing management)
+- [x] Create `/app/api/stripe/webhook/route.ts` with all event handlers
+- [x] Create pricing page component (`/app/pricing/page.tsx`)
+- [x] Create comprehensive setup guide (docs/STRIPE_SETUP.md)
+- [ ] **ACTION REQUIRED:** Configure Stripe products and get price IDs
+- [ ] **ACTION REQUIRED:** Set up webhook endpoint in Stripe Dashboard
 
-### Free Tier Limits - "Edit Last 5 Posts Only"
-- [ ] Update `/lib/github.ts` `getHugoPosts()` function
-  - [ ] Add user tier detection from database
-  - [ ] For Free tier: return only last 5 posts sorted by date
-  - [ ] For paid tiers: return all posts
-- [ ] Update `/app/dashboard/page.tsx`
-  - [ ] Check user tier from session/database
-  - [ ] Pass tier to components
-  - [ ] Show tier badge in UI
-- [ ] Update FileBrowser component
-  - [ ] Show "Last 5 posts (Free tier)" message
-  - [ ] Display upgrade prompt when on Free tier
-- [ ] Add "locked" state for older posts in Free tier
-  - [ ] Show lock icon on posts beyond the 5-post limit
-  - [ ] Clicking locked post shows upgrade modal
+### Free Tier Limits - "Edit Last 5 Posts Only" ✅
+- [x] Update dashboard to detect user tier and limit posts
+- [x] Free tier: 5 posts, Paid tiers: 50 posts
+- [x] Cache keys include tier for proper filtering
+- [x] Show tier badge in dashboard header (color-coded)
+- [x] FileBrowser shows "(Free: 5 most recent)" indicator
+- [x] "Upgrade to Edit All Posts" button for free users
 
-### Upgrade Prompts & Flows
-- [ ] Create `UpgradeModal` component
-  - [ ] Triggered when Free user hits limit (tries to edit 6th post)
-  - [ ] Shows Personal tier benefits + pricing
-  - [ ] "Upgrade Now" button → Stripe checkout
-- [ ] Create `TierBadge` component
-  - [ ] Display current tier in dashboard header
-  - [ ] Link to pricing/manage subscription
-- [ ] Add upgrade trigger when attempting to upload image (Free tier)
+### Upgrade Prompts & Flows ✅
+- [x] Create `UpgradeModal` component with all 3 paid tiers
+- [x] Context-aware messaging (post_limit, images, etc.)
+- [x] Monthly/yearly toggle with 17% savings
+- [x] Direct Stripe checkout integration
+- [x] Tier badge links to pricing page
+- [x] Beautiful, responsive pricing page with FAQ
+- [x] "Manage Subscription" for existing customers
 
-### Server-Side Event Logging
-- [ ] Create `analytics_events` table in Supabase
-  - [ ] Fields: event_name, user_id, metadata (jsonb), created_at
-- [ ] Log key events (server-side only, no PII):
-  - [ ] `oauth_completed`
-  - [ ] `repo_bound`
-  - [ ] `first_publish`
-  - [ ] `upgrade_modal_shown`
-  - [ ] `upgrade_started`
-  - [ ] `upgrade_completed`
-- [ ] Create helper function `logEvent(eventName, userId, metadata)`
+### Server-Side Event Logging ✅
+- [x] Create `analytics_events` table in Supabase (migration ready)
+- [x] Create `/api/analytics/log-event` endpoint for client events
+- [x] Log `oauth_completed` (on GitHub sign-in)
+- [x] Log `repo_bound` (when repository connected)
+- [x] Log `first_publish` (user's first published post)
+- [x] Log `post_published` (every publish/update)
+- [x] Log `post_deleted` (when post deleted)
+- [x] Log `upgrade_started` (in Stripe checkout endpoint)
+- [x] Log `upgrade_completed` (in webhook handler)
+- [x] Helper function `logEvent()` implemented
 
 ---
 

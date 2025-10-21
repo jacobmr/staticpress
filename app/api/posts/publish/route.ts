@@ -4,6 +4,7 @@ import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import { generateHugoPath, generateFrontmatter } from '@/lib/hugo'
 import { clearCache } from '@/lib/cache'
+import { getUserByGithubId, logEvent, supabase } from '@/lib/db'
 import TurndownService from 'turndown'
 
 const turndownService = new TurndownService({
@@ -77,6 +78,33 @@ export async function POST(request: Request) {
 
     // Clear cache so next load gets fresh data
     clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
+
+    // Log post published event
+    const user = await getUserByGithubId(session.user.id)
+    if (user) {
+      await logEvent('post_published', user.id, {
+        title,
+        path: filePath,
+        draft,
+        is_update: !!path,
+      })
+
+      // Check if this is the user's first publish
+      const { data: previousPublishes } = await supabase
+        .from('analytics_events')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('event_name', 'post_published')
+        .limit(2)
+
+      if (previousPublishes && previousPublishes.length === 1) {
+        // This is their first publish!
+        await logEvent('first_publish', user.id, {
+          title,
+          path: filePath,
+        })
+      }
+    }
 
     return NextResponse.json({
       success: true,
