@@ -24,21 +24,6 @@ async function getSupabase(): Promise<SupabaseClient> {
 // Export async getter instead of direct client
 export { getSupabase as getSupabaseClient }
 
-// For backward compatibility, export a proxy (but this should be avoided at build time)
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(_target, prop) {
-    return (...args: unknown[]) => {
-      return getSupabase().then(client => {
-        const method = (client as unknown as Record<string, unknown>)[prop as string]
-        if (typeof method === 'function') {
-          return (method as (...args: unknown[]) => unknown).apply(client, args)
-        }
-        return method
-      })
-    }
-  }
-})
-
 export interface User {
   id: number
   github_id: string
@@ -101,6 +86,8 @@ export async function getOrCreateUser(githubUser: {
   name?: string | null
   image?: string | null
 }): Promise<User> {
+  const supabase = await getSupabase()
+
   // Try to find existing user
   const { data: existingUser, error: fetchError } = await supabase
     .from('users')
@@ -147,6 +134,8 @@ export async function getOrCreateUser(githubUser: {
  * Get user's repository configuration
  */
 export async function getUserRepository(userId: number): Promise<Repository | null> {
+  const supabase = await getSupabase()
+
   const { data, error } = await supabase
     .from('repositories')
     .select('*')
@@ -171,6 +160,8 @@ export async function upsertUserRepository(
     theme?: string
   }
 ): Promise<Repository> {
+  const supabase = await getSupabase()
+
   // Check if repository already exists
   const { data: existing, error: fetchError } = await supabase
     .from('repositories')
@@ -218,6 +209,8 @@ export async function upsertUserRepository(
  * Get or create usage tracking for user
  */
 export async function getOrCreateUsageTracking(userId: number): Promise<UsageTracking> {
+  const supabase = await getSupabase()
+
   const { data: existing, error: fetchError } = await supabase
     .from('usage_tracking')
     .select('*')
@@ -246,6 +239,8 @@ export async function getOrCreateUsageTracking(userId: number): Promise<UsageTra
  * Increment post edit count for user
  */
 export async function incrementPostEditCount(userId: number): Promise<void> {
+  const supabase = await getSupabase()
+
   const { error } = await supabase.rpc('increment_post_count', {
     user_id_param: userId,
   })
@@ -266,6 +261,8 @@ export async function incrementPostEditCount(userId: number): Promise<void> {
  * Check if user can edit posts (free tier has 5 post limit)
  */
 export async function canUserEditPosts(userId: number): Promise<boolean> {
+  const supabase = await getSupabase()
+
   const { data, error } = await supabase
     .from('users')
     .select('subscription_tier')
@@ -313,6 +310,8 @@ export function hasFeatureAccess(
  * Get user by ID
  */
 export async function getUserById(userId: number): Promise<User | null> {
+  const supabase = await getSupabase()
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -327,6 +326,8 @@ export async function getUserById(userId: number): Promise<User | null> {
  * Get user by GitHub ID
  */
 export async function getUserByGithubId(githubId: string): Promise<User | null> {
+  const supabase = await getSupabase()
+
   const { data, error } = await supabase
     .from('users')
     .select('*')
@@ -346,6 +347,8 @@ export async function logEvent(
   metadata: Record<string, unknown> = {}
 ): Promise<void> {
   try {
+    const supabase = await getSupabase()
+
     await supabase.from('analytics_events').insert({
       event_name: eventName,
       user_id: userId,
@@ -361,6 +364,8 @@ export async function logEvent(
  * Get user's subscription tier
  */
 export async function getUserTier(userId: number): Promise<User['subscription_tier'] | null> {
+  const supabase = await getSupabase()
+
   const { data, error } = await supabase
     .from('users')
     .select('subscription_tier')

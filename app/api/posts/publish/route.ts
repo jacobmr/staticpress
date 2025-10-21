@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
 
     // Dynamically import database functions to prevent build-time initialization
-    const { getUserByGithubId, logEvent, supabase } = await import('@/lib/db')
+    const { getUserByGithubId, logEvent, getSupabaseClient } = await import('@/lib/db')
 
     // Log post published event
     const user = await getUserByGithubId(session.user.id)
@@ -92,6 +92,7 @@ export async function POST(request: Request) {
       })
 
       // Check if this is the user's first publish
+      const supabase = await getSupabaseClient()
       const { data: previousPublishes } = await supabase
         .from('analytics_events')
         .select('id')

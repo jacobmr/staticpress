@@ -89,9 +89,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const customerId = session.customer as string
 
   // Dynamically import database functions
-  const { supabase, logEvent } = await import('@/lib/db')
+  const { getSupabaseClient, logEvent } = await import('@/lib/db')
 
   // Update user in database
+  const supabase = await getSupabaseClient()
   const { error } = await supabase
     .from('users')
     .update({
@@ -134,13 +135,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   // Dynamically import database functions
-  const { supabase } = await import('@/lib/db')
+  const { getSupabaseClient } = await import('@/lib/db')
 
   // Update user subscription status
   const status = subscription.status === 'active' ? 'active' :
                  subscription.status === 'canceled' ? 'canceled' :
                  'expired'
 
+  const supabase = await getSupabaseClient()
   const { error } = await supabase
     .from('users')
     .update({
@@ -169,9 +171,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 
   // Dynamically import database functions
-  const { supabase } = await import('@/lib/db')
+  const { getSupabaseClient } = await import('@/lib/db')
 
   // Downgrade user to free tier
+  const supabase = await getSupabaseClient()
   const { error } = await supabase
     .from('users')
     .update({
