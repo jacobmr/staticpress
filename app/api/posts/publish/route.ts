@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import { generateHugoPath, generateFrontmatter } from '@/lib/hugo'
-import { clearCache } from '@/lib/cache'
+import { clearCachePattern } from '@/lib/cache'
 import TurndownService from 'turndown'
 
 const turndownService = new TurndownService({
@@ -13,6 +13,11 @@ const turndownService = new TurndownService({
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous'
+    const { rateLimitCheck } = await import('@/lib/cache')
+    if (!rateLimitCheck(`publish:${ip}`, 10, 60)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
     const session = await auth()
 
     if (!session?.user || !session.accessToken) {
@@ -75,15 +80,26 @@ export async function POST(request: Request) {
       existingSha
     )
 
-    // Clear cache so next load gets fresh data
-    clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
+    // Clear cache for all tiers of this repo
+    clearCachePattern(`posts:${repoConfig.owner}:${repoConfig.repo}:`)
 
     // Dynamically import database functions to prevent build-time initialization
     const { getUserByGithubId, logEvent, getSupabaseClient } = await import('@/lib/db')
 
-    // Log post published event
+    // Check if this is the user's first publish BEFORE logging the event
     const user = await getUserByGithubId(session.user.id)
     if (user) {
+      const supabase = await getSupabaseClient()
+      const { data: previousPublishes } = await supabase
+        .from('analytics_events')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('event_name', 'post_published')
+        .limit(1)
+
+      const isFirstPublish = !previousPublishes || previousPublishes.length === 0
+
+      // Log post published event
       await logEvent('post_published', user.id, {
         title,
         path: filePath,
@@ -91,17 +107,7 @@ export async function POST(request: Request) {
         is_update: !!path,
       })
 
-      // Check if this is the user's first publish
-      const supabase = await getSupabaseClient()
-      const { data: previousPublishes } = await supabase
-        .from('analytics_events')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('event_name', 'post_published')
-        .limit(2)
-
-      if (previousPublishes && previousPublishes.length === 1) {
-        // This is their first publish!
+      if (isFirstPublish) {
         await logEvent('first_publish', user.id, {
           title,
           path: filePath,

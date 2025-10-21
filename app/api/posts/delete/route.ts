@@ -2,10 +2,16 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
-import { clearCache } from '@/lib/cache'
+import { clearCachePattern } from '@/lib/cache'
 
 export async function POST(request: Request) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous'
+    const { rateLimitCheck } = await import('@/lib/cache')
+    if (!rateLimitCheck(`delete:${ip}`, 10, 60)) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    }
+    
     const session = await auth()
 
     if (!session?.user || !session.accessToken) {
@@ -49,8 +55,8 @@ export async function POST(request: Request) {
       file.sha
     )
 
-    // Clear cache
-    clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
+    // Clear cache for all tiers of this repo
+    clearCachePattern(`posts:${repoConfig.owner}:${repoConfig.repo}:`)
 
     // Dynamically import database functions to prevent build-time initialization
     const { getUserByGithubId, logEvent } = await import('@/lib/db')
