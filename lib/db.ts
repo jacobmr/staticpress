@@ -4,6 +4,12 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js'
 let _supabase: SupabaseClient | null = null
 
 function getSupabaseClient() {
+  // Skip initialization during build phase
+  if (typeof window === 'undefined' && !process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    // During build, return a mock that will never be called
+    return {} as SupabaseClient
+  }
+
   if (!_supabase) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
