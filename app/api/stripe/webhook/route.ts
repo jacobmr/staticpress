@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import { stripe, getTierFromPriceId } from '@/lib/stripe'
-import { supabase, logEvent } from '@/lib/db'
 import Stripe from 'stripe'
 
 // Disable body parsing for webhook
@@ -89,6 +88,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   const subscriptionId = session.subscription as string
   const customerId = session.customer as string
 
+  // Dynamically import database functions
+  const { supabase, logEvent } = await import('@/lib/db')
+
   // Update user in database
   const { error } = await supabase
     .from('users')
@@ -131,6 +133,9 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return
   }
 
+  // Dynamically import database functions
+  const { supabase } = await import('@/lib/db')
+
   // Update user subscription status
   const status = subscription.status === 'active' ? 'active' :
                  subscription.status === 'canceled' ? 'canceled' :
@@ -162,6 +167,9 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     console.error('Missing user_id in subscription metadata')
     return
   }
+
+  // Dynamically import database functions
+  const { supabase } = await import('@/lib/db')
 
   // Downgrade user to free tier
   const { error } = await supabase
@@ -197,6 +205,9 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
   const userId = subscription.metadata?.user_id
 
   if (userId) {
+    // Dynamically import database functions
+    const { logEvent } = await import('@/lib/db')
+
     await logEvent('payment_succeeded', parseInt(userId), {
       amount: invoice.amount_paid / 100,
       currency: invoice.currency,
@@ -222,6 +233,9 @@ async function handlePaymentFailed(invoice: Stripe.Invoice) {
   const userId = subscription.metadata?.user_id
 
   if (userId) {
+    // Dynamically import database functions
+    const { logEvent } = await import('@/lib/db')
+
     await logEvent('payment_failed', parseInt(userId), {
       amount: invoice.amount_due / 100,
       currency: invoice.currency,

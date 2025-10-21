@@ -3,7 +3,6 @@ import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import { clearCache } from '@/lib/cache'
-import { getUserByGithubId, logEvent } from '@/lib/db'
 
 export async function POST(request: Request) {
   try {
@@ -52,6 +51,9 @@ export async function POST(request: Request) {
 
     // Clear cache
     clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, logEvent } = await import('@/lib/db')
 
     // Log post deleted event
     const user = await getUserByGithubId(session.user.id)

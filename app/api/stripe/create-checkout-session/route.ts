@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { getUserByGithubId, logEvent } from '@/lib/db'
 import { createCheckoutSession, PricingTier, BillingInterval } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
@@ -25,6 +24,9 @@ export async function POST(req: NextRequest) {
     if (!interval || !['monthly', 'yearly'].includes(interval)) {
       return NextResponse.json({ error: 'Invalid interval' }, { status: 400 })
     }
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, logEvent } = await import('@/lib/db')
 
     // Get user from database
     const user = await getUserByGithubId(session.user.id)

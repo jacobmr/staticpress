@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { getUserByGithubId } from '@/lib/db'
 import { createPortalSession } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
@@ -12,6 +11,9 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId } = await import('@/lib/db')
 
     // Get user from database
     const user = await getUserByGithubId(session.user.id)

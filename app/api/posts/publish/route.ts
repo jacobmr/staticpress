@@ -4,7 +4,6 @@ import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import { generateHugoPath, generateFrontmatter } from '@/lib/hugo'
 import { clearCache } from '@/lib/cache'
-import { getUserByGithubId, logEvent, supabase } from '@/lib/db'
 import TurndownService from 'turndown'
 
 const turndownService = new TurndownService({
@@ -78,6 +77,9 @@ export async function POST(request: Request) {
 
     // Clear cache so next load gets fresh data
     clearCache(`posts:${repoConfig.owner}:${repoConfig.repo}`)
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, logEvent, supabase } = await import('@/lib/db')
 
     // Log post published event
     const user = await getUserByGithubId(session.user.id)

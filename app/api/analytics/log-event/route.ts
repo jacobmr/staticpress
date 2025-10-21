@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
-import { getUserByGithubId, logEvent, EventName } from '@/lib/db'
+import type { EventName } from '@/lib/db'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +18,9 @@ export async function POST(req: NextRequest) {
     if (!event_name) {
       return NextResponse.json({ error: 'Missing event_name' }, { status: 400 })
     }
+
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId, logEvent } = await import('@/lib/db')
 
     // Get user ID from database
     const user = await getUserByGithubId(session.user.id)
