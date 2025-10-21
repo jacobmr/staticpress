@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
-import { UpgradeModal } from './upgrade-modal'
 
 interface FileBrowserProps {
   posts: HugoPost[]
@@ -18,7 +17,6 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
   const [searchQuery, setSearchQuery] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
   const [deleteModalPost, setDeleteModalPost] = useState<HugoPost | null>(null)
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
 
   const filteredPosts = posts.filter(post =>
     post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -81,12 +79,12 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
           )}
         </div>
         {userTier === 'free' && posts.length === 5 && (
-          <button
-            onClick={() => setShowUpgradeModal(true)}
-            className="mt-2 w-full rounded-md bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700"
+          <a
+            href="/pricing"
+            className="mt-2 block w-full rounded-md bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white hover:bg-blue-700"
           >
             Upgrade to Edit All Posts
-          </button>
+          </a>
         )}
       </div>
 
@@ -187,12 +185,6 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
         </div>
       )}
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        reason="post_limit"
-      />
     </div>
   )
 }
