@@ -6,6 +6,8 @@ import { getUserByGithubId, upsertUserRepository, supabase } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import Link from "next/link"
 
+export const dynamic = 'force-dynamic'
+
 export default async function SettingsPage() {
   const session = await auth()
 

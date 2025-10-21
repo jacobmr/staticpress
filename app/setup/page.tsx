@@ -5,6 +5,8 @@ import { getRepoConfig } from "@/lib/cookies"
 import { getUserByGithubId, upsertUserRepository, logEvent } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
+export const dynamic = 'force-dynamic'
+
 export default async function SetupPage() {
   const session = await auth()
 

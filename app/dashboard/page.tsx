@@ -7,6 +7,8 @@ import { getCached, setCached } from "@/lib/cache"
 import { getUserByGithubId } from "@/lib/db"
 import Link from "next/link"
 
+export const dynamic = 'force-dynamic'
+
 export default async function Dashboard() {
   const session = await auth()
 
