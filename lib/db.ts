@@ -42,7 +42,7 @@ export interface AnalyticsEvent {
   id: number
   event_name: string
   user_id: number | null
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   created_at: string
 }
 
@@ -308,7 +308,7 @@ export async function getUserByGithubId(githubId: string): Promise<User | null> 
 export async function logEvent(
   eventName: EventName,
   userId: number | null,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ): Promise<void> {
   try {
     await supabase.from('analytics_events').insert({
