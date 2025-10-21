@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth'
 import { getUserByGithubId, logEvent } from '@/lib/db'
 import { createCheckoutSession, PricingTier, BillingInterval } from '@/lib/stripe'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     // Check authentication

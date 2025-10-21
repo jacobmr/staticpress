@@ -3,6 +3,8 @@ import { auth } from '@/lib/auth'
 import { getUserByGithubId } from '@/lib/db'
 import { createPortalSession } from '@/lib/stripe'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(req: NextRequest) {
   try {
     // Check authentication
