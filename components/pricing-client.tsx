@@ -121,6 +121,7 @@ export function PricingClient({ currentTier, userId, hasStripeCustomer }: Pricin
       ],
       color: 'purple',
       cta: 'Upgrade to SMB',
+      comingSoon: true,
     },
     {
       id: 'pro',
@@ -135,6 +136,7 @@ export function PricingClient({ currentTier, userId, hasStripeCustomer }: Pricin
       ],
       color: 'orange',
       cta: 'Upgrade to Pro',
+      comingSoon: true,
     },
   ]
 
@@ -283,6 +285,18 @@ export function PricingClient({ currentTier, userId, hasStripeCustomer }: Pricin
                 >
                   Free Forever
                 </button>
+              ) : tier.comingSoon ? (
+                <div className="text-center">
+                  <button
+                    disabled
+                    className="w-full rounded-md bg-gray-300 px-6 py-3 font-medium text-gray-600 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+                  >
+                    Coming Soon
+                  </button>
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                    Available in Q2 2025
+                  </p>
+                </div>
               ) : canUpgrade && !isDowngrade ? (
                 <button
                   onClick={() => handleUpgrade(tier.id as 'personal' | 'smb' | 'pro', billingInterval)}
