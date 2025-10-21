@@ -185,7 +185,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
  * Handle successful payment
  */
 async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
-  const subscriptionId = invoice.subscription as string
+  // Type assertion needed as subscription property exists but isn't in TS types
+  const subscriptionRef = (invoice as unknown as { subscription?: string | Stripe.Subscription }).subscription
+  if (!subscriptionRef) return
+
+  const subscriptionId = typeof subscriptionRef === 'string' ? subscriptionRef : subscriptionRef.id
   if (!subscriptionId) return
 
   // Get subscription to get user_id
@@ -206,7 +210,11 @@ async function handlePaymentSucceeded(invoice: Stripe.Invoice) {
  * Handle failed payment
  */
 async function handlePaymentFailed(invoice: Stripe.Invoice) {
-  const subscriptionId = invoice.subscription as string
+  // Type assertion needed as subscription property exists but isn't in TS types
+  const subscriptionRef = (invoice as unknown as { subscription?: string | Stripe.Subscription }).subscription
+  if (!subscriptionRef) return
+
+  const subscriptionId = typeof subscriptionRef === 'string' ? subscriptionRef : subscriptionRef.id
   if (!subscriptionId) return
 
   // Get subscription to get user_id

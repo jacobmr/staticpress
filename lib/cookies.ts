@@ -41,7 +41,7 @@ export async function getRepoConfig(): Promise<RepoConfig | null> {
  * Note: This function is kept for backward compatibility but doesn't actually do anything.
  * Use upsertUserRepository from lib/db.ts directly instead.
  */
-export async function setRepoConfig(config: RepoConfig) {
+export async function setRepoConfig(_config: RepoConfig) {
   // This function is now deprecated - repository configuration should be set
   // via upsertUserRepository in lib/db.ts using the server action in setup page
   console.warn('setRepoConfig is deprecated - use upsertUserRepository from lib/db.ts instead')

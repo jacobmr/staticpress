@@ -1,24 +1,27 @@
 import Stripe from 'stripe'
 
 // Initialize Stripe with secret key (server-side only)
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-12-18.acacia',
+// Use a placeholder during build if the key is not set
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder_for_build'
+
+export const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: '2025-09-30.clover',
   typescript: true,
 })
 
 // Subscription tier to Stripe price ID mapping
 export const PRICE_IDS = {
   personal: {
-    monthly: process.env.STRIPE_PERSONAL_MONTHLY_PRICE_ID!,
-    yearly: process.env.STRIPE_PERSONAL_YEARLY_PRICE_ID!,
+    monthly: process.env.STRIPE_PERSONAL_MONTHLY_PRICE_ID || 'price_placeholder_personal_monthly',
+    yearly: process.env.STRIPE_PERSONAL_YEARLY_PRICE_ID || 'price_placeholder_personal_yearly',
   },
   smb: {
-    monthly: process.env.STRIPE_SMB_MONTHLY_PRICE_ID!,
-    yearly: process.env.STRIPE_SMB_YEARLY_PRICE_ID!,
+    monthly: process.env.STRIPE_SMB_MONTHLY_PRICE_ID || 'price_placeholder_smb_monthly',
+    yearly: process.env.STRIPE_SMB_YEARLY_PRICE_ID || 'price_placeholder_smb_yearly',
   },
   pro: {
-    monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID!,
-    yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID!,
+    monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID || 'price_placeholder_pro_monthly',
+    yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID || 'price_placeholder_pro_yearly',
   },
 } as const
 

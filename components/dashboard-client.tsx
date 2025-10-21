@@ -14,7 +14,7 @@ interface DashboardClientProps {
   userId: number
 }
 
-export function DashboardClient({ initialPosts, userTier, userId }: DashboardClientProps) {
+export function DashboardClient({ initialPosts, userTier, userId: _userId }: DashboardClientProps) {
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
   const [title, setTitle] = useState('')

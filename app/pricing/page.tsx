@@ -1,6 +1,5 @@
 import { auth } from '@/lib/auth'
 import { getUserByGithubId } from '@/lib/db'
-import { redirect } from 'next/navigation'
 import { PricingClient } from '@/components/pricing-client'
 import Link from 'next/link'
 

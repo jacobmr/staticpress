@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const { event_name, metadata = {} } = body as {
       event_name: EventName
-      metadata?: Record<string, any>
+      metadata?: Record<string, unknown>
     }
 
     if (!event_name) {

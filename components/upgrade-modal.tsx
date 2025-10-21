@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { getStripe } from '@/lib/stripe-client'
 
 interface UpgradeModalProps {
   isOpen: boolean
@@ -32,18 +31,10 @@ export function UpgradeModal({ isOpen, onClose, reason = 'post_limit' }: Upgrade
         throw new Error(data.error || 'Failed to create checkout session')
       }
 
-      const { sessionId } = await response.json()
+      const { url } = await response.json()
 
       // Redirect to Stripe Checkout
-      const stripe = await getStripe()
-      if (!stripe) {
-        throw new Error('Failed to load Stripe')
-      }
-
-      const { error } = await stripe.redirectToCheckout({ sessionId })
-      if (error) {
-        throw error
-      }
+      window.location.href = url
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
       setIsLoading(false)

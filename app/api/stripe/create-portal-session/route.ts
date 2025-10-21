@@ -3,7 +3,7 @@ import { auth } from '@/lib/auth'
 import { getUserByGithubId } from '@/lib/db'
 import { createPortalSession } from '@/lib/stripe'
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     // Check authentication
     const session = await auth()

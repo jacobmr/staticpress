@@ -1,8 +1,9 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Initialize Supabase client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+// Use placeholders during build if environment variables are not set
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co'
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder-key-for-build'
 
 export const supabase = createClient(supabaseUrl, supabaseKey)
 
@@ -42,7 +43,7 @@ export interface AnalyticsEvent {
   id: number
   event_name: string
   user_id: number | null
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   created_at: string
 }
 
@@ -56,6 +57,8 @@ export type EventName =
   | 'image_upload'
   | 'post_published'
   | 'post_deleted'
+  | 'payment_succeeded'
+  | 'payment_failed'
 
 /**
  * Get or create user by GitHub ID
@@ -308,7 +311,7 @@ export async function getUserByGithubId(githubId: string): Promise<User | null> 
 export async function logEvent(
   eventName: EventName,
   userId: number | null,
-  metadata: Record<string, any> = {}
+  metadata: Record<string, unknown> = {}
 ): Promise<void> {
   try {
     await supabase.from('analytics_events').insert({
