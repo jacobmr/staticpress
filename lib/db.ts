@@ -53,6 +53,8 @@ export type EventName =
   | 'upgrade_modal_shown'
   | 'upgrade_started'
   | 'upgrade_completed'
+  | 'payment_succeeded'
+  | 'payment_failed'
   | 'image_upload'
   | 'post_published'
   | 'post_deleted'
