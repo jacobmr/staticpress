@@ -1,10 +1,29 @@
 import Stripe from 'stripe'
 
-// Initialize Stripe with secret key (server-side only)
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2025-09-30.clover',
-  typescript: true,
-})
+// Lazy-initialize Stripe client to avoid build-time errors
+let _stripe: Stripe | null = null
+
+function getStripe(): Stripe {
+  if (_stripe) {
+    return _stripe
+  }
+
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY
+
+  if (!stripeSecretKey) {
+    throw new Error('Missing Stripe configuration: STRIPE_SECRET_KEY')
+  }
+
+  _stripe = new Stripe(stripeSecretKey, {
+    apiVersion: '2025-09-30.clover',
+    typescript: true,
+  })
+
+  return _stripe
+}
+
+// For backward compatibility - but prefer using getStripe() directly in new code
+export const stripe = getStripe()
 
 // Subscription tier to Stripe price ID mapping
 export const PRICE_IDS = {
