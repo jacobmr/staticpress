@@ -45,12 +45,19 @@ export default async function Home() {
                 Get Started Free
               </button>
             </form>
-            <a
-              href="#pricing"
-              className="rounded-lg border-2 border-gray-900 px-8 py-4 text-lg font-semibold text-gray-900 transition-colors hover:bg-gray-100 dark:border-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
+            <form
+              action={async () => {
+                "use server"
+                await signIn("github")
+              }}
             >
-              View Pricing
-            </a>
+              <button
+                type="submit"
+                className="rounded-lg border-2 border-gray-900 px-8 py-4 text-lg font-semibold text-gray-900 transition-colors hover:bg-gray-100 dark:border-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
+              >
+                Sign In
+              </button>
+            </form>
           </div>
 
           <div className="mt-16 grid gap-8 sm:grid-cols-3">
@@ -170,7 +177,7 @@ export default async function Home() {
                 type="submit"
                 className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
               >
-                Start Free Trial
+                Upgrade to Personal
               </button>
             </form>
           </div>
@@ -205,19 +212,17 @@ export default async function Home() {
                 <span>Theme gallery</span>
               </li>
             </ul>
-            <form
-              action={async () => {
-                "use server"
-                await signIn("github")
-              }}
-            >
+            <div className="text-center">
               <button
-                type="submit"
-                className="w-full rounded-md bg-purple-600 px-4 py-2 font-medium text-white hover:bg-purple-700"
+                disabled
+                className="w-full rounded-md bg-gray-300 px-4 py-2 font-medium text-gray-600 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
               >
-                Start Free Trial
+                Coming Soon
               </button>
-            </form>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Available in Q2 2025
+              </p>
+            </div>
           </div>
 
           {/* Pro Tier */}
@@ -250,19 +255,17 @@ export default async function Home() {
                 <span>Priority support</span>
               </li>
             </ul>
-            <form
-              action={async () => {
-                "use server"
-                await signIn("github")
-              }}
-            >
+            <div className="text-center">
               <button
-                type="submit"
-                className="w-full rounded-md bg-gradient-to-r from-yellow-400 to-orange-500 px-4 py-2 font-medium text-white hover:from-yellow-500 hover:to-orange-600"
+                disabled
+                className="w-full rounded-md bg-gray-300 px-4 py-2 font-medium text-gray-600 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
               >
-                Start Free Trial
+                Coming Soon
               </button>
-            </form>
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Available in Q2 2025
+              </p>
+            </div>
           </div>
         </div>
 
