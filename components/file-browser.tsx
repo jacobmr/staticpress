@@ -17,6 +17,11 @@ interface FileBrowserProps {
 function extractFirstImage(htmlContent: string): string | null {
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
   const match = htmlContent.match(imgRegex)
+  if (match) {
+    console.log('Found image:', match[1])
+  } else {
+    console.log('No image found in content (first 200 chars):', htmlContent.substring(0, 200))
+  }
   return match ? match[1] : null
 }
 
