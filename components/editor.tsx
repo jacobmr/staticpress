@@ -29,7 +29,6 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         },
       }),
     ],
-    content,
     editorProps: {
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[400px] px-4 py-3 text-gray-900 dark:text-white prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-900 dark:prose-p:text-white',
@@ -38,7 +37,7 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
-  }, []) // Add dependency array to prevent re-initialization
+  })
 
   const setLink = useCallback(() => {
     if (!editor) return
