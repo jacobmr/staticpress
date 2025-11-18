@@ -18,11 +18,14 @@ function extractFirstImage(htmlContent: string): string | null {
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
   const match = htmlContent.match(imgRegex)
   if (match) {
-    console.log('Found image:', match[1])
-  } else {
-    console.log('No image found in content (first 200 chars):', htmlContent.substring(0, 200))
+    let imageUrl = match[1]
+    // Convert relative URLs to absolute URLs
+    if (imageUrl.startsWith('/')) {
+      imageUrl = `https://docnotes.net${imageUrl}`
+    }
+    return imageUrl
   }
-  return match ? match[1] : null
+  return null
 }
 
 export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost, userTier }: FileBrowserProps) {
