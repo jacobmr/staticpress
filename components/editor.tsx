@@ -38,7 +38,7 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
-  })
+  }, []) // Add dependency array to prevent re-initialization
 
   const setLink = useCallback(() => {
     if (!editor) return
