@@ -111,38 +111,22 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                     : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
-                {/* Thumbnail or Icon */}
-                <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                  {(() => {
-                    const imageUrl = extractFirstImage(post.content)
-                    if (imageUrl) {
-                      return (
+                {/* Thumbnail - only if post has an image */}
+                {(() => {
+                  const imageUrl = extractFirstImage(post.content)
+                  if (imageUrl) {
+                    return (
+                      <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
                         <img
                           src={imageUrl}
                           alt={post.title}
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to icon if image fails to load
-                            e.currentTarget.style.display = 'none'
-                            if (e.currentTarget.nextSibling) {
-                              (e.currentTarget.nextSibling as HTMLElement).style.display = 'block'
-                            }
-                          }}
                         />
-                      )
-                    }
-                    return null
-                  })()}
-                  <svg
-                    className="w-8 h-8 text-gray-400"
-                    style={{ display: extractFirstImage(post.content) ? 'none' : 'block' }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
 
                 <button
                   onClick={() => onSelectPost(post)}
