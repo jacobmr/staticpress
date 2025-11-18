@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
-import { generateHugoPath, generateFrontmatter } from '@/lib/hugo'
+import { generateHugoPath, generateFrontmatter, extractFirstImageUrl } from '@/lib/hugo'
 import { clearCachePattern } from '@/lib/cache'
 import TurndownService from 'turndown'
 
@@ -38,6 +38,9 @@ export async function POST(request: Request) {
 
     const github = new GitHubClient(session.accessToken)
 
+    // Extract first image URL from HTML content for featured image
+    const featureImageUrl = extractFirstImageUrl(content)
+
     // Convert HTML to markdown
     const markdownContent = turndownService.turndown(content)
 
@@ -58,11 +61,18 @@ export async function POST(request: Request) {
     }
 
     // Create frontmatter and combine with content
-    const frontmatter = generateFrontmatter({
+    const frontmatterData: Record<string, unknown> = {
       title,
       date: new Date().toISOString(),
       draft,
-    })
+    }
+
+    // Add feature image if found
+    if (featureImageUrl) {
+      frontmatterData.featureimage = featureImageUrl
+    }
+
+    const frontmatter = generateFrontmatter(frontmatterData)
 
     const fileContent = `${frontmatter}\n\n${markdownContent}`
 

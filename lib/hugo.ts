@@ -166,6 +166,28 @@ export function parseHugoPost(fileContent: string): {
 }
 
 /**
+ * Extract first image URL from HTML content
+ * Converts relative URLs to absolute URLs for docnotes.net
+ */
+export function extractFirstImageUrl(htmlContent: string): string | null {
+  const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
+  const match = htmlContent.match(imgRegex)
+
+  if (match) {
+    let imageUrl = match[1]
+
+    // Convert relative URLs to absolute URLs
+    if (imageUrl.startsWith('/')) {
+      imageUrl = `https://docnotes.net${imageUrl}`
+    }
+
+    return imageUrl
+  }
+
+  return null
+}
+
+/**
  * Generate commit message for Hugo post
  */
 export function generateCommitMessage(action: "create" | "update" | "delete", title: string): string {

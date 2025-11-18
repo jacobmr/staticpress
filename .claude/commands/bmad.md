@@ -1,0 +1,1 @@
+Activate the BMAD Master orchestrator by loading the agent file at /Users/jmr/dev/ResearchFlo/.claude/commands/bmad/core/agents/bmad-master.md and following all activation steps exactly as specified in that file.
