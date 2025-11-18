@@ -19,12 +19,15 @@ function extractFirstImage(htmlContent: string): string | null {
   const match = htmlContent.match(imgRegex)
   if (match) {
     let imageUrl = match[1]
+    console.log('Original image URL:', imageUrl)
     // Convert relative URLs to absolute URLs
     if (imageUrl.startsWith('/')) {
       imageUrl = `https://docnotes.net${imageUrl}`
+      console.log('Converted to absolute URL:', imageUrl)
     }
     return imageUrl
   }
+  console.log('No image found in content')
   return null
 }
 
@@ -129,6 +132,13 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                           src={imageUrl}
                           alt={post.title}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            console.error('Failed to load image:', imageUrl, e)
+                            e.currentTarget.style.display = 'none'
+                          }}
+                          onLoad={() => {
+                            console.log('Successfully loaded image:', imageUrl)
+                          }}
                         />
                       </div>
                     )
