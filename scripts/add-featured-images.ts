@@ -7,7 +7,7 @@
 
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'
-import { parseHugoPost, generateFrontmatter, extractFirstImageUrl } from '../lib/hugo'
+import { parseHugoPost, generateFrontmatter, extractFirstImageUrl } from '../lib/hugo.js'
 
 const POSTS_DIR = '/Users/jmr/dev/docnotes-hugo/content/posts'
 
@@ -52,10 +52,16 @@ function updatePost(filePath: string): boolean {
   const updatedFrontmatter = {
     ...frontmatter,
     featureimage: imageUrl,
+  } as Record<string, unknown>
+
+  // Ensure title exists (required by HugoFrontmatter)
+  if (!updatedFrontmatter.title) {
+    console.warn(`Skipping ${filePath}: no title in frontmatter`)
+    return false
   }
 
   // Generate new frontmatter
-  const newFrontmatterBlock = generateFrontmatter(updatedFrontmatter)
+  const newFrontmatterBlock = generateFrontmatter(updatedFrontmatter as any)
 
   // Recreate file with new frontmatter
   const newContent = `${newFrontmatterBlock}\n\n${bodyContent}`
