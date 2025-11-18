@@ -5,6 +5,7 @@ import { GitHubClient, HugoPost } from "@/lib/github"
 import { DashboardClient } from "@/components/dashboard-client"
 import { getCached, setCached } from "@/lib/cache"
 import Link from "next/link"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 export const dynamic = 'force-dynamic'
 
@@ -79,6 +80,7 @@ export default async function Dashboard() {
                user.subscription_tier === 'personal' ? 'Personal' :
                user.subscription_tier === 'smb' ? 'SMB' : 'Pro'}
             </Link>
+            <ThemeToggle />
             <Link
               href="/settings"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
