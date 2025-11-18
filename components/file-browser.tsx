@@ -13,6 +13,13 @@ interface FileBrowserProps {
   userTier: User['subscription_tier']
 }
 
+// Extract first image URL from HTML content
+function extractFirstImage(htmlContent: string): string | null {
+  const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
+  const match = htmlContent.match(imgRegex)
+  return match ? match[1] : null
+}
+
 export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost, userTier }: FileBrowserProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
@@ -98,12 +105,45 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
             {filteredPosts.map((post) => (
               <div
                 key={post.path}
-                className={`relative flex items-start px-4 py-3 transition-colors ${
+                className={`relative flex items-start gap-3 px-4 py-3 transition-colors ${
                   selectedPost?.path === post.path
                     ? 'bg-blue-50 dark:bg-blue-950'
                     : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                 }`}
               >
+                {/* Thumbnail or Icon */}
+                <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                  {(() => {
+                    const imageUrl = extractFirstImage(post.content)
+                    if (imageUrl) {
+                      return (
+                        <img
+                          src={imageUrl}
+                          alt={post.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to icon if image fails to load
+                            e.currentTarget.style.display = 'none'
+                            if (e.currentTarget.nextSibling) {
+                              (e.currentTarget.nextSibling as HTMLElement).style.display = 'block'
+                            }
+                          }}
+                        />
+                      )
+                    }
+                    return null
+                  })()}
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    style={{ display: extractFirstImage(post.content) ? 'none' : 'block' }}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+
                 <button
                   onClick={() => onSelectPost(post)}
                   className="flex-1 text-left min-w-0"
