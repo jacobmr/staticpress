@@ -10,59 +10,75 @@ import { ThemeToggle } from "@/components/theme-toggle"
 export const dynamic = 'force-dynamic'
 
 export default async function Dashboard() {
-  const session = await auth()
-
-  if (!session?.user || !session.accessToken) {
-    redirect('/')
-  }
-
-  // Dynamically import database functions to prevent build-time initialization
-  const { getUserByGithubId } = await import('@/lib/db')
-
-  // Get user from database to check tier
-  let user
   try {
-    user = await getUserByGithubId(session.user.id)
-  } catch (error) {
-    console.error('[Dashboard] Database error:', error)
-    throw new Error('Failed to connect to database. Please check environment variables.')
-  }
+    console.log('[Dashboard] Starting dashboard load')
 
-  if (!user) {
-    console.error('[Dashboard] User not found for GitHub ID:', session.user.id)
-    throw new Error(`User not found in database for GitHub ID: ${session.user.id}`)
-  }
+    const session = await auth()
+    console.log('[Dashboard] Session:', {
+      hasUser: !!session?.user,
+      userId: session?.user?.id,
+      hasAccessToken: !!session?.accessToken
+    })
 
-  // Check if repository is configured
-  const repoConfig = await getRepoConfig()
-  if (!repoConfig) {
-    redirect('/setup')
-  }
+    if (!session?.user || !session.accessToken) {
+      console.log('[Dashboard] No session, redirecting to /')
+      redirect('/')
+    }
 
-  // Determine post limit based on tier
-  // Free tier: 5 posts only, Paid tiers: all posts (limit 50 for performance)
-  const postLimit = user.subscription_tier === 'free' ? 5 : 50
+    // Dynamically import database functions to prevent build-time initialization
+    const { getUserByGithubId } = await import('@/lib/db')
 
-  // Try to get cached posts first (24-hour server cache)
-  const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`
-  let posts = getCached<HugoPost[]>(cacheKey)
+    // Get user from database to check tier
+    console.log('[Dashboard] Looking up user for GitHub ID:', session.user.id)
+    let user
+    try {
+      user = await getUserByGithubId(session.user.id)
+      console.log('[Dashboard] User found:', { id: user?.id, tier: user?.subscription_tier })
+    } catch (error) {
+      console.error('[Dashboard] Database error:', error)
+      throw new Error('Failed to connect to database. Please check environment variables.')
+    }
 
-  if (!posts) {
-    // Fetch posts from GitHub (cached on server for 24 hours)
-    const github = new GitHubClient(session.accessToken)
-    posts = await github.getHugoPosts(
-      repoConfig.owner,
-      repoConfig.repo,
-      repoConfig.contentPath || 'content/posts',
-      postLimit
-    )
-    setCached(cacheKey, posts)
-    console.log(`[Server] Fetched ${posts.length} posts from GitHub, cached for 24 hours`)
-  } else {
-    console.log(`[Server] Loaded ${posts.length} posts from server cache`)
-  }
+    if (!user) {
+      console.error('[Dashboard] User not found for GitHub ID:', session.user.id)
+      throw new Error(`User not found in database for GitHub ID: ${session.user.id}`)
+    }
 
-  return (
+    // Check if repository is configured
+    console.log('[Dashboard] Getting repo config')
+    const repoConfig = await getRepoConfig()
+    console.log('[Dashboard] Repo config:', repoConfig)
+
+    if (!repoConfig) {
+      console.log('[Dashboard] No repo config, redirecting to /setup')
+      redirect('/setup')
+    }
+
+    // Determine post limit based on tier
+    // Free tier: 5 posts only, Paid tiers: all posts (limit 50 for performance)
+    const postLimit = user.subscription_tier === 'free' ? 5 : 50
+
+    // Try to get cached posts first (24-hour server cache)
+    const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`
+    let posts = getCached<HugoPost[]>(cacheKey)
+
+    if (!posts) {
+      // Fetch posts from GitHub (cached on server for 24 hours)
+      console.log('[Dashboard] Fetching posts from GitHub')
+      const github = new GitHubClient(session.accessToken)
+      posts = await github.getHugoPosts(
+        repoConfig.owner,
+        repoConfig.repo,
+        repoConfig.contentPath || 'content/posts',
+        postLimit
+      )
+      setCached(cacheKey, posts)
+      console.log(`[Dashboard] Fetched ${posts.length} posts from GitHub, cached for 24 hours`)
+    } else {
+      console.log(`[Dashboard] Loaded ${posts.length} posts from server cache`)
+    }
+
+    return (
     <div className="flex min-h-screen flex-col">
       {/* Header */}
       <header className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
@@ -126,5 +142,9 @@ export default async function Dashboard() {
         userTier={user.subscription_tier}
       />
     </div>
-  )
+    )
+  } catch (error) {
+    console.error('[Dashboard] Fatal error:', error)
+    throw error
+  }
 }
