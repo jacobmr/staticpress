@@ -50,16 +50,23 @@ export default async function SetupPage() {
     const { getUserByGithubId, upsertUserRepository, logEvent } = await import('@/lib/db')
 
     // Get or create user (in case sign-in callback failed to create)
-    let user = await getUserByGithubId(session.user.id)
-    if (!user) {
-      // User doesn't exist yet, create it now
-      const { getOrCreateUser } = await import('@/lib/db')
-      user = await getOrCreateUser({
-        id: session.user.id,
-        email: session.user.email,
-        name: session.user.name,
-        image: session.user.image,
-      })
+    let user
+    try {
+      user = await getUserByGithubId(session.user.id)
+      if (!user) {
+        // User doesn't exist yet, create it now
+        console.log('[Setup] Creating user for GitHub ID:', session.user.id)
+        const { getOrCreateUser } = await import('@/lib/db')
+        user = await getOrCreateUser({
+          id: session.user.id,
+          email: session.user.email,
+          name: session.user.name,
+          image: session.user.image,
+        })
+      }
+    } catch (error) {
+      console.error('[Setup] Database error:', error)
+      throw new Error('Failed to connect to database. Please check environment variables.')
     }
 
     // Save repository configuration to database

@@ -20,9 +20,17 @@ export default async function Dashboard() {
   const { getUserByGithubId } = await import('@/lib/db')
 
   // Get user from database to check tier
-  const user = await getUserByGithubId(session.user.id)
+  let user
+  try {
+    user = await getUserByGithubId(session.user.id)
+  } catch (error) {
+    console.error('[Dashboard] Database error:', error)
+    throw new Error('Failed to connect to database. Please check environment variables.')
+  }
+
   if (!user) {
-    redirect('/')
+    console.error('[Dashboard] User not found for GitHub ID:', session.user.id)
+    throw new Error(`User not found in database for GitHub ID: ${session.user.id}`)
   }
 
   // Check if repository is configured
