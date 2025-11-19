@@ -137,9 +137,11 @@ export function parseHugoPost(fileContent: string): {
           let value = line.slice(colonIndex + 1).trim()
 
           if (value) {
-            // Remove quotes
+            // Remove quotes and unescape
             if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
               value = value.slice(1, -1)
+              // Unescape backslash-escaped characters
+              value = value.replace(/\\"/g, '"').replace(/\\\\/g, '\\')
             }
 
             // Parse booleans
