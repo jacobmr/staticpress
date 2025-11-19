@@ -70,6 +70,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return session
       }
 
+      // If we have a token but no githubId, this is an old session from before we fixed auth
+      // We should not populate the session - this will cause it to fail and force re-login
+      if (!token.githubId) {
+        console.warn('[Auth Session] Old session detected - missing githubId, forcing re-authentication')
+        // Return empty session to force sign out
+        return {
+          ...session,
+          user: {},
+          accessToken: undefined
+        } as any
+      }
+
       session.accessToken = token.accessToken as string
       session.user.id = token.githubId as string // Use GitHub numeric ID
 
