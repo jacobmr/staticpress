@@ -20,10 +20,15 @@ function extractFirstImage(htmlContent: string): string | null {
   if (match) {
     let imageUrl = match[1]
     console.log('Original image URL:', imageUrl)
-    // Convert relative URLs to absolute URLs
+    // Convert relative URLs to absolute URLs (use docnotes.com not .net)
     if (imageUrl.startsWith('/')) {
-      imageUrl = `https://docnotes.net${imageUrl}`
+      imageUrl = `https://docnotes.com${imageUrl}`
       console.log('Converted to absolute URL:', imageUrl)
+    }
+    // Convert docnotes.net to docnotes.com (redirect in place)
+    if (imageUrl.includes('docnotes.net')) {
+      imageUrl = imageUrl.replace('docnotes.net', 'docnotes.com')
+      console.log('Changed .net to .com:', imageUrl)
     }
     return imageUrl
   }
