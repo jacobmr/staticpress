@@ -61,15 +61,11 @@ export async function POST(request: Request) {
     }
 
     // Create frontmatter and combine with content
-    const frontmatterData: Record<string, unknown> = {
+    const frontmatterData = {
       title,
       date: new Date().toISOString(),
       draft,
-    }
-
-    // Add feature image if found
-    if (featureImageUrl) {
-      frontmatterData.featureimage = featureImageUrl
+      ...(featureImageUrl && { featureimage: featureImageUrl }),
     }
 
     const frontmatter = generateFrontmatter(frontmatterData)
