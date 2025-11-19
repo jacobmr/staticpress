@@ -38,14 +38,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return true // Still allow sign in even if database fails
       }
     },
-    async jwt({ token, account, user }) {
+    async jwt({ token, account, user, trigger }) {
+      // On sign in, set the access token and GitHub ID
       if (account) {
         token.accessToken = account.access_token
         token.githubId = account.providerAccountId // Store GitHub numeric ID
       }
+
       return token
     },
     async session({ session, token }) {
+      // If token is invalid, session will be null
+      if (!token) {
+        return session
+      }
+
       session.accessToken = token.accessToken as string
       session.user.id = token.githubId as string // Use GitHub numeric ID
       return session
