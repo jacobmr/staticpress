@@ -1,4 +1,4 @@
-import { auth, signIn, signOut } from "@/lib/auth"
+import { auth, signIn } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
@@ -6,13 +6,7 @@ export const dynamic = 'force-dynamic'
 export default async function Home() {
   const session = await auth()
 
-  // If session exists but doesn't have user.id, it's an invalid old session
-  // Auto sign out to force fresh authentication
-  if (session?.user && !session.user.id) {
-    console.log('[Landing] Invalid session detected - missing user.id, signing out')
-    await signOut({ redirect: false })
-    // Continue rendering landing page after sign out
-  } else if (session?.user && session.user.id) {
+  if (session?.user) {
     redirect('/dashboard')
   }
 
