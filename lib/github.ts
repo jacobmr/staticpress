@@ -74,7 +74,8 @@ export class GitHubClient {
     path: string,
     content: string,
     message: string,
-    sha?: string
+    sha?: string,
+    isAlreadyBase64 = false
   ) {
     try {
       const { data } = await this.octokit.rest.repos.createOrUpdateFileContents({
@@ -82,7 +83,7 @@ export class GitHubClient {
         repo,
         path,
         message,
-        content: Buffer.from(content).toString("base64"),
+        content: isAlreadyBase64 ? content : Buffer.from(content).toString("base64"),
         sha,
       })
       return data

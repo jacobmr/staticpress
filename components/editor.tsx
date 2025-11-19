@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
+import Image from '@tiptap/extension-image'
 
 interface EditorProps {
   content: string
@@ -15,6 +16,8 @@ interface EditorProps {
 export function Editor({ content, onChange, placeholder = 'Start writing your post...' }: EditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const editor = useEditor({
     extensions: [
@@ -26,6 +29,11 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         openOnClick: false,
         HTMLAttributes: {
           class: 'text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300',
+        },
+      }),
+      Image.configure({
+        HTMLAttributes: {
+          class: 'max-w-full h-auto rounded-lg',
         },
       }),
     ],
@@ -73,6 +81,74 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
     editor.chain().focus().unsetLink().run()
     setShowLinkModal(false)
     setLinkUrl('')
+  }, [editor])
+
+  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !editor) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be smaller than 5MB')
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string
+
+        // Upload to GitHub
+        const response = await fetch('/api/images/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: file.name,
+            content: base64.split(',')[1], // Remove data:image/png;base64, prefix
+            contentType: file.type,
+          }),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to upload image')
+        }
+
+        const { url } = await response.json()
+
+        // Insert image into editor
+        editor.chain().focus().setImage({ src: url }).run()
+
+        setIsUploading(false)
+      }
+
+      reader.onerror = () => {
+        alert('Failed to read image file')
+        setIsUploading(false)
+      }
+
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Image upload error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to upload image')
+      setIsUploading(false)
+    }
+
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
   }, [editor])
 
   // Update editor content when content prop changes
@@ -205,6 +281,22 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
             Unlink
           </button>
         )}
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
+          className="px-3 py-1 rounded text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
+          type="button"
+          title="Upload image"
+        >
+          {isUploading ? 'Uploading...' : '📷 Image'}
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="hidden"
+        />
       </div>
 
       {/* Editor Content */}
