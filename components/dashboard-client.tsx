@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
+import { setCachedPosts, clearCachedPosts } from '@/lib/client-cache'
 
 interface DashboardClientProps {
   initialPosts: HugoPost[]
@@ -13,13 +14,19 @@ interface DashboardClientProps {
   userTier: User['subscription_tier']
 }
 
-export function DashboardClient({ initialPosts, userTier }: DashboardClientProps) {
+export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }: DashboardClientProps) {
+  const repoKey = `${repoOwner}/${repoName}`
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+
+  // Save posts to localStorage cache whenever they change
+  useEffect(() => {
+    setCachedPosts(repoKey, posts)
+  }, [posts, repoKey])
 
   const handleSelectPost = (post: HugoPost) => {
     setSelectedPost(post)
@@ -64,6 +71,9 @@ export function DashboardClient({ initialPosts, userTier }: DashboardClientProps
 
       const result = await response.json()
       setSaveMessage(`✓ Published: ${result.path}`)
+
+      // Clear server cache to force refresh on next load
+      clearCachedPosts(repoKey)
 
       const newPath: string = result.path
       const newPost: HugoPost = {
@@ -118,6 +128,9 @@ export function DashboardClient({ initialPosts, userTier }: DashboardClientProps
       const result = await response.json()
       setSaveMessage(`✓ Draft saved: ${result.path}`)
 
+      // Clear server cache to force refresh on next load
+      clearCachedPosts(repoKey)
+
       const newPath: string = result.path
       const newPost: HugoPost = {
         title,
@@ -161,6 +174,12 @@ export function DashboardClient({ initialPosts, userTier }: DashboardClientProps
       }
 
       setSaveMessage(`✓ Deleted: ${post.title}`)
+
+      // Clear server cache to force refresh on next load
+      clearCachedPosts(repoKey)
+
+      // Remove post from list
+      setPosts((prev) => prev.filter((p) => p.path !== post.path))
 
       // Clear editor if deleted post was selected
       if (selectedPost?.path === post.path) {

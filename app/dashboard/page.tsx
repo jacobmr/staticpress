@@ -35,12 +35,12 @@ export default async function Dashboard() {
   // Free tier: 5 posts only, Paid tiers: all posts (limit 50 for performance)
   const postLimit = user.subscription_tier === 'free' ? 5 : 50
 
-  // Try to get cached posts first
+  // Try to get cached posts first (24-hour server cache)
   const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`
   let posts = getCached<HugoPost[]>(cacheKey)
 
   if (!posts) {
-    // Fetch posts based on user's tier
+    // Fetch posts from GitHub (cached on server for 24 hours)
     const github = new GitHubClient(session.accessToken)
     posts = await github.getHugoPosts(
       repoConfig.owner,
@@ -49,6 +49,9 @@ export default async function Dashboard() {
       postLimit
     )
     setCached(cacheKey, posts)
+    console.log(`[Server] Fetched ${posts.length} posts from GitHub, cached for 24 hours`)
+  } else {
+    console.log(`[Server] Loaded ${posts.length} posts from server cache`)
   }
 
   return (
