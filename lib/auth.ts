@@ -1,6 +1,5 @@
 import NextAuth from "next-auth"
 import GitHub from "next-auth/providers/github"
-import { getOrCreateUser, logEvent } from "./db"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -17,6 +16,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   callbacks: {
     async signIn({ user, account }) {
       try {
+        // Dynamically import database functions to prevent build-time initialization
+        const { getOrCreateUser, logEvent } = await import('./db')
+
         // Create or update user in database using GitHub numeric ID
         if (account?.providerAccountId && user.email) {
           const dbUser = await getOrCreateUser({
