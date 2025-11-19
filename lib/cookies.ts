@@ -1,5 +1,4 @@
 import { auth } from './auth'
-import { getUserRepository, getUserByGithubId } from './db'
 
 export interface RepoConfig {
   owner: string
@@ -16,6 +15,9 @@ export async function getRepoConfig(): Promise<RepoConfig | null> {
   if (!session?.user?.id) {
     return null
   }
+
+  // Dynamically import database functions to prevent build-time initialization
+  const { getUserRepository, getUserByGithubId } = await import('./db')
 
   // Get user from database
   const user = await getUserByGithubId(session.user.id)
