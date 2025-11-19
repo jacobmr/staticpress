@@ -72,7 +72,8 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
       const result = await response.json()
       setSaveMessage(`✓ Published: ${result.path}`)
 
-      // Clear server cache to force refresh on next load
+      // Clear both server and client caches to force refresh on next load
+      await fetch('/api/cache/clear', { method: 'POST' })
       clearCachedPosts(repoKey)
 
       const newPath: string = result.path
@@ -128,7 +129,8 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
       const result = await response.json()
       setSaveMessage(`✓ Draft saved: ${result.path}`)
 
-      // Clear server cache to force refresh on next load
+      // Clear both server and client caches to force refresh on next load
+      await fetch('/api/cache/clear', { method: 'POST' })
       clearCachedPosts(repoKey)
 
       const newPath: string = result.path
@@ -175,7 +177,8 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
 
       setSaveMessage(`✓ Deleted: ${post.title}`)
 
-      // Clear server cache to force refresh on next load
+      // Clear both server and client caches to force refresh on next load
+      await fetch('/api/cache/clear', { method: 'POST' })
       clearCachedPosts(repoKey)
 
       // Remove post from list
