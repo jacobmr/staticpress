@@ -169,7 +169,7 @@ export function parseHugoPost(fileContent: string): {
 
 /**
  * Extract first image URL from HTML content
- * Converts relative URLs to absolute URLs for docnotes.net
+ * Only returns docnotes.net images (Hugo theme can't resize external URLs)
  */
 export function extractFirstImageUrl(htmlContent: string): string | null {
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
@@ -183,7 +183,10 @@ export function extractFirstImageUrl(htmlContent: string): string | null {
       imageUrl = `https://docnotes.net${imageUrl}`
     }
 
-    return imageUrl
+    // Only return docnotes.net images (Hugo theme can't handle external URLs)
+    if (imageUrl.includes('docnotes.net') || imageUrl.startsWith('/')) {
+      return imageUrl
+    }
   }
 
   return null
