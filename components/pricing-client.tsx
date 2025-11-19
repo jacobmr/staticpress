@@ -281,9 +281,9 @@ export function PricingClient({ currentTier, userId, hasStripeCustomer }: Pricin
               ) : tier.id === 'free' ? (
                 <button
                   disabled
-                  className="w-full rounded-md border border-gray-300 px-6 py-3 font-medium text-gray-700 dark:border-gray-700 dark:text-gray-300"
+                  className="w-full rounded-md bg-gray-300 px-6 py-3 font-medium text-gray-600 cursor-not-allowed"
                 >
-                  Free Forever
+                  Get Started
                 </button>
               ) : tier.comingSoon ? (
                 <div className="text-center">
