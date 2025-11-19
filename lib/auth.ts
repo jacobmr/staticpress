@@ -15,12 +15,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user }) {
+    async signIn({ user, account }) {
       try {
-        // Create or update user in database
-        if (user.id && user.email) {
+        // Create or update user in database using GitHub numeric ID
+        if (account?.providerAccountId && user.email) {
           const dbUser = await getOrCreateUser({
-            id: user.id,
+            id: account.providerAccountId, // Use GitHub's numeric ID, not NextAuth's UUID
             email: user.email,
             name: user.name,
             image: user.image,
@@ -41,15 +41,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, account, user }) {
       if (account) {
         token.accessToken = account.access_token
-      }
-      if (user) {
-        token.userId = user.id
+        token.githubId = account.providerAccountId // Store GitHub numeric ID
       }
       return token
     },
     async session({ session, token }) {
       session.accessToken = token.accessToken as string
-      session.user.id = token.userId as string
+      session.user.id = token.githubId as string // Use GitHub numeric ID
       return session
     },
   },
