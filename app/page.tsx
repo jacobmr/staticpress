@@ -1,4 +1,4 @@
-import { auth, signIn } from "@/lib/auth"
+import { auth, signIn, signOut } from "@/lib/auth"
 import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
