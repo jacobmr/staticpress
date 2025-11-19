@@ -43,20 +43,42 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, account, user, trigger }) {
       // On sign in, set the access token and GitHub ID
       if (account) {
+        console.log('[Auth JWT] Account data:', {
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+          hasAccessToken: !!account.access_token
+        })
         token.accessToken = account.access_token
         token.githubId = account.providerAccountId // Store GitHub numeric ID
       }
 
+      console.log('[Auth JWT] Token:', {
+        hasAccessToken: !!token.accessToken,
+        githubId: token.githubId,
+        sub: token.sub
+      })
+
       return token
     },
     async session({ session, token }) {
-      // If token is invalid, session will be null
+      console.log('[Auth Session] Token data:', {
+        hasAccessToken: !!token.accessToken,
+        githubId: token.githubId
+      })
+
       if (!token) {
         return session
       }
 
       session.accessToken = token.accessToken as string
       session.user.id = token.githubId as string // Use GitHub numeric ID
+
+      console.log('[Auth Session] Final session:', {
+        hasUser: !!session.user,
+        userId: session.user.id,
+        hasAccessToken: !!session.accessToken
+      })
+
       return session
     },
   },
