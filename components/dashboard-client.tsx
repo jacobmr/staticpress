@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
+import { OnboardingChecklist } from './onboarding-checklist'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
 import { setCachedPosts, clearCachedPosts } from '@/lib/client-cache'
@@ -291,6 +292,14 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       {/* Editor Area */}
       <main className="flex-1 overflow-y-auto p-8">
         <div className="mx-auto max-w-4xl">
+          {/* Onboarding Checklist */}
+          <OnboardingChecklist
+            posts={posts}
+            repoOwner={repoOwner}
+            repoName={repoName}
+            onCreatePost={handleNewPost}
+          />
+
           <h2 className="mb-6 text-3xl font-bold">
             {selectedPost ? 'Edit Post' : 'New Post'}
           </h2>
