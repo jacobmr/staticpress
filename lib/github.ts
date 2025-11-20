@@ -298,13 +298,36 @@ jobs:
 
     // Create files one by one using Contents API
     for (const file of files) {
-      await this.createOrUpdateFile(
-        owner,
-        repo,
-        file.path,
-        file.content,
-        `Initialize Hugo project: ${file.path}`
-      )
+      try {
+        await this.createOrUpdateFile(
+          owner,
+          repo,
+          file.path,
+          file.content,
+          `Initialize Hugo project: ${file.path}`
+        )
+      } catch (error) {
+        // If file exists (SHA error), get SHA and update
+        if (error instanceof Error && error.message.includes("sha")) {
+          const { data } = await this.octokit.rest.repos.getContent({
+            owner,
+            repo,
+            path: file.path,
+          })
+          if (!Array.isArray(data) && data.sha) {
+            await this.createOrUpdateFile(
+              owner,
+              repo,
+              file.path,
+              file.content,
+              `Initialize Hugo project: ${file.path}`,
+              data.sha
+            )
+          }
+        } else {
+          throw error
+        }
+      }
     }
 
     // Update README with proper content (need SHA since auto_init created it)
