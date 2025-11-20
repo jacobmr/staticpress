@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
+import { clearCachePattern } from '@/lib/cache'
 
 // Template repository for new blogs
 const TEMPLATE_OWNER = 'jacobmr'
@@ -124,6 +125,9 @@ theme = "ananke"
       repository: `${owner}/${repoName}`,
       blog_name: blogName,
     })
+
+    // Clear any cached data for this repo so dashboard loads fresh
+    clearCachePattern(`posts:${owner}:${repoName}`)
 
     return NextResponse.json({
       success: true,
