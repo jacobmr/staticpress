@@ -58,12 +58,17 @@ export async function POST(request: Request) {
       true // This is a binary file (base64)
     )
 
-    // Generate URL for the image (Hugo serves static files from root)
-    const imageUrl = `/images/${year}/${month}/${finalFilename}`
+    // Generate URLs for the image
+    // Hugo URL (relative) - for saving to content
+    const hugoUrl = `/images/${year}/${month}/${finalFilename}`
+
+    // GitHub raw URL - for immediate display in editor (available instantly)
+    const rawUrl = `https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${imagePath}`
 
     return NextResponse.json({
       success: true,
-      url: imageUrl,
+      url: rawUrl, // Use raw URL for immediate display
+      hugoUrl: hugoUrl, // Relative URL for Hugo
       path: imagePath,
       sha: result.content?.sha,
     })

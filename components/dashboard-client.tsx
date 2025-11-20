@@ -69,11 +69,20 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
   // Reverse transformation: convert absolute URLs back to relative for saving
   const reverseTransformImageUrls = (content: string): string => {
-    // Convert docnotes.com URLs back to relative URLs
-    return content.replace(
+    // First, convert GitHub raw URLs back to relative URLs
+    // Pattern: https://raw.githubusercontent.com/{owner}/{repo}/main/static/images/...
+    let result = content.replace(
+      /(<img[^>]+src=["'])https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[^/]+\/static(\/images\/[^"']+)(["'])/gi,
+      '$1$2$3'
+    )
+
+    // Then, convert docnotes.com URLs back to relative URLs
+    result = result.replace(
       /(<img[^>]+src=["'])https:\/\/docnotes\.com\/([^"']+)(["'])/gi,
       '$1/$2$3'
     )
+
+    return result
   }
 
   const handleSelectPost = (post: HugoPost) => {
