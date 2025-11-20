@@ -59,8 +59,15 @@ export async function POST(request: Request) {
     )
 
     // Generate URLs for the image
-    // Hugo URL (relative) - for saving to content
-    const hugoUrl = `/images/${year}/${month}/${finalFilename}`
+    // Hugo URL - for saving to content
+    // Include repo name for GitHub Pages project sites (user.github.io/repo/)
+    // Skip for custom domains or when site is at root
+    const isGitHubPagesProject = !repoConfig.siteUrl ||
+      repoConfig.siteUrl?.includes('.github.io/')
+
+    const hugoUrl = isGitHubPagesProject
+      ? `/${repoConfig.repo}/images/${year}/${month}/${finalFilename}`
+      : `/images/${year}/${month}/${finalFilename}`
 
     // GitHub raw URL - for immediate display in editor (available instantly)
     const rawUrl = `https://raw.githubusercontent.com/${repoConfig.owner}/${repoConfig.repo}/main/${imagePath}`

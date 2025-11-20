@@ -169,7 +169,7 @@ export function parseHugoPost(fileContent: string): {
 
 /**
  * Extract first image URL from HTML content
- * Only returns docnotes.com images (Hugo theme can't resize external URLs)
+ * Returns relative URLs for Hugo to handle with baseURL
  */
 export function extractFirstImageUrl(htmlContent: string): string | null {
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
@@ -178,18 +178,16 @@ export function extractFirstImageUrl(htmlContent: string): string | null {
   if (match) {
     let imageUrl = match[1]
 
-    // Convert relative URLs to absolute URLs (use docnotes.com not .net)
+    // For GitHub raw URLs, convert to relative paths
+    if (imageUrl.includes('raw.githubusercontent.com')) {
+      const pathMatch = imageUrl.match(/\/main\/static(\/images\/.+)/)
+      if (pathMatch) {
+        imageUrl = pathMatch[1]
+      }
+    }
+
+    // Only return relative URLs (skip external images)
     if (imageUrl.startsWith('/')) {
-      imageUrl = `https://docnotes.com${imageUrl}`
-    }
-
-    // Convert docnotes.net to docnotes.com (redirect in place)
-    if (imageUrl.includes('docnotes.net')) {
-      imageUrl = imageUrl.replace('docnotes.net', 'docnotes.com')
-    }
-
-    // Only return docnotes.com images (Hugo theme can't handle external URLs)
-    if (imageUrl.includes('docnotes.com') || imageUrl.startsWith('/')) {
       return imageUrl
     }
   }
