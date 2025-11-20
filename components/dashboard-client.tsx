@@ -165,7 +165,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       const newPost: HugoPost = {
         title,
         date: new Date().toISOString(),
-        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/,'') || title,
+        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/, '') || title,
         content,
         path: newPath,
       }
@@ -222,7 +222,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       const newPost: HugoPost = {
         title,
         date: new Date().toISOString(),
-        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/,'') || title,
+        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/, '') || title,
         content,
         path: newPath,
       }
@@ -301,23 +301,16 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       {/* Editor Area */}
       <main className="flex-1 overflow-y-auto p-8">
         <div className="mx-auto max-w-4xl">
-          <h2 className="mb-6 text-3xl font-bold">
-            {selectedPost ? 'Edit Post' : 'New Post'}
-          </h2>
-
           <div className="space-y-6">
             {/* Title Field */}
             <div>
-              <label htmlFor="title" className="mb-2 block text-sm font-medium">
-                Title
-              </label>
               <input
                 type="text"
                 id="title"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
-                placeholder="Enter post title..."
+                className="w-full border-none bg-transparent px-0 text-4xl font-bold placeholder-gray-400 focus:ring-0 dark:text-white"
+                placeholder="Post Title"
               />
             </div>
 

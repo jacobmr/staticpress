@@ -6,6 +6,25 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
+import BubbleMenuExtension from '@tiptap/extension-bubble-menu'
+import { EditorBubbleMenu } from './editor-bubble-menu'
+import { SlashCommand, suggestion } from './editor-slash-command'
+import {
+  Bold,
+  Italic,
+  Link as LinkIcon,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  Quote,
+  Code,
+  Minus,
+  Image as ImageIcon,
+  Maximize2,
+  Minimize2,
+  X,
+} from 'lucide-react'
 
 interface EditorProps {
   content: string
@@ -18,6 +37,7 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
+  const [isFocusMode, setIsFocusMode] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
   // Track uploaded images: base64 src → hugo URL
@@ -105,7 +125,11 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        heading: {
+          levels: [1, 2, 3],
+        },
+      }),
       Placeholder.configure({
         placeholder,
       }),
@@ -119,13 +143,17 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg my-4',
+          class: 'max-w-full h-auto rounded-lg my-4 shadow-md',
         },
+      }),
+      BubbleMenuExtension,
+      SlashCommand.configure({
+        suggestion: suggestion,
       }),
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[400px] px-4 py-3 text-gray-900 dark:text-white prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-900 dark:prose-p:text-white prose-img:max-w-full prose-img:h-auto prose-img:rounded-lg',
+        class: 'prose prose-lg dark:prose-invert mx-auto focus:outline-none min-h-[400px] px-8 py-6 max-w-3xl',
       },
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items
@@ -282,133 +310,133 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
   }
 
   return (
-    <div className="border border-gray-300 rounded-md dark:border-gray-700">
-      {/* Editor Toolbar */}
-      <div className="border-b border-gray-300 bg-gray-50 px-2 py-2 flex flex-wrap gap-1 dark:border-gray-700 dark:bg-gray-800">
+    <div
+      className={`flex flex-col border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900 ${isFocusMode
+          ? 'fixed inset-0 z-50 h-screen w-screen border-0'
+          : 'rounded-md border min-h-[500px]'
+        }`}
+    >
+      {/* Sticky Toolbar */}
+      <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-gray-200 bg-white/80 px-2 py-2 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('bold')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('bold') ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Bold"
         >
-          Bold
+          <Bold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('italic')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('italic') ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Italic"
         >
-          Italic
+          <Italic className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('heading', { level: 2 })
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('heading', { level: 2 })
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Heading 2"
         >
-          H2
+          <Heading2 className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('heading', { level: 3 })
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('heading', { level: 3 })
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Heading 3"
         >
-          H3
+          <Heading3 className="h-4 w-4" />
         </button>
+
+        <div className="mx-1 h-4 w-px bg-gray-200 dark:bg-gray-700" />
+
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('bulletList')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('bulletList')
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Bullet List"
         >
-          List
+          <List className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('orderedList')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('orderedList')
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Numbered List"
         >
-          Numbered
+          <ListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('blockquote')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('blockquote')
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Quote"
         >
-          Quote
+          <Quote className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('codeBlock')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('codeBlock')
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Code Block"
         >
-          Code
+          <Code className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().setHorizontalRule().run()}
-          className="px-3 py-1 rounded text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          type="button"
+          className="rounded p-1.5 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+          title="Divider"
         >
-          HR
+          <Minus className="h-4 w-4" />
         </button>
+
+        <div className="mx-1 h-4 w-px bg-gray-200 dark:bg-gray-700" />
+
         <button
           onClick={setLink}
-          className={`px-3 py-1 rounded text-sm font-medium ${
-            editor.isActive('link')
-              ? 'bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900'
-              : 'bg-white text-gray-700 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
-          }`}
-          type="button"
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('link')
+              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+              : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title="Link"
         >
-          Link
+          <LinkIcon className="h-4 w-4" />
         </button>
-        {editor.isActive('link') && (
-          <button
-            onClick={removeLink}
-            className="px-3 py-1 rounded text-sm font-medium bg-red-100 text-red-700 hover:bg-red-200 dark:bg-red-900 dark:text-red-300 dark:hover:bg-red-800"
-            type="button"
-          >
-            Unlink
-          </button>
-        )}
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={isUploading}
-          className="px-3 py-1 rounded text-sm font-medium bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-          type="button"
-          title="Upload image"
+          className="rounded p-1.5 text-gray-600 hover:bg-gray-100 disabled:opacity-50 dark:text-gray-300 dark:hover:bg-gray-800"
+          title="Upload Image"
         >
-          {isUploading ? 'Uploading...' : '📷 Image'}
+          <ImageIcon className="h-4 w-4" />
         </button>
+
+        <div className="flex-1" />
+
+        <button
+          onClick={() => setIsFocusMode(!isFocusMode)}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${isFocusMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
+            }`}
+          title={isFocusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
+        >
+          {isFocusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </button>
+
         <input
           ref={fileInputRef}
           type="file"
@@ -419,19 +447,32 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
       </div>
 
       {/* Editor Content */}
-      <EditorContent editor={editor} />
+      <div className={`flex-1 overflow-y-auto ${isFocusMode ? 'px-4 py-8 md:px-0' : ''}`}>
+        <EditorContent editor={editor} />
+      </div>
+
+      <EditorBubbleMenu editor={editor} />
 
       {/* Link Modal */}
       {showLinkModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-semibold mb-4 dark:text-gray-100">
-              {editor?.getAttributes('link').href ? 'Edit Link' : 'Add Link'}
-            </h3>
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold dark:text-gray-100">
+                {editor?.getAttributes('link').href ? 'Edit Link' : 'Add Link'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowLinkModal(false)
+                  setLinkUrl('')
+                }}
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <div className="mb-4">
-              <label className="block text-sm font-medium mb-2 dark:text-gray-300">
-                URL
-              </label>
+              <label className="mb-2 block text-sm font-medium dark:text-gray-300">URL</label>
               <input
                 type="url"
                 value={linkUrl}
@@ -446,24 +487,23 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
                   }
                 }}
                 placeholder="https://example.com"
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
                 autoFocus
               />
             </div>
             <div className="flex justify-end gap-2">
-              <button
-                onClick={() => {
-                  setShowLinkModal(false)
-                  setLinkUrl('')
-                }}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-                type="button"
-              >
-                Cancel
-              </button>
+              {editor.isActive('link') && (
+                <button
+                  onClick={removeLink}
+                  className="rounded-md bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
+                  type="button"
+                >
+                  Remove Link
+                </button>
+              )}
               <button
                 onClick={saveLink}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
                 type="button"
               >
                 Save
