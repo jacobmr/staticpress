@@ -18,6 +18,70 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
   const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+
+  // Handle pasting images from clipboard
+  const handlePastedImage = useCallback(async (file: File) => {
+    const currentEditor = editorRef.current
+    if (!currentEditor) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be smaller than 5MB')
+      return
+    }
+
+    setIsUploading(true)
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string
+
+        // Upload to GitHub
+        const response = await fetch('/api/images/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filename: file.name || `pasted-image-${Date.now()}.png`,
+            content: base64.split(',')[1], // Remove data:image/png;base64, prefix
+            contentType: file.type,
+          }),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to upload image')
+        }
+
+        const { url } = await response.json()
+
+        // Insert image into editor
+        currentEditor.chain().focus().setImage({ src: url }).run()
+
+        setIsUploading(false)
+      }
+
+      reader.onerror = () => {
+        alert('Failed to read image file')
+        setIsUploading(false)
+      }
+
+      reader.readAsDataURL(file)
+    } catch (error) {
+      console.error('Image paste error:', error)
+      alert(error instanceof Error ? error.message : 'Failed to upload image')
+      setIsUploading(false)
+    }
+  }, [])
 
   const editor = useEditor({
     extensions: [
@@ -43,11 +107,34 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
       attributes: {
         class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-xl mx-auto focus:outline-none min-h-[400px] px-4 py-3 text-gray-900 dark:text-white prose-headings:text-gray-900 dark:prose-headings:text-white prose-p:text-gray-900 dark:prose-p:text-white prose-img:max-w-full prose-img:h-auto prose-img:rounded-lg',
       },
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items
+        if (!items) return false
+
+        for (let i = 0; i < items.length; i++) {
+          const item = items[i]
+          if (item.type.startsWith('image/')) {
+            const file = item.getAsFile()
+            if (file) {
+              event.preventDefault()
+              handlePastedImage(file)
+              return true
+            }
+          }
+        }
+
+        return false
+      },
     },
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML())
     },
   })
+
+  // Keep editorRef in sync with editor for paste handler
+  useEffect(() => {
+    editorRef.current = editor
+  }, [editor])
 
   const setLink = useCallback(() => {
     if (!editor) return

@@ -102,19 +102,7 @@ export default async function Home() {
                 <span>GitHub integration</span>
               </li>
             </ul>
-            <form
-              action={async () => {
-                "use server"
-                await signIn("github")
-              }}
-            >
-              <button
-                type="submit"
-                className="w-full rounded-md border border-gray-300 px-4 py-2 font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-800"
-              >
-                Get Started
-              </button>
-            </form>
+            <SignInButton action={signInWithGitHub} variant="outline" />
           </div>
 
           {/* Personal Tier */}
