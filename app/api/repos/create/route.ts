@@ -52,12 +52,30 @@ export async function POST(request: Request) {
       throw new Error(`Failed to create repo: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
-    // Initialize Hugo project structure
-    try {
-      await github.initializeHugoProject(owner, repoName, blogName)
-      console.log(`[Create] Hugo project initialized`)
-    } catch (error) {
-      throw new Error(`Failed to initialize Hugo: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    // Initialize Hugo project structure with retries
+    let initialized = false
+    let lastError: Error | null = null
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        // Wait before each attempt (exponential backoff)
+        if (attempt > 1) {
+          const delay = Math.pow(2, attempt - 1) * 1000
+          console.log(`[Create] Retry ${attempt}/5, waiting ${delay}ms...`)
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
+
+        await github.initializeHugoProject(owner, repoName, blogName)
+        console.log(`[Create] Hugo project initialized on attempt ${attempt}`)
+        initialized = true
+        break
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error('Unknown error')
+        console.log(`[Create] Attempt ${attempt} failed: ${lastError.message}`)
+      }
+    }
+
+    if (!initialized) {
+      throw new Error(`Failed to initialize Hugo after 5 attempts: ${lastError?.message || 'Unknown error'}`)
     }
 
     // Get or create user in database and save repo config
