@@ -21,6 +21,7 @@ export default async function OnboardingPage() {
       repoOwner={repoConfig.owner}
       repoName={repoConfig.repo}
       userName={session.user.name || session.user.email || 'there'}
+      engine={repoConfig.engine || 'hugo'}
     />
   )
 }

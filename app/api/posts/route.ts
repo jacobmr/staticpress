@@ -31,10 +31,17 @@ export async function GET(request: Request) {
     const effectiveLimit = Math.min(limit, maxLimit)
 
     const github = new GitHubClient(session.accessToken)
+
+    // For Krems, contentPath is empty string (root folder)
+    // For Hugo, default to 'content/posts'
+    const contentPath = repoConfig.contentPath !== undefined && repoConfig.contentPath !== null
+      ? repoConfig.contentPath
+      : 'content/posts'
+
     const allPosts = await github.getHugoPosts(
       repoConfig.owner,
       repoConfig.repo,
-      repoConfig.contentPath || 'content/posts',
+      contentPath,
       maxLimit
     )
 

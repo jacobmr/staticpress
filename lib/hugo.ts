@@ -207,3 +207,69 @@ export function generateCommitMessage(action: "create" | "update" | "delete", ti
 
   return `${actionMap[action]} post: ${title}`
 }
+
+// Krems-specific functions
+
+/**
+ * Generate Krems file path - just slug.md in root
+ */
+export function generateKremsPath(title: string): string {
+  const slug = generateSlug(title)
+  return `${slug}.md`
+}
+
+/**
+ * Krems frontmatter interface (no draft support)
+ */
+export interface KremsFrontmatter {
+  title: string
+  date?: string
+  tags?: string[]
+  [key: string]: unknown
+}
+
+/**
+ * Generate YAML frontmatter for Krems
+ * Krems doesn't support draft mode, so we omit that field
+ */
+export function generateKremsFrontmatter(data: KremsFrontmatter): string {
+  const lines = ["---"]
+
+  // Title (required)
+  lines.push(`title: "${data.title.replace(/"/g, '\\"')}"`)
+
+  // Date (ISO format)
+  if (data.date) {
+    lines.push(`date: ${data.date}`)
+  } else {
+    lines.push(`date: ${new Date().toISOString()}`)
+  }
+
+  // Tags
+  if (data.tags && data.tags.length > 0) {
+    lines.push("tags:")
+    data.tags.forEach((tag) => {
+      lines.push(`  - "${tag.replace(/"/g, '\\"')}"`)
+    })
+  }
+
+  // Any other custom fields (but not draft)
+  Object.keys(data).forEach((key) => {
+    if (!["title", "date", "tags", "draft"].includes(key)) {
+      const value = data[key]
+      if (typeof value === "string") {
+        lines.push(`${key}: "${value.replace(/"/g, '\\"')}"`)
+      } else if (typeof value === "number" || typeof value === "boolean") {
+        lines.push(`${key}: ${value}`)
+      } else if (Array.isArray(value)) {
+        lines.push(`${key}:`)
+        value.forEach((item) => {
+          lines.push(`  - "${String(item).replace(/"/g, '\\"')}"`)
+        })
+      }
+    }
+  })
+
+  lines.push("---")
+  return lines.join("\n")
+}

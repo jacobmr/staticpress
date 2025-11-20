@@ -167,9 +167,13 @@ export class GitHubClient {
         build_type: 'workflow',
       })
       return data
-    } catch (error) {
-      // If Pages is already enabled, try to update it
-      if (error instanceof Error && (error.message.includes('already exists') || error.message.includes('already enabled'))) {
+    } catch (error: unknown) {
+      // If Pages is already enabled (409 Conflict), try to update it instead
+      const isAlreadyEnabled =
+        (error && typeof error === 'object' && 'status' in error && error.status === 409) ||
+        (error instanceof Error && (error.message.includes('already exists') || error.message.includes('already enabled')))
+
+      if (isAlreadyEnabled) {
         const { data } = await this.octokit.rest.repos.updateInformationAboutPagesSite({
           owner,
           repo,
@@ -642,6 +646,12 @@ You can also deploy to:
         if (item.type === "dir") {
           await traverseDirectory(item.path, depth + 1)
         } else if (item.type === "file" && (item.name.endsWith(".md") || item.name.endsWith(".markdown"))) {
+          // Skip common non-post files (especially important for Krems root folder)
+          const lowerName = item.name.toLowerCase()
+          if (lowerName === 'readme.md' || lowerName === 'index.md' || lowerName === 'changelog.md' || lowerName === 'license.md') {
+            continue
+          }
+
           const content = await this.getFileContent(owner, repo, item.path)
           if (content) {
             const post = this.parseHugoPost(content, item.path)

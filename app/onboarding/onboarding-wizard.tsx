@@ -8,11 +8,12 @@ interface OnboardingWizardProps {
   repoOwner: string
   repoName: string
   userName: string
+  engine?: 'hugo' | 'krems'
 }
 
 type Platform = 'github-pages' | 'cloudflare' | 'vercel' | 'netlify' | null
 
-export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWizardProps) {
+export function OnboardingWizard({ repoOwner, repoName, userName, engine = 'hugo' }: OnboardingWizardProps) {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
   const [selectedPlatform, setSelectedPlatform] = useState<Platform>(null)
@@ -22,7 +23,8 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
   const [siteUrl, setSiteUrl] = useState('')
   const [manualSiteUrl, setManualSiteUrl] = useState('')
 
-  const totalSteps = 4
+  // Krems uses 2 steps (auto-deploy), Hugo uses 4 steps
+  const totalSteps = engine === 'krems' ? 2 : 4
 
   const handleNext = () => {
     if (currentStep < totalSteps) {
@@ -115,7 +117,7 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
       <div className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            {[1, 2, 3, 4].map((step) => (
+            {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
               <div key={step} className="flex items-center">
                 <div
                   className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
@@ -134,7 +136,7 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
                     step
                   )}
                 </div>
-                {step < 4 && (
+                {step < totalSteps && (
                   <div
                     className={`mx-2 h-1 w-16 sm:w-24 ${
                       step < currentStep ? 'bg-green-500' : 'bg-gray-200 dark:bg-gray-700'
@@ -145,10 +147,19 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
             ))}
           </div>
           <div className="mt-2 flex justify-between text-xs text-gray-500">
-            <span>Created</span>
-            <span>Platform</span>
-            <span>Deploy</span>
-            <span>Complete</span>
+            {engine === 'krems' ? (
+              <>
+                <span>Created</span>
+                <span>Complete</span>
+              </>
+            ) : (
+              <>
+                <span>Created</span>
+                <span>Platform</span>
+                <span>Deploy</span>
+                <span>Complete</span>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -180,20 +191,53 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
                   View on GitHub
                 </a>
               </div>
-              <p className="mb-8 text-gray-600 dark:text-gray-400">
-                Next, let&apos;s get your blog live on the internet!
-              </p>
-              <button
-                onClick={handleNext}
-                className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white hover:bg-blue-700"
-              >
-                Choose Hosting Platform
-              </button>
+
+              {engine === 'krems' ? (
+                <>
+                  <p className="mb-4 text-gray-600 dark:text-gray-400">
+                    Your blog will be automatically deployed to GitHub Pages!
+                  </p>
+                  {deployError && (
+                    <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                      {deployError}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleDeployGitHubPages}
+                    disabled={isDeploying}
+                    className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isDeploying ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Deploying...
+                      </span>
+                    ) : (
+                      'Deploy to GitHub Pages'
+                    )}
+                  </button>
+                </>
+              ) : (
+                <>
+                  <p className="mb-8 text-gray-600 dark:text-gray-400">
+                    Next, let&apos;s get your blog live on the internet!
+                  </p>
+                  <button
+                    onClick={handleNext}
+                    className="rounded-md bg-blue-600 px-8 py-3 font-medium text-white hover:bg-blue-700"
+                  >
+                    Choose Hosting Platform
+                  </button>
+                </>
+              )}
             </div>
           )}
 
-          {/* Step 2: Choose Platform */}
-          {currentStep === 2 && (
+          {/* Step 2: Choose Platform (Hugo only) */}
+          {currentStep === 2 && engine === 'hugo' && (
             <div>
               <h2 className="mb-4 text-center text-3xl font-bold">Choose Your Hosting</h2>
               <p className="mb-8 text-center text-gray-600 dark:text-gray-400">
@@ -285,8 +329,8 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
             </div>
           )}
 
-          {/* Step 3: Deploy */}
-          {currentStep === 3 && (
+          {/* Step 3: Deploy (Hugo only) */}
+          {currentStep === 3 && engine === 'hugo' && (
             <div>
               <h2 className="mb-4 text-center text-3xl font-bold">
                 {selectedPlatform === 'github-pages' ? 'Deploy to GitHub Pages' : 'Set Up Deployment'}
@@ -515,8 +559,8 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
             </div>
           )}
 
-          {/* Step 4: Complete */}
-          {currentStep === 4 && (
+          {/* Final Step: Complete */}
+          {currentStep === totalSteps && (
             <div className="text-center">
               <div className="mb-6 inline-flex h-20 w-20 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
                 <svg className="h-10 w-10 text-green-600 dark:text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -551,12 +595,22 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
                     </svg>
                     Write and publish your first post
                   </li>
-                  <li className="flex items-center gap-2">
-                    <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Customize your hugo.toml for theme and settings
-                  </li>
+                  {engine === 'hugo' && (
+                    <li className="flex items-center gap-2">
+                      <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Customize your hugo.toml for theme and settings
+                    </li>
+                  )}
+                  {engine === 'krems' && (
+                    <li className="flex items-center gap-2">
+                      <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Edit config.yaml to customize your blog title
+                    </li>
+                  )}
                   {!customDomain && (
                     <li className="flex items-center gap-2">
                       <svg className="h-4 w-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

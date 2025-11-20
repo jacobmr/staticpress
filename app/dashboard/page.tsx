@@ -50,10 +50,17 @@ export default async function Dashboard() {
     if (!allPosts) {
       // Fetch all posts from GitHub (cached on server for 24 hours)
       const github = new GitHubClient(session.accessToken)
+
+      // For Krems, contentPath is empty string (root folder)
+      // For Hugo, default to 'content/posts'
+      const contentPath = repoConfig.contentPath !== undefined && repoConfig.contentPath !== null
+        ? repoConfig.contentPath
+        : 'content/posts'
+
       allPosts = await github.getHugoPosts(
         repoConfig.owner,
         repoConfig.repo,
-        repoConfig.contentPath || 'content/posts',
+        contentPath,
         maxPostLimit
       )
       setCached(cacheKey, allPosts)
@@ -131,6 +138,7 @@ export default async function Dashboard() {
         repoName={repoConfig.repo}
         userTier={user.subscription_tier}
         hasMorePosts={hasMorePosts}
+        engine={repoConfig.engine || 'hugo'}
       />
     </div>
     )

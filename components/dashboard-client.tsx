@@ -13,9 +13,10 @@ interface DashboardClientProps {
   repoName: string
   userTier: User['subscription_tier']
   hasMorePosts?: boolean
+  engine?: 'hugo' | 'krems'
 }
 
-export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, hasMorePosts = false }: DashboardClientProps) {
+export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, hasMorePosts = false, engine = 'hugo' }: DashboardClientProps) {
   const repoKey = `${repoOwner}/${repoName}`
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
@@ -333,13 +334,15 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
               >
                 {isSaving ? 'Publishing...' : 'Publish'}
               </button>
-              <button
-                onClick={handleSaveDraft}
-                disabled={isSaving}
-                className="rounded-md border border-gray-300 px-6 py-2 font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 disabled:opacity-50"
-              >
-                {isSaving ? 'Saving...' : 'Save Draft'}
-              </button>
+              {engine === 'hugo' && (
+                <button
+                  onClick={handleSaveDraft}
+                  disabled={isSaving}
+                  className="rounded-md border border-gray-300 px-6 py-2 font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 disabled:opacity-50"
+                >
+                  {isSaving ? 'Saving...' : 'Save Draft'}
+                </button>
+              )}
               {saveMessage && (
                 <span className={`text-sm ${saveMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
                   {saveMessage}

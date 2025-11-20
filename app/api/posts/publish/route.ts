@@ -2,7 +2,13 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
-import { generateHugoPath, generateFrontmatter, extractFirstImageUrl } from '@/lib/hugo'
+import {
+  generateHugoPath,
+  generateFrontmatter,
+  extractFirstImageUrl,
+  generateKremsPath,
+  generateKremsFrontmatter
+} from '@/lib/hugo'
 import { clearCachePattern } from '@/lib/cache'
 import TurndownService from 'turndown'
 
@@ -44,8 +50,18 @@ export async function POST(request: Request) {
     // Convert HTML to markdown
     const markdownContent = turndownService.turndown(content)
 
+    // Determine engine (default to hugo for existing repos)
+    const engine = repoConfig.engine || 'hugo'
+
     // Generate path for new posts or use existing path
-    const filePath = path || generateHugoPath(title)
+    let filePath: string
+    if (path) {
+      filePath = path
+    } else if (engine === 'krems') {
+      filePath = generateKremsPath(title)
+    } else {
+      filePath = generateHugoPath(title)
+    }
 
     // Get existing file SHA if updating
     let existingSha: string | undefined
@@ -60,15 +76,25 @@ export async function POST(request: Request) {
       }
     }
 
-    // Create frontmatter and combine with content
-    const frontmatterData = {
-      title,
-      date: new Date().toISOString(),
-      draft,
-      ...(featureImageUrl && { featureimage: featureImageUrl }),
+    // Create frontmatter based on engine
+    let frontmatter: string
+    if (engine === 'krems') {
+      // Krems doesn't support draft mode
+      const frontmatterData = {
+        title,
+        date: new Date().toISOString(),
+      }
+      frontmatter = generateKremsFrontmatter(frontmatterData)
+    } else {
+      // Hugo with draft support
+      const frontmatterData = {
+        title,
+        date: new Date().toISOString(),
+        draft,
+        ...(featureImageUrl && { featureimage: featureImageUrl }),
+      }
+      frontmatter = generateFrontmatter(frontmatterData)
     }
-
-    const frontmatter = generateFrontmatter(frontmatterData)
 
     const fileContent = `${frontmatter}\n\n${markdownContent}`
 
