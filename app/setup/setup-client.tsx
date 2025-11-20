@@ -6,6 +6,8 @@ import { AuthButton } from '@/components/auth-buttons'
 import { signOutUser } from '@/lib/auth-actions'
 import { HUGO_THEMES, DEFAULT_THEME_ID } from '@/lib/themes'
 
+type BlogEngine = 'hugo' | 'krems'
+
 interface Repo {
   id: number
   full_name: string
@@ -34,6 +36,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
   const [blogName, setBlogName] = useState('')
   const [blogDescription, setBlogDescription] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
+  const [selectedEngine, setSelectedEngine] = useState<BlogEngine>('krems')
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME_ID)
 
   const handleConnectRepo = async (e: React.FormEvent) => {
@@ -94,7 +97,8 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
           blogName: blogName.trim(),
           description: blogDescription.trim(),
           isPrivate,
-          theme: selectedTheme,
+          engine: selectedEngine,
+          theme: selectedEngine === 'hugo' ? selectedTheme : undefined,
         }),
       })
 
@@ -257,6 +261,42 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
                 />
               </div>
 
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Blog Engine
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEngine('krems')}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      selectedEngine === 'krems'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">Krems</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Simple, fast. Built-in Bootstrap styling.
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedEngine('hugo')}
+                    className={`rounded-lg border p-3 text-left transition-colors ${
+                      selectedEngine === 'hugo'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                        : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="font-medium text-sm">Hugo</div>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Flexible themes. More customization.
+                    </div>
+                  </button>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3">
                 <input
                   type="checkbox"
@@ -270,6 +310,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
                 </label>
               </div>
 
+              {selectedEngine === 'hugo' && (
               <div>
                 <label className="mb-2 block text-sm font-medium">
                   Select Theme
@@ -294,6 +335,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
                   ))}
                 </div>
               </div>
+              )}
 
               <button
                 type="submit"

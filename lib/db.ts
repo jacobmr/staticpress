@@ -38,12 +38,15 @@ export interface User {
   updated_at: string
 }
 
+export type BlogEngine = 'hugo' | 'krems'
+
 export interface Repository {
   id: number
   user_id: number
   owner: string
   repo: string
   content_path: string
+  engine: BlogEngine
   theme: string | null
   site_url: string | null
   created_at: string
@@ -160,6 +163,7 @@ export async function upsertUserRepository(
     owner: string
     repo: string
     contentPath: string
+    engine?: BlogEngine
     theme?: string
   }
 ): Promise<Repository> {
@@ -180,6 +184,7 @@ export async function upsertUserRepository(
       .from('repositories')
       .update({
         content_path: repoConfig.contentPath,
+        engine: repoConfig.engine || existing.engine || 'hugo',
         theme: repoConfig.theme || null,
         updated_at: new Date().toISOString(),
       })
@@ -199,6 +204,7 @@ export async function upsertUserRepository(
       owner: repoConfig.owner,
       repo: repoConfig.repo,
       content_path: repoConfig.contentPath,
+      engine: repoConfig.engine || 'hugo',
       theme: repoConfig.theme || null,
     })
     .select()

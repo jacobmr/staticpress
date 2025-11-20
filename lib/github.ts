@@ -169,7 +169,7 @@ export class GitHubClient {
       return data
     } catch (error) {
       // If Pages is already enabled, try to update it
-      if (error instanceof Error && error.message.includes('already exists')) {
+      if (error instanceof Error && (error.message.includes('already exists') || error.message.includes('already enabled'))) {
         const { data } = await this.octokit.rest.repos.updateInformationAboutPagesSite({
           owner,
           repo,
