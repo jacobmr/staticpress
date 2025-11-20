@@ -1,11 +1,18 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { marked } from 'marked'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
 import { setCachedPosts, clearCachedPosts } from '@/lib/client-cache'
+
+// Configure marked for safe HTML output
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
 
 interface DashboardClientProps {
   initialPosts: HugoPost[]
@@ -107,7 +114,9 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
   const handleSelectPost = (post: HugoPost) => {
     setSelectedPost(post)
     setTitle(post.title)
-    setContent(transformImageUrls(post.content))
+    // Convert markdown to HTML for TipTap editor
+    const htmlContent = marked.parse(post.content) as string
+    setContent(transformImageUrls(htmlContent))
     setSaveMessage('')
   }
 
