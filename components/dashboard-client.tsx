@@ -28,10 +28,29 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
     setCachedPosts(repoKey, posts)
   }, [posts, repoKey])
 
+  // Transform relative image URLs to absolute URLs for display in editor
+  const transformImageUrls = (content: string): string => {
+    // Convert relative URLs to absolute URLs using docnotes.com
+    // TODO: Make this configurable per user/repo
+    return content.replace(
+      /(<img[^>]+src=["'])(\/)([^"']+)(["'])/gi,
+      '$1https://docnotes.com/$3$4'
+    )
+  }
+
+  // Reverse transformation: convert absolute URLs back to relative for saving
+  const reverseTransformImageUrls = (content: string): string => {
+    // Convert docnotes.com URLs back to relative URLs
+    return content.replace(
+      /(<img[^>]+src=["'])https:\/\/docnotes\.com\/([^"']+)(["'])/gi,
+      '$1/$2$3'
+    )
+  }
+
   const handleSelectPost = (post: HugoPost) => {
     setSelectedPost(post)
     setTitle(post.title)
-    setContent(post.content)
+    setContent(transformImageUrls(post.content))
     setSaveMessage('')
   }
 
@@ -59,7 +78,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
         },
         body: JSON.stringify({
           title,
-          content,
+          content: reverseTransformImageUrls(content),
           path: selectedPost?.path,
           draft: false,
         }),
@@ -116,7 +135,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
         },
         body: JSON.stringify({
           title,
-          content,
+          content: reverseTransformImageUrls(content),
           path: selectedPost?.path,
           draft: true,
         }),
