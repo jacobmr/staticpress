@@ -104,7 +104,9 @@ export async function POST(request: Request) {
         }
 
         if (hugoConfig && 'sha' in hugoConfig) {
-          const customizedConfig = `baseURL = "https://example.org/"
+          // Set baseURL for GitHub Pages (will be updated if custom domain is set later)
+          const baseURL = `https://${owner}.github.io/${repoName}/`
+          const customizedConfig = `baseURL = "${baseURL}"
 languageCode = "en-us"
 title = "${blogName}"
 theme = "${themeId}"
