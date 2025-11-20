@@ -30,18 +30,35 @@ export async function POST(request: Request) {
     const github = new GitHubClient(session.accessToken)
 
     // Get authenticated user to get owner name
-    const user = await github.getAuthenticatedUser()
-    const owner = user.login
+    let owner: string
+    try {
+      const user = await github.getAuthenticatedUser()
+      owner = user.login
+      console.log(`[Create] Got user: ${owner}`)
+    } catch (error) {
+      throw new Error(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
 
     // Create the repository
-    const repo = await github.createRepository(
-      repoName,
-      description || `${blogName} - A blog managed with StaticPress`,
-      isPrivate ?? false
-    )
+    let repo
+    try {
+      repo = await github.createRepository(
+        repoName,
+        description || `${blogName} - A blog managed with StaticPress`,
+        isPrivate ?? false
+      )
+      console.log(`[Create] Repository created: ${owner}/${repoName}`)
+    } catch (error) {
+      throw new Error(`Failed to create repo: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
 
     // Initialize Hugo project structure
-    await github.initializeHugoProject(owner, repoName, blogName)
+    try {
+      await github.initializeHugoProject(owner, repoName, blogName)
+      console.log(`[Create] Hugo project initialized`)
+    } catch (error) {
+      throw new Error(`Failed to initialize Hugo: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
 
     // Get or create user in database and save repo config
     const { getUserByGithubId, upsertUserRepository, logEvent } = await import('@/lib/db')
