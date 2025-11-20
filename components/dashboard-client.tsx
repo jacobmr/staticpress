@@ -12,9 +12,10 @@ interface DashboardClientProps {
   repoOwner: string
   repoName: string
   userTier: User['subscription_tier']
+  hasMorePosts?: boolean
 }
 
-export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }: DashboardClientProps) {
+export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, hasMorePosts = false }: DashboardClientProps) {
   const repoKey = `${repoOwner}/${repoName}`
   const [posts, setPosts] = useState<HugoPost[]>(initialPosts)
   const [selectedPost, setSelectedPost] = useState<HugoPost | null>(null)
@@ -22,6 +23,34 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier }:
   const [content, setContent] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Fetch remaining posts in background after initial render
+  useEffect(() => {
+    if (!hasMorePosts) return
+
+    const fetchRemainingPosts = async () => {
+      setIsLoadingMore(true)
+      try {
+        const response = await fetch(`/api/posts?offset=${initialPosts.length}`)
+        if (response.ok) {
+          const data = await response.json()
+          // Merge with initial posts, avoiding duplicates
+          setPosts(prev => {
+            const existingPaths = new Set(prev.map(p => p.path))
+            const newPosts = data.posts.filter((p: HugoPost) => !existingPaths.has(p.path))
+            return [...prev, ...newPosts]
+          })
+        }
+      } catch (error) {
+        console.error('Error fetching remaining posts:', error)
+      } finally {
+        setIsLoadingMore(false)
+      }
+    }
+
+    fetchRemainingPosts()
+  }, [hasMorePosts, initialPosts.length])
 
   // Save posts to localStorage cache whenever they change
   useEffect(() => {

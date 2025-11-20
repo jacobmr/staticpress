@@ -36,25 +36,32 @@ export default async function Dashboard() {
       redirect('/setup')
     }
 
-    // Determine post limit based on tier
+    // Determine max post limit based on tier
     // Free tier: 5 posts only, Paid tiers: all posts (limit 50 for performance)
-    const postLimit = user.subscription_tier === 'free' ? 5 : 50
+    const maxPostLimit = user.subscription_tier === 'free' ? 5 : 50
+
+    // For initial load, fetch only 5 posts for fast render
+    const initialLimit = Math.min(5, maxPostLimit)
 
     // Try to get cached posts first (24-hour server cache)
     const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`
-    let posts = getCached<HugoPost[]>(cacheKey)
+    let allPosts = getCached<HugoPost[]>(cacheKey)
 
-    if (!posts) {
-      // Fetch posts from GitHub (cached on server for 24 hours)
+    if (!allPosts) {
+      // Fetch all posts from GitHub (cached on server for 24 hours)
       const github = new GitHubClient(session.accessToken)
-      posts = await github.getHugoPosts(
+      allPosts = await github.getHugoPosts(
         repoConfig.owner,
         repoConfig.repo,
         repoConfig.contentPath || 'content/posts',
-        postLimit
+        maxPostLimit
       )
-      setCached(cacheKey, posts)
+      setCached(cacheKey, allPosts)
     }
+
+    // Return only initial posts for fast render, client will load rest
+    const posts = allPosts.slice(0, initialLimit)
+    const hasMorePosts = allPosts.length > initialLimit
 
     return (
     <div className="flex min-h-screen flex-col">
@@ -106,6 +113,7 @@ export default async function Dashboard() {
         repoOwner={repoConfig.owner}
         repoName={repoConfig.repo}
         userTier={user.subscription_tier}
+        hasMorePosts={hasMorePosts}
       />
     </div>
     )
