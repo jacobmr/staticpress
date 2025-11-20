@@ -94,6 +94,12 @@ export default async function Dashboard() {
             </Link>
             <ThemeToggle />
             <Link
+              href="/help"
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            >
+              Help
+            </Link>
+            <Link
               href="/settings"
               className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
             >

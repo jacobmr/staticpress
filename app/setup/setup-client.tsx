@@ -115,7 +115,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <h2 className="text-xl font-semibold">Setup</h2>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-gray-400">v0.5.0</span>
+            <span className="text-xs text-gray-400">v0.6.0</span>
             <AuthButton
               action={signOutUser}
               loadingText="Signing out..."
