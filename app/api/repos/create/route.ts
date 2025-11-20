@@ -76,18 +76,23 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Error creating repository:', error)
 
-    // Check for specific GitHub errors
+    // Extract error message
+    let errorMessage = 'Failed to create repository'
+
     if (error instanceof Error) {
+      // Check for specific GitHub errors
       if (error.message.includes('name already exists')) {
-        return NextResponse.json(
-          { error: 'A repository with this name already exists' },
-          { status: 400 }
-        )
+        errorMessage = 'A repository with this name already exists'
+      } else if (error.message.includes('could not be cloned')) {
+        errorMessage = 'Repository created but initialization failed'
+      } else {
+        // Pass through the actual error for debugging
+        errorMessage = error.message
       }
     }
 
     return NextResponse.json(
-      { error: 'Failed to create repository' },
+      { error: errorMessage },
       { status: 500 }
     )
   }
