@@ -70,6 +70,14 @@ export async function POST(request: Request) {
       )
     }
 
+    // Trigger workflow to rebuild the site with new theme
+    try {
+      await github.triggerWorkflowDispatch(owner, repo)
+    } catch (error) {
+      console.log('Could not trigger workflow:', error)
+      // Non-fatal - the push should trigger it anyway
+    }
+
     // Log the theme change
     const { getUserByGithubId, logEvent } = await import('@/lib/db')
     const user = await getUserByGithubId(session.user.id as string)
