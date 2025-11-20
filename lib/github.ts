@@ -215,6 +215,22 @@ export class GitHubClient {
     }
   }
 
+  async triggerWorkflowDispatch(owner: string, repo: string, workflowId: string = 'hugo.yml') {
+    try {
+      await this.octokit.rest.actions.createWorkflowDispatch({
+        owner,
+        repo,
+        workflow_id: workflowId,
+        ref: 'main',
+      })
+      return true
+    } catch (error) {
+      console.error(`Error triggering workflow:`, error)
+      // Don't throw - workflow might already be running
+      return false
+    }
+  }
+
   // Helper to create file with retry for newly created repos
   private async createFileWithRetry(
     owner: string,
@@ -346,8 +362,6 @@ jobs:
       - name: Setup Pages
         id: pages
         uses: actions/configure-pages@v5
-        with:
-          enablement: true
       - name: Install Node.js dependencies
         run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
       - name: Build with Hugo

@@ -32,9 +32,15 @@ export async function POST(request: Request) {
       await github.setCustomDomain(owner, repo, customDomain.trim())
     }
 
-    // Get the Pages status to return the URL
-    // Wait a moment for GitHub to process
+    // Wait a moment for GitHub to process Pages enablement
     await new Promise(resolve => setTimeout(resolve, 2000))
+
+    // Trigger workflow to build and deploy (since initial run likely failed)
+    console.log(`[Deploy] Triggering workflow dispatch for ${owner}/${repo}`)
+    await github.triggerWorkflowDispatch(owner, repo)
+
+    // Get the Pages status to return the URL
+    await new Promise(resolve => setTimeout(resolve, 1000))
 
     const status = await github.getGitHubPagesStatus(owner, repo)
 
