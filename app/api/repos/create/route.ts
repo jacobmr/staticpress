@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { clearCachePattern } from '@/lib/cache'
+import { getThemeById, DEFAULT_THEME_ID } from '@/lib/themes'
 
 // Template repository for new blogs
 const TEMPLATE_OWNER = 'jacobmr'
@@ -15,10 +16,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { blogName, description, isPrivate } = await request.json()
+    const { blogName, description, isPrivate, theme } = await request.json()
 
     if (!blogName) {
       return NextResponse.json({ error: 'Blog name is required' }, { status: 400 })
+    }
+
+    // Get theme info - fallback to default if not found
+    const themeId = theme || DEFAULT_THEME_ID
+    const themeInfo = getThemeById(themeId)
+    if (!themeInfo) {
+      return NextResponse.json({ error: 'Invalid theme selected' }, { status: 400 })
     }
 
     // Sanitize blog name for use as repo name
@@ -84,7 +92,7 @@ export async function POST(request: Request) {
         const customizedConfig = `baseURL = "https://example.org/"
 languageCode = "en-us"
 title = "${blogName}"
-theme = "ananke"
+theme = "${themeId}"
 
 [params]
   author = "StaticPress User"
@@ -95,14 +103,24 @@ theme = "ananke"
           repoName,
           'hugo.toml',
           customizedConfig,
-          `Customize blog title: ${blogName}`,
+          `Customize blog: ${blogName} with theme ${themeId}`,
           hugoConfig.sha as string
         )
-        console.log(`[Create] Customized hugo.toml with blog name: ${blogName}`)
+        console.log(`[Create] Customized hugo.toml with blog name: ${blogName}, theme: ${themeId}`)
       }
     } catch (error) {
       // Non-fatal - blog will work with default title
       console.log(`[Create] Could not customize hugo.toml: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+
+    // Set up the selected theme as a git submodule
+    try {
+      console.log(`[Create] Setting up theme ${themeId} from ${themeInfo.repo}`)
+      await github.setHugoTheme(owner, repoName, themeId, themeInfo.repo)
+      console.log(`[Create] Theme ${themeId} added as submodule`)
+    } catch (error) {
+      // Non-fatal - user can manually add theme
+      console.log(`[Create] Could not set up theme submodule: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
     // Get or create user in database and save repo config
@@ -124,6 +142,7 @@ theme = "ananke"
     await logEvent('repo_created', dbUser.id, {
       repository: `${owner}/${repoName}`,
       blog_name: blogName,
+      theme: themeId,
     })
 
     // Clear any cached data for this repo so dashboard loads fresh

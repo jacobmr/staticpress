@@ -231,6 +231,104 @@ export class GitHubClient {
     }
   }
 
+  /**
+   * Add or update a Hugo theme as a git submodule
+   */
+  async setHugoTheme(owner: string, repo: string, themeId: string, themeRepoUrl: string) {
+    try {
+      // Get the default branch ref
+      const { data: refData } = await this.octokit.rest.git.getRef({
+        owner,
+        repo,
+        ref: 'heads/main',
+      })
+      const latestCommitSha = refData.object.sha
+
+      // Get the current commit
+      const { data: commitData } = await this.octokit.rest.git.getCommit({
+        owner,
+        repo,
+        commit_sha: latestCommitSha,
+      })
+      const baseTreeSha = commitData.tree.sha
+
+      // Get the latest commit SHA from the theme repo
+      // Extract owner/repo from URL like https://github.com/owner/repo.git
+      const themeMatch = themeRepoUrl.match(/github\.com\/([^/]+)\/([^/.]+)/)
+      if (!themeMatch) {
+        throw new Error(`Invalid theme repo URL: ${themeRepoUrl}`)
+      }
+      const themeOwner = themeMatch[1]
+      const themeRepo = themeMatch[2]
+
+      // Get the latest commit from the theme repo's default branch
+      const { data: themeRefData } = await this.octokit.rest.repos.getBranch({
+        owner: themeOwner,
+        repo: themeRepo,
+        branch: 'master', // Most Hugo themes use master
+      }).catch(async () => {
+        // Try main if master doesn't exist
+        return await this.octokit.rest.repos.getBranch({
+          owner: themeOwner,
+          repo: themeRepo,
+          branch: 'main',
+        })
+      })
+      const themeCommitSha = themeRefData.commit.sha
+
+      // Create .gitmodules content
+      const gitmodulesContent = `[submodule "themes/${themeId}"]
+	path = themes/${themeId}
+	url = ${themeRepoUrl}
+`
+
+      // Create a new tree with:
+      // 1. Updated .gitmodules file
+      // 2. Submodule entry for themes/themeId
+      const { data: newTree } = await this.octokit.rest.git.createTree({
+        owner,
+        repo,
+        base_tree: baseTreeSha,
+        tree: [
+          {
+            path: '.gitmodules',
+            mode: '100644',
+            type: 'blob',
+            content: gitmodulesContent,
+          },
+          {
+            path: `themes/${themeId}`,
+            mode: '160000', // Git submodule mode
+            type: 'commit',
+            sha: themeCommitSha,
+          },
+        ],
+      })
+
+      // Create a new commit
+      const { data: newCommit } = await this.octokit.rest.git.createCommit({
+        owner,
+        repo,
+        message: `Set theme: ${themeId}`,
+        tree: newTree.sha,
+        parents: [latestCommitSha],
+      })
+
+      // Update the branch reference
+      await this.octokit.rest.git.updateRef({
+        owner,
+        repo,
+        ref: 'heads/main',
+        sha: newCommit.sha,
+      })
+
+      return true
+    } catch (error) {
+      console.error(`Error setting theme ${themeId}:`, error)
+      throw error
+    }
+  }
+
   // Helper to create file with retry for newly created repos
   private async createFileWithRetry(
     owner: string,

@@ -4,6 +4,7 @@ import { GitHubClient } from "@/lib/github"
 import { getRepoConfig } from "@/lib/cookies"
 import { revalidatePath } from "next/cache"
 import Link from "next/link"
+import { ThemeSelector } from "./theme-selector"
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,27 @@ export default async function SettingsPage() {
   const currentConfig = await getRepoConfig()
   const github = new GitHubClient(session.accessToken)
   const repos = await github.getUserRepos()
+
+  // Get current theme from hugo.toml
+  let currentTheme: string | undefined
+  if (currentConfig) {
+    try {
+      const hugoConfig = await github.getFileContent(
+        currentConfig.owner,
+        currentConfig.repo,
+        'hugo.toml'
+      )
+      if (hugoConfig) {
+        const themeMatch = hugoConfig.match(/^theme\s*=\s*["']?([^"'\n]+)["']?$/m)
+        if (themeMatch) {
+          currentTheme = themeMatch[1].trim()
+        }
+      }
+    } catch (error) {
+      // Couldn't read theme, that's okay
+      console.log('Could not read current theme:', error)
+    }
+  }
 
   async function updateRepo(formData: FormData) {
     "use server"
@@ -138,6 +160,11 @@ export default async function SettingsPage() {
               <p className="text-gray-500">No repository connected</p>
             )}
           </div>
+
+          {/* Theme Selector */}
+          {currentConfig && (
+            <ThemeSelector currentTheme={currentTheme} />
+          )}
 
           {/* Change Repository */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">

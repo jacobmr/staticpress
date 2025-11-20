@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { AuthButton } from '@/components/auth-buttons'
 import { signOutUser } from '@/lib/auth-actions'
+import { HUGO_THEMES, DEFAULT_THEME_ID } from '@/lib/themes'
 
 interface Repo {
   id: number
@@ -33,6 +34,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
   const [blogName, setBlogName] = useState('')
   const [blogDescription, setBlogDescription] = useState('')
   const [isPrivate, setIsPrivate] = useState(false)
+  const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME_ID)
 
   const handleConnectRepo = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,6 +94,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
           blogName: blogName.trim(),
           description: blogDescription.trim(),
           isPrivate,
+          theme: selectedTheme,
         }),
       })
 
@@ -115,7 +118,7 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <h2 className="text-xl font-semibold">Setup</h2>
           <div className="flex items-center gap-4">
-            <span className="text-xs text-gray-400">v0.9.2</span>
+            <span className="text-xs text-gray-400">v0.9.6</span>
             <AuthButton
               action={signOutUser}
               loadingText="Signing out..."
@@ -265,6 +268,31 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
                 <label htmlFor="isPrivate" className="text-sm text-gray-600 dark:text-gray-400">
                   Make repository private
                 </label>
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium">
+                  Select Theme
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  {HUGO_THEMES.map((theme) => (
+                    <button
+                      key={theme.id}
+                      type="button"
+                      onClick={() => setSelectedTheme(theme.id)}
+                      className={`rounded-lg border p-3 text-left transition-colors ${
+                        selectedTheme === theme.id
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="font-medium text-sm">{theme.name}</div>
+                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        {theme.description}
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <button
