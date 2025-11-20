@@ -8,7 +8,7 @@ StaticPress is a WYSIWYG editor that makes it easy to write and publish blog pos
 
 - 🔐 **GitHub OAuth Authentication** - Secure login with your GitHub account
 - 📁 **Repository Integration** - Connect any GitHub repository containing a Hugo blog
-- 📝 **Simple Editor** - Clean interface with just Title and Content fields  
+- 📝 **Premium Editor** - Notion-style writing with Slash commands, Bubble menu, and Focus mode
 - 🎯 **Hugo-Aware** - Automatically follows Hugo file structure (`content/posts/YYYY/MM/slug.md`)
 - 📤 **Auto-Commit** - Changes are committed and pushed to your repository automatically
 - ⚙️ **Easy Setup** - Select your repository on first login, change it anytime in Settings
