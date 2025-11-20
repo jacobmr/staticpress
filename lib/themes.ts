@@ -20,12 +20,6 @@ export const HUGO_THEMES: HugoTheme[] = [
     repo: 'https://github.com/theNewDynamic/gohugo-theme-ananke.git',
   },
   {
-    id: 'stack',
-    name: 'Stack',
-    description: 'Card-based, modern design with dark mode.',
-    repo: 'https://github.com/CaiJimmy/hugo-theme-stack.git',
-  },
-  {
     id: 'terminal',
     name: 'Terminal',
     description: 'Retro terminal aesthetic for developers.',
@@ -38,22 +32,16 @@ export const HUGO_THEMES: HugoTheme[] = [
     repo: 'https://github.com/luizdepra/hugo-coder.git',
   },
   {
-    id: 'blowfish',
-    name: 'Blowfish',
-    description: 'Modern, Tailwind CSS with full dark mode.',
-    repo: 'https://github.com/nunocoracao/blowfish.git',
+    id: 'poison',
+    name: 'Poison',
+    description: 'Professional dark theme with sidebar.',
+    repo: 'https://github.com/lukeorth/poison.git',
   },
   {
-    id: 'congo',
-    name: 'Congo',
-    description: 'Minimal, fast, and responsive.',
-    repo: 'https://github.com/jpanther/congo.git',
-  },
-  {
-    id: 'clarity',
-    name: 'Clarity',
-    description: 'Feature-rich with search and comments.',
-    repo: 'https://github.com/chipzoller/hugo-clarity.git',
+    id: 'risotto',
+    name: 'Risotto',
+    description: 'Minimalist, monospace design.',
+    repo: 'https://github.com/joeroe/risotto.git',
   },
 ]
 
