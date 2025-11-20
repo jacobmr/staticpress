@@ -183,6 +183,28 @@ export class GitHubClient {
   }
 
   async initializeHugoProject(owner: string, repo: string, blogName: string) {
+    // First, verify the repo is accessible by getting the README
+    // This ensures the repo is fully initialized before we try to create files
+    let repoReady = false
+    for (let i = 0; i < 10; i++) {
+      try {
+        await this.octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: 'README.md',
+        })
+        repoReady = true
+        break
+      } catch {
+        // Wait 2 seconds and retry
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+
+    if (!repoReady) {
+      throw new Error(`Repository ${owner}/${repo} not accessible after 20 seconds`)
+    }
+
     // Use simple Contents API approach
     const files = [
       {
