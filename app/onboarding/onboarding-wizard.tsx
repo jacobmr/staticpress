@@ -20,6 +20,7 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
   const [isDeploying, setIsDeploying] = useState(false)
   const [deployError, setDeployError] = useState('')
   const [siteUrl, setSiteUrl] = useState('')
+  const [manualSiteUrl, setManualSiteUrl] = useState('')
 
   const totalSteps = 4
 
@@ -60,6 +61,37 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
       handleNext()
     } catch (error) {
       setDeployError(error instanceof Error ? error.message : 'Deployment failed')
+    } finally {
+      setIsDeploying(false)
+    }
+  }
+
+  const handleManualDeployComplete = async () => {
+    if (!manualSiteUrl.trim()) {
+      setDeployError('Please enter your site URL')
+      return
+    }
+
+    setIsDeploying(true)
+    setDeployError('')
+
+    try {
+      const response = await fetch('/api/repos/site-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ siteUrl: manualSiteUrl.trim() }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to save site URL')
+      }
+
+      setSiteUrl(data.url)
+      handleNext()
+    } catch (error) {
+      setDeployError(error instanceof Error ? error.message : 'Failed to save site URL')
     } finally {
       setIsDeploying(false)
     }
@@ -354,8 +386,33 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
                     <li>Set Framework preset to <strong>Hugo</strong></li>
                     <li>Click <strong>Save and Deploy</strong></li>
                   </ol>
-                  <button onClick={handleNext} className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700">
-                    I&apos;ve Set Up Deployment
+                  <div className="mb-4">
+                    <label htmlFor="cloudflareUrl" className="mb-2 block text-sm font-medium">
+                      Your Cloudflare Pages URL
+                    </label>
+                    <input
+                      type="text"
+                      id="cloudflareUrl"
+                      value={manualSiteUrl}
+                      onChange={(e) => setManualSiteUrl(e.target.value)}
+                      placeholder="your-project.pages.dev"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Find this in your Cloudflare dashboard after deployment
+                    </p>
+                  </div>
+                  {deployError && (
+                    <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                      {deployError}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleManualDeployComplete}
+                    disabled={isDeploying}
+                    className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isDeploying ? 'Saving...' : 'I\'ve Set Up Deployment'}
                   </button>
                 </div>
               )}
@@ -372,8 +429,33 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
                     <li>Select repository: <strong>{repoOwner}/{repoName}</strong></li>
                     <li>Click <strong>Deploy</strong></li>
                   </ol>
-                  <button onClick={handleNext} className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700">
-                    I&apos;ve Set Up Deployment
+                  <div className="mb-4">
+                    <label htmlFor="vercelUrl" className="mb-2 block text-sm font-medium">
+                      Your Vercel URL
+                    </label>
+                    <input
+                      type="text"
+                      id="vercelUrl"
+                      value={manualSiteUrl}
+                      onChange={(e) => setManualSiteUrl(e.target.value)}
+                      placeholder="your-project.vercel.app"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Find this in your Vercel dashboard after deployment
+                    </p>
+                  </div>
+                  {deployError && (
+                    <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                      {deployError}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleManualDeployComplete}
+                    disabled={isDeploying}
+                    className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isDeploying ? 'Saving...' : 'I\'ve Set Up Deployment'}
                   </button>
                 </div>
               )}
@@ -391,8 +473,33 @@ export function OnboardingWizard({ repoOwner, repoName, userName }: OnboardingWi
                     <li>Build command: <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">hugo</code></li>
                     <li>Publish directory: <code className="rounded bg-gray-100 px-1 dark:bg-gray-800">public</code></li>
                   </ol>
-                  <button onClick={handleNext} className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700">
-                    I&apos;ve Set Up Deployment
+                  <div className="mb-4">
+                    <label htmlFor="netlifyUrl" className="mb-2 block text-sm font-medium">
+                      Your Netlify URL
+                    </label>
+                    <input
+                      type="text"
+                      id="netlifyUrl"
+                      value={manualSiteUrl}
+                      onChange={(e) => setManualSiteUrl(e.target.value)}
+                      placeholder="your-site.netlify.app"
+                      className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Find this in your Netlify dashboard after deployment
+                    </p>
+                  </div>
+                  {deployError && (
+                    <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                      {deployError}
+                    </div>
+                  )}
+                  <button
+                    onClick={handleManualDeployComplete}
+                    disabled={isDeploying}
+                    className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    {isDeploying ? 'Saving...' : 'I\'ve Set Up Deployment'}
                   </button>
                 </div>
               )}
