@@ -59,6 +59,35 @@ export async function POST(request: Request) {
       // Continue - we'll still try to add the submodule
     }
 
+    // Update workflow to use latest Hugo version (for theme compatibility)
+    try {
+      const workflowContents = await github.getRepoContents(owner, repo, '.github/workflows/hugo.yml')
+      if (workflowContents.length > 0 && !Array.isArray(workflowContents[0]) && 'sha' in workflowContents[0]) {
+        const currentWorkflow = await github.getFileContent(owner, repo, '.github/workflows/hugo.yml')
+        if (currentWorkflow) {
+          // Update Hugo version to 0.146.0
+          const updatedWorkflow = currentWorkflow.replace(
+            /HUGO_VERSION:\s*[\d.]+/,
+            'HUGO_VERSION: 0.146.0'
+          )
+
+          if (updatedWorkflow !== currentWorkflow) {
+            await github.createOrUpdateFile(
+              owner,
+              repo,
+              '.github/workflows/hugo.yml',
+              updatedWorkflow,
+              'Update Hugo to 0.146.0 for theme compatibility',
+              workflowContents[0].sha as string
+            )
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error updating workflow:', error)
+      // Non-fatal
+    }
+
     // Set up the new theme as a git submodule
     try {
       await github.setHugoTheme(owner, repo, theme, themeInfo.repo)
