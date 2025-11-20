@@ -53,13 +53,17 @@ export async function POST(request: Request) {
     }
 
     // Initialize Hugo project structure with retries
+    // Wait 3 seconds initially to let GitHub fully set up the repo
+    console.log(`[Create] Waiting 3s for GitHub to initialize repo...`)
+    await new Promise(resolve => setTimeout(resolve, 3000))
+
     let initialized = false
     let lastError: Error | null = null
     for (let attempt = 1; attempt <= 5; attempt++) {
       try {
-        // Wait before each attempt (exponential backoff)
+        // Wait before retry attempts (exponential backoff)
         if (attempt > 1) {
-          const delay = Math.pow(2, attempt - 1) * 1000
+          const delay = Math.pow(2, attempt) * 1000 // 4s, 8s, 16s, 32s
           console.log(`[Create] Retry ${attempt}/5, waiting ${delay}ms...`)
           await new Promise(resolve => setTimeout(resolve, delay))
         }
