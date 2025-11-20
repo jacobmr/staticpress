@@ -114,13 +114,16 @@ export function SetupClient({ repos, userId, userEmail, userName, userImage }: S
       <header className="border-b border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-900">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <h2 className="text-xl font-semibold">Setup</h2>
-          <AuthButton
-            action={signOutUser}
-            loadingText="Signing out..."
-            className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 disabled:opacity-50 disabled:cursor-wait"
-          >
-            Sign Out
-          </AuthButton>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-gray-400">v0.3.1</span>
+            <AuthButton
+              action={signOutUser}
+              loadingText="Signing out..."
+              className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 disabled:opacity-50 disabled:cursor-wait"
+            >
+              Sign Out
+            </AuthButton>
+          </div>
         </div>
       </header>
 
