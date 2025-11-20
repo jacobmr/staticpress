@@ -126,7 +126,7 @@ export class GitHubClient {
         name,
         description,
         private: isPrivate,
-        auto_init: true, // Initialize with README
+        auto_init: false, // Don't auto-init, we'll create all files ourselves
       })
       return data
     } catch (error) {
@@ -137,7 +137,36 @@ export class GitHubClient {
 
   async initializeHugoProject(owner: string, repo: string, blogName: string) {
     // Create basic Hugo structure with initial files
+    // README must be first to initialize the repository
     const files = [
+      {
+        path: 'README.md',
+        content: `# ${blogName}
+
+A blog built with [Hugo](https://gohugo.io) and managed by [StaticPress](https://staticpress.me).
+
+## Setup
+
+To build this site locally:
+
+1. Install Hugo: https://gohugo.io/installation/
+2. Clone this repository
+3. Install the theme:
+   \`\`\`bash
+   git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
+   \`\`\`
+4. Run \`hugo server\` to preview
+
+## Deployment
+
+This repository includes a GitHub Actions workflow for automatic deployment to GitHub Pages.
+
+You can also deploy to:
+- [Cloudflare Pages](https://pages.cloudflare.com)
+- [Vercel](https://vercel.com)
+- [Netlify](https://netlify.com)
+`,
+      },
       {
         path: 'hugo.toml',
         content: `baseURL = "https://example.org/"
@@ -259,42 +288,6 @@ jobs:
         `Initialize Hugo project: ${file.path}`
       )
     }
-
-    // Add Ananke theme as submodule (we'll need to do this via git command or API)
-    // For now, we'll add a note in the README about installing the theme
-    const readmeContent = `# ${blogName}
-
-A blog built with [Hugo](https://gohugo.io) and managed by [StaticPress](https://staticpress.me).
-
-## Setup
-
-To build this site locally:
-
-1. Install Hugo: https://gohugo.io/installation/
-2. Clone this repository
-3. Install the theme:
-   \`\`\`bash
-   git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
-   \`\`\`
-4. Run \`hugo server\` to preview
-
-## Deployment
-
-This repository includes a GitHub Actions workflow for automatic deployment to GitHub Pages.
-
-You can also deploy to:
-- [Cloudflare Pages](https://pages.cloudflare.com)
-- [Vercel](https://vercel.com)
-- [Netlify](https://netlify.com)
-`
-
-    await this.createOrUpdateFile(
-      owner,
-      repo,
-      'README.md',
-      readmeContent,
-      'Update README with setup instructions'
-    )
 
     return true
   }
