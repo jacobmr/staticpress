@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
-import { SignInButton } from "@/components/auth-buttons"
+import { SignInButton, AuthButton } from "@/components/auth-buttons"
 import { signInWithGitHub } from "@/lib/auth-actions"
 
 export const dynamic = 'force-dynamic'
@@ -135,19 +135,13 @@ export default async function Home() {
                 <span>Categories & tags</span>
               </li>
             </ul>
-            <form
-              action={async () => {
-                "use server"
-                await signIn("github")
-              }}
+            <AuthButton
+              action={signInWithGitHub}
+              loadingText="Signing in..."
+              className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait"
             >
-              <button
-                type="submit"
-                className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700"
-              >
-                Upgrade to Personal
-              </button>
-            </form>
+              Upgrade to Personal
+            </AuthButton>
           </div>
 
           {/* SMB Tier */}

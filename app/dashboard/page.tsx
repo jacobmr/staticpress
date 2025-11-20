@@ -1,4 +1,4 @@
-import { auth, signOut } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { getRepoConfig } from "@/lib/cookies"
 import { GitHubClient, HugoPost } from "@/lib/github"
@@ -6,6 +6,8 @@ import { DashboardClient } from "@/components/dashboard-client"
 import { getCached, setCached } from "@/lib/cache"
 import Link from "next/link"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { SignOutButton } from "@/components/auth-buttons"
+import { signOutUser } from "@/lib/auth-actions"
 
 export const dynamic = 'force-dynamic'
 
@@ -93,19 +95,7 @@ export default async function Dashboard() {
             <span className="text-sm text-gray-600 dark:text-gray-400">
               {session.user.name || session.user.email}
             </span>
-            <form
-              action={async () => {
-                "use server"
-                await signOut({ redirectTo: '/' })
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-              >
-                Sign Out
-              </button>
-            </form>
+            <SignOutButton action={signOutUser} />
           </div>
         </div>
       </header>
