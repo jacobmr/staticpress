@@ -1,5 +1,7 @@
-import { auth, signIn } from "@/lib/auth"
+import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { SignInButton } from "@/components/auth-buttons"
+import { signInWithGitHub } from "@/lib/auth-actions"
 
 export const dynamic = 'force-dynamic'
 
@@ -34,32 +36,8 @@ export default async function Home() {
           </div>
 
           <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-            <form
-              action={async () => {
-                "use server"
-                await signIn("github")
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-lg bg-gray-900 px-8 py-4 text-lg font-semibold text-white transition-colors hover:bg-gray-700 dark:bg-gray-100 dark:text-gray-900 dark:hover:bg-gray-300"
-              >
-                Get Started Free
-              </button>
-            </form>
-            <form
-              action={async () => {
-                "use server"
-                await signIn("github")
-              }}
-            >
-              <button
-                type="submit"
-                className="rounded-lg border-2 border-gray-900 px-8 py-4 text-lg font-semibold text-gray-900 transition-colors hover:bg-gray-100 dark:border-gray-100 dark:text-gray-100 dark:hover:bg-gray-800"
-              >
-                Sign In
-              </button>
-            </form>
+            <SignInButton action={signInWithGitHub} variant="primary" />
+            <SignInButton action={signInWithGitHub} variant="secondary" />
           </div>
 
           <div className="mt-16 grid gap-8 sm:grid-cols-3">
