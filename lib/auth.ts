@@ -74,12 +74,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // We should not populate the session - this will cause it to fail and force re-login
       if (!token.githubId) {
         console.warn('[Auth Session] Old session detected - missing githubId, forcing re-authentication')
-        // Return empty session to force sign out
-        return {
-          ...session,
-          user: {},
-          accessToken: undefined
-        } as any
+        // Return session without user data to force sign out
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session as any).user = undefined
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (session as any).accessToken = undefined
+        return session
       }
 
       session.accessToken = token.accessToken as string
