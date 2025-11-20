@@ -78,6 +78,7 @@ export type EventName =
   | 'image_upload'
   | 'post_published'
   | 'post_deleted'
+  | 'theme_changed'
 
 /**
  * Get or create user by GitHub ID
