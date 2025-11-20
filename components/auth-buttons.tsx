@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 
 interface AuthButtonProps {
   action: () => Promise<void>
@@ -13,16 +12,15 @@ interface AuthButtonProps {
 
 export function AuthButton({ action, children, loadingText, className, redirectTo }: AuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     try {
       await action()
-      // If we have a redirectTo, navigate after action completes
+      // If we have a redirectTo, do a full page reload to clear session state
       if (redirectTo) {
-        router.push(redirectTo)
+        window.location.href = redirectTo
       }
     } catch (error) {
       console.error('Auth action failed:', error)
