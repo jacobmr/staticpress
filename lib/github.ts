@@ -115,6 +115,190 @@ export class GitHubClient {
     }
   }
 
+  async getAuthenticatedUser() {
+    const { data } = await this.octokit.rest.users.getAuthenticated()
+    return data
+  }
+
+  async createRepository(name: string, description: string, isPrivate: boolean = false) {
+    try {
+      const { data } = await this.octokit.rest.repos.createForAuthenticatedUser({
+        name,
+        description,
+        private: isPrivate,
+        auto_init: true, // Initialize with README
+      })
+      return data
+    } catch (error) {
+      console.error(`Error creating repository ${name}:`, error)
+      throw error
+    }
+  }
+
+  async initializeHugoProject(owner: string, repo: string, blogName: string) {
+    // Create basic Hugo structure with initial files
+    const files = [
+      {
+        path: 'hugo.toml',
+        content: `baseURL = "https://example.org/"
+languageCode = "en-us"
+title = "${blogName}"
+theme = "ananke"
+
+[params]
+  author = "StaticPress User"
+  description = "A blog created with StaticPress"
+`,
+      },
+      {
+        path: 'content/posts/.gitkeep',
+        content: '',
+      },
+      {
+        path: 'static/images/.gitkeep',
+        content: '',
+      },
+      {
+        path: 'content/posts/welcome.md',
+        content: `---
+title: "Welcome to My Blog"
+date: "${new Date().toISOString()}"
+draft: false
+---
+
+Welcome to your new blog powered by Hugo and StaticPress!
+
+## Getting Started
+
+This is your first post. You can edit it directly in StaticPress or create new posts.
+
+### What's Next?
+
+1. **Customize your theme** - Change the look and feel of your blog
+2. **Write your first real post** - Share your thoughts with the world
+3. **Deploy your site** - Publish to Cloudflare Pages, Vercel, or Netlify
+
+Happy blogging!
+`,
+      },
+      {
+        path: '.github/workflows/hugo.yml',
+        content: `name: Deploy Hugo site
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HUGO_VERSION: 0.128.0
+    steps:
+      - name: Install Hugo CLI
+        run: |
+          wget -O \${{ runner.temp }}/hugo.deb https://github.com/gohugoio/hugo/releases/download/v\${HUGO_VERSION}/hugo_extended_\${HUGO_VERSION}_linux-amd64.deb \\
+          && sudo dpkg -i \${{ runner.temp }}/hugo.deb
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v5
+      - name: Install Node.js dependencies
+        run: "[[ -f package-lock.json || -f npm-shrinkwrap.json ]] && npm ci || true"
+      - name: Build with Hugo
+        env:
+          HUGO_CACHEDIR: \${{ runner.temp }}/hugo_cache
+          HUGO_ENVIRONMENT: production
+        run: |
+          hugo \\
+            --minify \\
+            --baseURL "\${{ steps.pages.outputs.base_url }}/"
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./public
+
+  deploy:
+    environment:
+      name: github-pages
+      url: \${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+`,
+      },
+    ]
+
+    // Create files one by one (GitHub API doesn't support batch creation)
+    for (const file of files) {
+      await this.createOrUpdateFile(
+        owner,
+        repo,
+        file.path,
+        file.content,
+        `Initialize Hugo project: ${file.path}`
+      )
+    }
+
+    // Add Ananke theme as submodule (we'll need to do this via git command or API)
+    // For now, we'll add a note in the README about installing the theme
+    const readmeContent = `# ${blogName}
+
+A blog built with [Hugo](https://gohugo.io) and managed by [StaticPress](https://staticpress.me).
+
+## Setup
+
+To build this site locally:
+
+1. Install Hugo: https://gohugo.io/installation/
+2. Clone this repository
+3. Install the theme:
+   \`\`\`bash
+   git submodule add https://github.com/theNewDynamic/gohugo-theme-ananke.git themes/ananke
+   \`\`\`
+4. Run \`hugo server\` to preview
+
+## Deployment
+
+This repository includes a GitHub Actions workflow for automatic deployment to GitHub Pages.
+
+You can also deploy to:
+- [Cloudflare Pages](https://pages.cloudflare.com)
+- [Vercel](https://vercel.com)
+- [Netlify](https://netlify.com)
+`
+
+    await this.createOrUpdateFile(
+      owner,
+      repo,
+      'README.md',
+      readmeContent,
+      'Update README with setup instructions'
+    )
+
+    return true
+  }
+
   async getHugoPosts(owner: string, repo: string, contentPath: string = "content/posts", limit: number = 10, maxDepth: number = 10): Promise<HugoPost[]> {
     const posts: HugoPost[] = []
     let count = 0

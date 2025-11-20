@@ -67,6 +67,7 @@ export interface AnalyticsEvent {
 export type EventName =
   | 'oauth_completed'
   | 'repo_bound'
+  | 'repo_created'
   | 'first_publish'
   | 'upgrade_modal_shown'
   | 'upgrade_started'
