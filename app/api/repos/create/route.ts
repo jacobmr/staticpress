@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 
+// Template repository for new blogs
+const TEMPLATE_OWNER = 'jacobmr'
+const TEMPLATE_REPO = 'staticpress-hugo-template'
+
 export async function POST(request: Request) {
   try {
     const session = await auth()
@@ -39,43 +43,24 @@ export async function POST(request: Request) {
       throw new Error(`Failed to get user: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
 
-    // Create the repository
+    // Create repository from template
     let repo
     try {
-      repo = await github.createRepository(
+      repo = await github.createRepositoryFromTemplate(
+        TEMPLATE_OWNER,
+        TEMPLATE_REPO,
         repoName,
         description || `${blogName} - A blog managed with StaticPress`,
         isPrivate ?? false
       )
-      console.log(`[Create] Repository created: ${owner}/${repoName}`)
+      console.log(`[Create] Repository created from template: ${owner}/${repoName}`)
     } catch (error) {
-      throw new Error(`Failed to create repo: ${error instanceof Error ? error.message : 'Unknown error'}`)
-    }
-
-    // Initialize Hugo project structure with retries
-    let initialized = false
-    let lastError: Error | null = null
-    for (let attempt = 1; attempt <= 5; attempt++) {
-      try {
-        // Wait before retry attempts (exponential backoff)
-        if (attempt > 1) {
-          const delay = Math.pow(2, attempt) * 1000 // 4s, 8s, 16s, 32s
-          console.log(`[Create] Retry ${attempt}/5, waiting ${delay}ms...`)
-          await new Promise(resolve => setTimeout(resolve, delay))
-        }
-
-        await github.initializeHugoProject(owner, repoName, blogName)
-        console.log(`[Create] Hugo project initialized on attempt ${attempt}`)
-        initialized = true
-        break
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error('Unknown error')
-        console.log(`[Create] Attempt ${attempt} failed: ${lastError.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      // Check for specific template errors
+      if (errorMessage.includes('Not Found')) {
+        throw new Error('Template repository not found. Please contact support.')
       }
-    }
-
-    if (!initialized) {
-      throw new Error(`Failed to initialize Hugo after 5 attempts: ${lastError?.message || 'Unknown error'}`)
+      throw new Error(`Failed to create repo: ${errorMessage}`)
     }
 
     // Get or create user in database and save repo config
