@@ -296,7 +296,18 @@ jobs:
       },
     ]
 
-    // Add README to files
+    // Create files one by one using Contents API
+    for (const file of files) {
+      await this.createOrUpdateFile(
+        owner,
+        repo,
+        file.path,
+        file.content,
+        `Initialize Hugo project: ${file.path}`
+      )
+    }
+
+    // Update README with proper content (need SHA since auto_init created it)
     const readmeContent = `# ${blogName}
 
 A blog built with [Hugo](https://gohugo.io) and managed by [StaticPress](https://staticpress.me).
@@ -322,16 +333,22 @@ You can also deploy to:
 - [Vercel](https://vercel.com)
 - [Netlify](https://netlify.com)
 `
-    files.push({ path: 'README.md', content: readmeContent })
 
-    // Create files one by one using Contents API
-    for (const file of files) {
+    // Get SHA of existing README
+    const { data: readmeData } = await this.octokit.rest.repos.getContent({
+      owner,
+      repo,
+      path: 'README.md',
+    })
+
+    if (!Array.isArray(readmeData) && readmeData.sha) {
       await this.createOrUpdateFile(
         owner,
         repo,
-        file.path,
-        file.content,
-        `Initialize Hugo project: ${file.path}`
+        'README.md',
+        readmeContent,
+        'Update README with setup instructions',
+        readmeData.sha
       )
     }
 
