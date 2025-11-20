@@ -30,10 +30,12 @@ interface EditorProps {
   content: string
   onChange: (content: string) => void
   placeholder?: string
+  readOnly?: boolean
   onImageUploaded?: (base64: string, hugoUrl: string) => void
+  uploadImage?: (file: File) => Promise<string | null>
 }
 
-export function Editor({ content, onChange, placeholder = 'Start writing your post...', onImageUploaded }: EditorProps) {
+export function Editor({ content, onChange, placeholder = 'Start writing your post...', readOnly = false, onImageUploaded, uploadImage }: EditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -242,61 +244,31 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
     setIsUploading(true)
 
     try {
-      // Convert file to base64
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string
-
-        // Insert base64 preview immediately (works for private repos)
-        editor.chain().focus().setImage({ src: base64 }).run()
-
-        // Upload to GitHub in background
-        const response = await fetch('/api/images/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filename: file.name,
-            content: base64.split(',')[1], // Remove data:image/png;base64, prefix
-            contentType: file.type,
-          }),
-        })
-
-        if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Failed to upload image')
+      if (uploadImage) {
+        const url = await uploadImage(file)
+        if (url) {
+          editor.chain().focus().setImage({ src: url }).run()
         }
-
-        const data = await response.json()
-        const { hugoUrl } = data
-
-        // Store mapping and notify parent
-        uploadedImagesRef.current.set(base64, hugoUrl)
-        if (onImageUploaded) {
-          onImageUploaded(base64, hugoUrl)
+      } else {
+        // Fallback to base64
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          editor.chain().focus().setImage({ src: result }).run()
+          onImageUploaded?.(result, '')
         }
-
-        setIsUploading(false)
+        reader.readAsDataURL(file)
       }
-
-      reader.onerror = () => {
-        alert('Failed to read image file')
-        setIsUploading(false)
-      }
-
-      reader.readAsDataURL(file)
     } catch (error) {
       console.error('Image upload error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to upload image')
+      alert('Failed to upload image')
+    } finally {
       setIsUploading(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
     }
-
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }, [editor])
+  }, [editor, uploadImage, onImageUploaded])
 
   // Update editor content when content prop changes
   useEffect(() => {
@@ -312,8 +284,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
   return (
     <div
       className={`flex flex-col border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900 ${isFocusMode
-          ? 'fixed inset-0 z-50 h-screen w-screen border-0'
-          : 'rounded-md border min-h-[500px]'
+        ? 'fixed inset-0 z-50 h-screen w-screen border-0'
+        : 'rounded-md border min-h-[500px]'
         }`}
     >
       {/* Sticky Toolbar */}
@@ -337,8 +309,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('heading', { level: 2 })
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Heading 2"
         >
@@ -347,8 +319,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('heading', { level: 3 })
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Heading 3"
         >
@@ -360,8 +332,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('bulletList')
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Bullet List"
         >
@@ -370,8 +342,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('orderedList')
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Numbered List"
         >
@@ -380,8 +352,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('blockquote')
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Quote"
         >
@@ -390,8 +362,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('codeBlock')
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Code Block"
         >
@@ -410,8 +382,8 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <button
           onClick={setLink}
           className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('link')
-              ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-              : 'text-gray-600 dark:text-gray-300'
+            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
+            : 'text-gray-600 dark:text-gray-300'
             }`}
           title="Link"
         >
