@@ -64,8 +64,14 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
 
         const { url } = await response.json()
 
+        // Transform relative URL to absolute for display in editor
+        // TODO: Make base URL configurable per user/repo
+        const absoluteUrl = url.startsWith('/')
+          ? `https://docnotes.com${url}`
+          : url
+
         // Insert image into editor
-        currentEditor.chain().focus().setImage({ src: url }).run()
+        currentEditor.chain().focus().setImage({ src: absoluteUrl }).run()
 
         setIsUploading(false)
       }
@@ -216,8 +222,14 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
 
         const { url } = await response.json()
 
+        // Transform relative URL to absolute for display in editor
+        // TODO: Make base URL configurable per user/repo
+        const absoluteUrl = url.startsWith('/')
+          ? `https://docnotes.com${url}`
+          : url
+
         // Insert image into editor
-        editor.chain().focus().setImage({ src: url }).run()
+        editor.chain().focus().setImage({ src: absoluteUrl }).run()
 
         setIsUploading(false)
       }
