@@ -1,22 +1,29 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 
 interface AuthButtonProps {
   action: () => Promise<void>
   children: React.ReactNode
   loadingText: string
   className?: string
+  redirectTo?: string
 }
 
-export function AuthButton({ action, children, loadingText, className }: AuthButtonProps) {
+export function AuthButton({ action, children, loadingText, className, redirectTo }: AuthButtonProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
     try {
       await action()
+      // If we have a redirectTo, navigate after action completes
+      if (redirectTo) {
+        router.push(redirectTo)
+      }
     } catch (error) {
       console.error('Auth action failed:', error)
       setIsLoading(false)
@@ -72,6 +79,7 @@ export function SignOutButton({ action }: { action: () => Promise<void> }) {
       action={action}
       loadingText="Signing out..."
       className="rounded-md bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-wait"
+      redirectTo="/"
     >
       Sign Out
     </AuthButton>
