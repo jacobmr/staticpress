@@ -297,13 +297,29 @@ jobs:
     ]
 
     // Create files one by one using Contents API
+    // Get SHA if file exists (for retry scenarios)
     for (const file of files) {
+      let sha: string | undefined
+      try {
+        const { data } = await this.octokit.rest.repos.getContent({
+          owner,
+          repo,
+          path: file.path,
+        })
+        if (!Array.isArray(data) && data.sha) {
+          sha = data.sha
+        }
+      } catch {
+        // File doesn't exist, that's fine
+      }
+
       await this.createOrUpdateFile(
         owner,
         repo,
         file.path,
         file.content,
-        `Initialize Hugo project: ${file.path}`
+        `Initialize Hugo project: ${file.path}`,
+        sha
       )
     }
 
