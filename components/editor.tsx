@@ -22,11 +22,16 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
 
   // Handle pasting images from clipboard
   const handlePastedImage = useCallback(async (file: File) => {
+    console.log('[PasteImage] Starting upload for:', file.name, file.size)
     const currentEditor = editorRef.current
-    if (!currentEditor) return
+    if (!currentEditor) {
+      console.error('[PasteImage] No editor available!')
+      return
+    }
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
+      console.log('[PasteImage] Not an image:', file.type)
       return
     }
 
@@ -62,23 +67,27 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
           throw new Error(error.error || 'Failed to upload image')
         }
 
-        const { url } = await response.json()
+        const data = await response.json()
+        const { url } = data
+        console.log('[PasteImage] Upload successful, URL:', url)
 
         // URL is now a GitHub raw URL (immediately available)
         // Insert image into editor
         currentEditor.chain().focus().setImage({ src: url }).run()
+        console.log('[PasteImage] Image inserted into editor')
 
         setIsUploading(false)
       }
 
       reader.onerror = () => {
+        console.error('[PasteImage] FileReader error')
         alert('Failed to read image file')
         setIsUploading(false)
       }
 
       reader.readAsDataURL(file)
     } catch (error) {
-      console.error('Image paste error:', error)
+      console.error('[PasteImage] Error:', error)
       alert(error instanceof Error ? error.message : 'Failed to upload image')
       setIsUploading(false)
     }
@@ -110,12 +119,15 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
       },
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items
+        console.log('[Paste] Clipboard items:', items?.length || 0)
         if (!items) return false
 
         for (let i = 0; i < items.length; i++) {
           const item = items[i]
+          console.log('[Paste] Item type:', item.type)
           if (item.type.startsWith('image/')) {
             const file = item.getAsFile()
+            console.log('[Paste] Got image file:', file?.name, file?.size)
             if (file) {
               event.preventDefault()
               handlePastedImage(file)
