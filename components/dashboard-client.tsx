@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
 import { HugoPost } from '@/lib/github'
@@ -24,6 +24,15 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+  // Track uploaded images: base64 → hugo URL
+  const uploadedImagesRef = useRef<Map<string, string>>(new Map())
+
+  // Callback for when editor uploads an image
+  const handleImageUploaded = useCallback((base64: string, hugoUrl: string) => {
+    uploadedImagesRef.current.set(base64, hugoUrl)
+    console.log('[Dashboard] Image uploaded, mapped base64 to:', hugoUrl)
+  }, [])
 
   // Fetch remaining posts in background after initial render
   useEffect(() => {
@@ -69,14 +78,23 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
   // Reverse transformation: convert absolute URLs back to relative for saving
   const reverseTransformImageUrls = (content: string): string => {
-    // First, convert GitHub raw URLs back to relative URLs
+    let result = content
+
+    // First, convert base64 images to their hugo URLs
+    uploadedImagesRef.current.forEach((hugoUrl, base64) => {
+      // Need to escape special regex characters in base64
+      const escapedBase64 = base64.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      result = result.replace(new RegExp(escapedBase64, 'g'), hugoUrl)
+    })
+
+    // Then, convert GitHub raw URLs back to relative URLs
     // Pattern: https://raw.githubusercontent.com/{owner}/{repo}/main/static/images/...
-    let result = content.replace(
+    result = result.replace(
       /(<img[^>]+src=["'])https:\/\/raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[^/]+\/static(\/images\/[^"']+)(["'])/gi,
       '$1$2$3'
     )
 
-    // Then, convert docnotes.com URLs back to relative URLs
+    // Finally, convert docnotes.com URLs back to relative URLs
     result = result.replace(
       /(<img[^>]+src=["'])https:\/\/docnotes\.com\/([^"']+)(["'])/gi,
       '$1/$2$3'
@@ -302,6 +320,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
                 content={content}
                 onChange={setContent}
                 placeholder="Start writing your post..."
+                onImageUploaded={handleImageUploaded}
               />
             </div>
 

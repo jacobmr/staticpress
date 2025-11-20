@@ -11,14 +11,17 @@ interface EditorProps {
   content: string
   onChange: (content: string) => void
   placeholder?: string
+  onImageUploaded?: (base64: string, hugoUrl: string) => void
 }
 
-export function Editor({ content, onChange, placeholder = 'Start writing your post...' }: EditorProps) {
+export function Editor({ content, onChange, placeholder = 'Start writing your post...', onImageUploaded }: EditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+  // Track uploaded images: base64 src → hugo URL
+  const uploadedImagesRef = useRef<Map<string, string>>(new Map())
 
   // Handle pasting images from clipboard
   const handlePastedImage = useCallback(async (file: File) => {
@@ -49,7 +52,11 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
       reader.onload = async (e) => {
         const base64 = e.target?.result as string
 
-        // Upload to GitHub
+        // Insert base64 preview immediately (works for private repos)
+        currentEditor.chain().focus().setImage({ src: base64 }).run()
+        console.log('[PasteImage] Base64 preview inserted')
+
+        // Upload to GitHub in background
         const response = await fetch('/api/images/upload', {
           method: 'POST',
           headers: {
@@ -68,13 +75,16 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         }
 
         const data = await response.json()
-        const { url } = data
-        console.log('[PasteImage] Upload successful, URL:', url)
+        const { hugoUrl } = data
+        console.log('[PasteImage] Upload successful, Hugo URL:', hugoUrl)
 
-        // URL is now a GitHub raw URL (immediately available)
-        // Insert image into editor
-        currentEditor.chain().focus().setImage({ src: url }).run()
-        console.log('[PasteImage] Image inserted into editor')
+        // Store mapping for conversion when saving
+        uploadedImagesRef.current.set(base64, hugoUrl)
+
+        // Notify parent for conversion on save
+        if (onImageUploaded) {
+          onImageUploaded(base64, hugoUrl)
+        }
 
         setIsUploading(false)
       }
@@ -209,7 +219,10 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
       reader.onload = async (e) => {
         const base64 = e.target?.result as string
 
-        // Upload to GitHub
+        // Insert base64 preview immediately (works for private repos)
+        editor.chain().focus().setImage({ src: base64 }).run()
+
+        // Upload to GitHub in background
         const response = await fetch('/api/images/upload', {
           method: 'POST',
           headers: {
@@ -227,11 +240,14 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
           throw new Error(error.error || 'Failed to upload image')
         }
 
-        const { url } = await response.json()
+        const data = await response.json()
+        const { hugoUrl } = data
 
-        // URL is now a GitHub raw URL (immediately available)
-        // Insert image into editor
-        editor.chain().focus().setImage({ src: url }).run()
+        // Store mapping and notify parent
+        uploadedImagesRef.current.set(base64, hugoUrl)
+        if (onImageUploaded) {
+          onImageUploaded(base64, hugoUrl)
+        }
 
         setIsUploading(false)
       }
