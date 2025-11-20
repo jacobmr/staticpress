@@ -53,9 +53,9 @@ export async function POST(request: Request) {
     }
 
     // Initialize Hugo project structure with retries
-    // Wait 3 seconds initially to let GitHub fully set up the repo
-    console.log(`[Create] Waiting 3s for GitHub to initialize repo...`)
-    await new Promise(resolve => setTimeout(resolve, 3000))
+    // Wait 5 seconds initially to let GitHub fully set up the repo
+    console.log(`[Create] Waiting 5s for GitHub to initialize ${owner}/${repoName}...`)
+    await new Promise(resolve => setTimeout(resolve, 5000))
 
     let initialized = false
     let lastError: Error | null = null

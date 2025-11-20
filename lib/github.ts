@@ -135,6 +135,29 @@ export class GitHubClient {
     }
   }
 
+  async createRepositoryFromTemplate(
+    templateOwner: string,
+    templateRepo: string,
+    name: string,
+    description: string,
+    isPrivate: boolean = false
+  ) {
+    try {
+      const { data } = await this.octokit.rest.repos.createUsingTemplate({
+        template_owner: templateOwner,
+        template_repo: templateRepo,
+        name,
+        description,
+        private: isPrivate,
+        include_all_branches: false,
+      })
+      return data
+    } catch (error) {
+      console.error(`Error creating repository from template:`, error)
+      throw error
+    }
+  }
+
   // Helper to create file with retry for newly created repos
   private async createFileWithRetry(
     owner: string,
@@ -160,28 +183,7 @@ export class GitHubClient {
   }
 
   async initializeHugoProject(owner: string, repo: string, blogName: string) {
-    // Use Git Data API for more reliable file creation in new repos
-
-    // First, get the default branch and its latest commit
-    const { data: repoData } = await this.octokit.rest.repos.get({ owner, repo })
-    const defaultBranch = repoData.default_branch
-
-    const { data: refData } = await this.octokit.rest.git.getRef({
-      owner,
-      repo,
-      ref: `heads/${defaultBranch}`,
-    })
-    const latestCommitSha = refData.object.sha
-
-    // Get the tree from the latest commit
-    const { data: commitData } = await this.octokit.rest.git.getCommit({
-      owner,
-      repo,
-      commit_sha: latestCommitSha,
-    })
-    const baseTreeSha = commitData.tree.sha
-
-    // Define all files to create
+    // Use simple Contents API approach
     const files = [
       {
         path: 'hugo.toml',
@@ -322,48 +324,16 @@ You can also deploy to:
 `
     files.push({ path: 'README.md', content: readmeContent })
 
-    // Create blobs for all files
-    const treeItems = await Promise.all(
-      files.map(async (file) => {
-        const { data: blob } = await this.octokit.rest.git.createBlob({
-          owner,
-          repo,
-          content: Buffer.from(file.content).toString('base64'),
-          encoding: 'base64',
-        })
-        return {
-          path: file.path,
-          mode: '100644' as const,
-          type: 'blob' as const,
-          sha: blob.sha,
-        }
-      })
-    )
-
-    // Create a new tree with all files
-    const { data: newTree } = await this.octokit.rest.git.createTree({
-      owner,
-      repo,
-      base_tree: baseTreeSha,
-      tree: treeItems,
-    })
-
-    // Create a commit
-    const { data: newCommit } = await this.octokit.rest.git.createCommit({
-      owner,
-      repo,
-      message: 'Initialize Hugo project with StaticPress',
-      tree: newTree.sha,
-      parents: [latestCommitSha],
-    })
-
-    // Update the branch reference
-    await this.octokit.rest.git.updateRef({
-      owner,
-      repo,
-      ref: `heads/${defaultBranch}`,
-      sha: newCommit.sha,
-    })
+    // Create files one by one using Contents API
+    for (const file of files) {
+      await this.createOrUpdateFile(
+        owner,
+        repo,
+        file.path,
+        file.content,
+        `Initialize Hugo project: ${file.path}`
+      )
+    }
 
     return true
   }
