@@ -20,8 +20,8 @@ export default async function Dashboard() {
       hasAccessToken: !!session?.accessToken
     })
 
-    if (!session?.user || !session.accessToken) {
-      console.log('[Dashboard] No session, redirecting to /')
+    if (!session?.user || !session.accessToken || !session.user.id) {
+      console.log('[Dashboard] No session or invalid session (missing user.id), redirecting to /')
       redirect('/')
     }
 

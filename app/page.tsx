@@ -6,7 +6,9 @@ export const dynamic = 'force-dynamic'
 export default async function Home() {
   const session = await auth()
 
-  if (session?.user) {
+  // Only redirect to dashboard if we have a valid session with user.id
+  // Old sessions (before auth fix) will have empty user.id
+  if (session?.user && session.user.id) {
     redirect('/dashboard')
   }
 
