@@ -252,6 +252,32 @@ export class GitHubClient {
       })
       const baseTreeSha = commitData.tree.sha
 
+      // Get the current tree to find existing themes to remove
+      const { data: currentTree } = await this.octokit.rest.git.getTree({
+        owner,
+        repo,
+        tree_sha: baseTreeSha,
+      })
+
+      // Find the themes directory
+      const themesEntry = currentTree.tree.find(item => item.path === 'themes')
+      const existingThemes: string[] = []
+
+      if (themesEntry && themesEntry.sha) {
+        // Get contents of themes directory
+        const { data: themesTree } = await this.octokit.rest.git.getTree({
+          owner,
+          repo,
+          tree_sha: themesEntry.sha,
+        })
+        // Collect existing theme names
+        themesTree.tree.forEach(item => {
+          if (item.path && item.path !== themeId) {
+            existingThemes.push(item.path)
+          }
+        })
+      }
+
       // Get the latest commit SHA from the theme repo
       // Extract owner/repo from URL like https://github.com/owner/repo.git
       const themeMatch = themeRepoUrl.match(/github\.com\/([^/]+)\/([^/.]+)/)
@@ -282,27 +308,47 @@ export class GitHubClient {
 	url = ${themeRepoUrl}
 `
 
-      // Create a new tree with:
+      // Build tree entries:
       // 1. Updated .gitmodules file
-      // 2. Submodule entry for themes/themeId
+      // 2. New theme submodule entry
+      // 3. Delete old themes by setting sha to null
+      const treeEntries: Array<{
+        path: string
+        mode: '100644' | '100755' | '040000' | '160000' | '120000'
+        type: 'blob' | 'tree' | 'commit'
+        sha?: string | null
+        content?: string
+      }> = [
+        {
+          path: '.gitmodules',
+          mode: '100644',
+          type: 'blob',
+          content: gitmodulesContent,
+        },
+        {
+          path: `themes/${themeId}`,
+          mode: '160000', // Git submodule mode
+          type: 'commit',
+          sha: themeCommitSha,
+        },
+      ]
+
+      // Add deletions for old themes
+      for (const oldTheme of existingThemes) {
+        treeEntries.push({
+          path: `themes/${oldTheme}`,
+          mode: '160000',
+          type: 'commit',
+          sha: null, // Setting sha to null deletes the entry
+        })
+      }
+
+      // Create a new tree
       const { data: newTree } = await this.octokit.rest.git.createTree({
         owner,
         repo,
         base_tree: baseTreeSha,
-        tree: [
-          {
-            path: '.gitmodules',
-            mode: '100644',
-            type: 'blob',
-            content: gitmodulesContent,
-          },
-          {
-            path: `themes/${themeId}`,
-            mode: '160000', // Git submodule mode
-            type: 'commit',
-            sha: themeCommitSha,
-          },
-        ],
+        tree: treeEntries,
       })
 
       // Create a new commit
