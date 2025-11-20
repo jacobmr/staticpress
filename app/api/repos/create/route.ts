@@ -40,6 +40,9 @@ export async function POST(request: Request) {
       isPrivate ?? false
     )
 
+    // Wait for GitHub to fully initialize the repository
+    await new Promise(resolve => setTimeout(resolve, 2000))
+
     // Initialize Hugo project structure
     await github.initializeHugoProject(owner, repoName, blogName)
 
