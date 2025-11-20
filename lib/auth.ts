@@ -40,32 +40,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return true // Still allow sign in even if database fails
       }
     },
-    async jwt({ token, account, user, trigger }) {
+    async jwt({ token, account }) {
       // On sign in, set the access token and GitHub ID
       if (account) {
-        console.log('[Auth JWT] Account data:', {
-          provider: account.provider,
-          providerAccountId: account.providerAccountId,
-          hasAccessToken: !!account.access_token
-        })
         token.accessToken = account.access_token
         token.githubId = account.providerAccountId // Store GitHub numeric ID
       }
-
-      console.log('[Auth JWT] Token:', {
-        hasAccessToken: !!token.accessToken,
-        githubId: token.githubId,
-        sub: token.sub
-      })
-
       return token
     },
     async session({ session, token }) {
-      console.log('[Auth Session] Token data:', {
-        hasAccessToken: !!token.accessToken,
-        githubId: token.githubId
-      })
-
       if (!token) {
         return session
       }
@@ -79,15 +62,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (githubId) {
         session.user.id = githubId
       } else {
-        console.log('[Auth Session] Old session detected - missing githubId')
         session.user.id = ''  // Empty string will fail dashboard check
       }
-
-      console.log('[Auth Session] Final session:', {
-        hasUser: !!session.user,
-        userId: session.user.id,
-        hasAccessToken: !!session.accessToken
-      })
 
       return session
     },

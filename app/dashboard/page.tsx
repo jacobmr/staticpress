@@ -11,17 +11,9 @@ export const dynamic = 'force-dynamic'
 
 export default async function Dashboard() {
   try {
-    console.log('[Dashboard] Starting dashboard load')
-
     const session = await auth()
-    console.log('[Dashboard] Session:', {
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      hasAccessToken: !!session?.accessToken
-    })
 
     if (!session?.user || !session.accessToken || !session.user.id) {
-      console.log('[Dashboard] No session or invalid session (missing user.id), redirecting to /')
       redirect('/')
     }
 
@@ -29,28 +21,16 @@ export default async function Dashboard() {
     const { getUserByGithubId } = await import('@/lib/db')
 
     // Get user from database to check tier
-    console.log('[Dashboard] Looking up user for GitHub ID:', session.user.id)
-    let user
-    try {
-      user = await getUserByGithubId(session.user.id)
-      console.log('[Dashboard] User found:', { id: user?.id, tier: user?.subscription_tier })
-    } catch (error) {
-      console.error('[Dashboard] Database error:', error)
-      throw new Error('Failed to connect to database. Please check environment variables.')
-    }
+    const user = await getUserByGithubId(session.user.id)
 
     if (!user) {
-      console.error('[Dashboard] User not found for GitHub ID:', session.user.id)
       throw new Error(`User not found in database for GitHub ID: ${session.user.id}`)
     }
 
     // Check if repository is configured
-    console.log('[Dashboard] Getting repo config')
     const repoConfig = await getRepoConfig()
-    console.log('[Dashboard] Repo config:', repoConfig)
 
     if (!repoConfig) {
-      console.log('[Dashboard] No repo config, redirecting to /setup')
       redirect('/setup')
     }
 
@@ -64,7 +44,6 @@ export default async function Dashboard() {
 
     if (!posts) {
       // Fetch posts from GitHub (cached on server for 24 hours)
-      console.log('[Dashboard] Fetching posts from GitHub')
       const github = new GitHubClient(session.accessToken)
       posts = await github.getHugoPosts(
         repoConfig.owner,
@@ -73,9 +52,6 @@ export default async function Dashboard() {
         postLimit
       )
       setCached(cacheKey, posts)
-      console.log(`[Dashboard] Fetched ${posts.length} posts from GitHub, cached for 24 hours`)
-    } else {
-      console.log(`[Dashboard] Loaded ${posts.length} posts from server cache`)
     }
 
     return (
