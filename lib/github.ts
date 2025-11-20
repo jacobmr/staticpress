@@ -158,6 +158,63 @@ export class GitHubClient {
     }
   }
 
+  async enableGitHubPages(owner: string, repo: string) {
+    try {
+      // Enable GitHub Pages with GitHub Actions as the build source
+      const { data } = await this.octokit.rest.repos.createPagesSite({
+        owner,
+        repo,
+        build_type: 'workflow',
+      })
+      return data
+    } catch (error) {
+      // If Pages is already enabled, try to update it
+      if (error instanceof Error && error.message.includes('already exists')) {
+        const { data } = await this.octokit.rest.repos.updateInformationAboutPagesSite({
+          owner,
+          repo,
+          build_type: 'workflow',
+        })
+        return data
+      }
+      console.error(`Error enabling GitHub Pages:`, error)
+      throw error
+    }
+  }
+
+  async setCustomDomain(owner: string, repo: string, domain: string) {
+    try {
+      await this.octokit.rest.repos.updateInformationAboutPagesSite({
+        owner,
+        repo,
+        cname: domain,
+        https_enforced: true,
+      })
+      return { success: true, domain }
+    } catch (error) {
+      console.error(`Error setting custom domain:`, error)
+      throw error
+    }
+  }
+
+  async getGitHubPagesStatus(owner: string, repo: string) {
+    try {
+      const { data } = await this.octokit.rest.repos.getPages({
+        owner,
+        repo,
+      })
+      return {
+        url: data.html_url,
+        status: data.status,
+        cname: data.cname,
+        https_enforced: data.https_enforced,
+      }
+    } catch (error) {
+      // Pages not enabled yet
+      return null
+    }
+  }
+
   // Helper to create file with retry for newly created repos
   private async createFileWithRetry(
     owner: string,
