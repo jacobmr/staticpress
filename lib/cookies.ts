@@ -4,6 +4,7 @@ export interface RepoConfig {
   owner: string
   repo: string
   contentPath?: string // e.g., "content/posts"
+  siteUrl?: string | null // Published site URL
 }
 
 /**
@@ -35,6 +36,7 @@ export async function getRepoConfig(): Promise<RepoConfig | null> {
     owner: repository.owner,
     repo: repository.repo,
     contentPath: repository.content_path,
+    siteUrl: repository.site_url,
   }
 }
 

@@ -45,6 +45,7 @@ export interface Repository {
   repo: string
   content_path: string
   theme: string | null
+  site_url: string | null
   created_at: string
   updated_at: string
 }
@@ -375,4 +376,28 @@ export async function getUserTier(userId: number): Promise<User['subscription_ti
 
   if (error || !data) return null
   return data.subscription_tier
+}
+
+/**
+ * Update repository site URL after deployment
+ */
+export async function updateRepositorySiteUrl(
+  userId: number,
+  owner: string,
+  repo: string,
+  siteUrl: string
+): Promise<void> {
+  const supabase = await getSupabase()
+
+  const { error } = await supabase
+    .from('repositories')
+    .update({
+      site_url: siteUrl,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('user_id', userId)
+    .eq('owner', owner)
+    .eq('repo', repo)
+
+  if (error) throw error
 }

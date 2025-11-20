@@ -70,9 +70,20 @@ export default async function Dashboard() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-4">
             <h1 className="text-2xl font-bold">StaticPress</h1>
-            <span className="text-sm text-gray-500">
-              {repoConfig.owner}/{repoConfig.repo}
-            </span>
+            {repoConfig.siteUrl ? (
+              <a
+                href={repoConfig.siteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:text-blue-800 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+              >
+                {repoConfig.owner}/{repoConfig.repo}
+              </a>
+            ) : (
+              <span className="text-sm text-gray-500">
+                {repoConfig.owner}/{repoConfig.repo}
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-4">
             {/* Tier Badge */}

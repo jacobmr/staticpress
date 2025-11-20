@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
+import { getUserByGithubId, updateRepositorySiteUrl } from '@/lib/db'
 
 export async function POST(request: Request) {
   try {
@@ -43,6 +44,12 @@ export async function POST(request: Request) {
       siteUrl = `https://${customDomain.trim()}`
     } else {
       siteUrl = `https://${owner}.github.io/${repo}`
+    }
+
+    // Save site URL to database
+    const user = await getUserByGithubId(session.user.id as string)
+    if (user) {
+      await updateRepositorySiteUrl(user.id, owner, repo, siteUrl)
     }
 
     return NextResponse.json({
