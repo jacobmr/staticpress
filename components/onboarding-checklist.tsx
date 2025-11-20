@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { HugoPost } from '@/lib/github'
 
 interface OnboardingChecklistProps {
@@ -18,6 +19,7 @@ interface ChecklistItem {
   action?: () => void
   actionLabel?: string
   externalUrl?: string
+  internalUrl?: string
 }
 
 export function OnboardingChecklist({ posts, repoOwner, repoName, onCreatePost }: OnboardingChecklistProps) {
@@ -63,8 +65,8 @@ export function OnboardingChecklist({ posts, repoOwner, repoName, onCreatePost }
       title: 'Set up deployment',
       description: 'Deploy your blog to GitHub Pages, Cloudflare, or Vercel',
       completed: false, // We can't easily detect this
-      externalUrl: `https://github.com/${repoOwner}/${repoName}/settings/pages`,
-      actionLabel: 'Setup Pages',
+      internalUrl: '/deploy',
+      actionLabel: 'Deploy Guide',
     },
     {
       id: 'customize',
@@ -168,7 +170,7 @@ export function OnboardingChecklist({ posts, repoOwner, repoName, onCreatePost }
                 </div>
 
                 {/* Action button */}
-                {!item.completed && (item.action || item.externalUrl) && (
+                {!item.completed && (item.action || item.externalUrl || item.internalUrl) && (
                   item.externalUrl ? (
                     <a
                       href={item.externalUrl}
@@ -178,6 +180,13 @@ export function OnboardingChecklist({ posts, repoOwner, repoName, onCreatePost }
                     >
                       {item.actionLabel}
                     </a>
+                  ) : item.internalUrl ? (
+                    <Link
+                      href={item.internalUrl}
+                      className="flex-shrink-0 rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700"
+                    >
+                      {item.actionLabel}
+                    </Link>
                   ) : (
                     <button
                       onClick={item.action}
