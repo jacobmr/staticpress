@@ -63,6 +63,47 @@ export async function POST(request: Request) {
       throw new Error(`Failed to create repo: ${errorMessage}`)
     }
 
+    // Customize hugo.toml with actual blog name
+    try {
+      // Wait for template files to be copied (usually quick but can take a moment)
+      let hugoConfig = null
+      for (let i = 0; i < 10; i++) {
+        try {
+          const contents = await github.getRepoContents(owner, repoName, 'hugo.toml')
+          if (contents.length > 0 && !Array.isArray(contents[0]) && 'sha' in contents[0]) {
+            hugoConfig = contents[0]
+            break
+          }
+        } catch {
+          await new Promise(resolve => setTimeout(resolve, 1000))
+        }
+      }
+
+      if (hugoConfig && 'sha' in hugoConfig) {
+        const customizedConfig = `baseURL = "https://example.org/"
+languageCode = "en-us"
+title = "${blogName}"
+theme = "ananke"
+
+[params]
+  author = "StaticPress User"
+  description = "${description || 'A blog created with StaticPress'}"
+`
+        await github.createOrUpdateFile(
+          owner,
+          repoName,
+          'hugo.toml',
+          customizedConfig,
+          `Customize blog title: ${blogName}`,
+          hugoConfig.sha as string
+        )
+        console.log(`[Create] Customized hugo.toml with blog name: ${blogName}`)
+      }
+    } catch (error) {
+      // Non-fatal - blog will work with default title
+      console.log(`[Create] Could not customize hugo.toml: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+
     // Get or create user in database and save repo config
     const { getUserByGithubId, upsertUserRepository, logEvent } = await import('@/lib/db')
 
