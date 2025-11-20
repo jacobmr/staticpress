@@ -160,7 +160,28 @@ export class GitHubClient {
   }
 
   async initializeHugoProject(owner: string, repo: string, blogName: string) {
-    // Create basic Hugo structure with initial files
+    // Use Git Data API for more reliable file creation in new repos
+
+    // First, get the default branch and its latest commit
+    const { data: repoData } = await this.octokit.rest.repos.get({ owner, repo })
+    const defaultBranch = repoData.default_branch
+
+    const { data: refData } = await this.octokit.rest.git.getRef({
+      owner,
+      repo,
+      ref: `heads/${defaultBranch}`,
+    })
+    const latestCommitSha = refData.object.sha
+
+    // Get the tree from the latest commit
+    const { data: commitData } = await this.octokit.rest.git.getCommit({
+      owner,
+      repo,
+      commit_sha: latestCommitSha,
+    })
+    const baseTreeSha = commitData.tree.sha
+
+    // Define all files to create
     const files = [
       {
         path: 'hugo.toml',
@@ -273,31 +294,7 @@ jobs:
       },
     ]
 
-    // Create files one by one (GitHub API doesn't support batch creation)
-    // Use retry for first file since repo may not be ready yet
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i]
-      if (i === 0) {
-        // First file uses retry logic
-        await this.createFileWithRetry(
-          owner,
-          repo,
-          file.path,
-          file.content,
-          `Initialize Hugo project: ${file.path}`
-        )
-      } else {
-        await this.createOrUpdateFile(
-          owner,
-          repo,
-          file.path,
-          file.content,
-          `Initialize Hugo project: ${file.path}`
-        )
-      }
-    }
-
-    // Update README with proper content (replacing auto-generated one)
+    // Add README to files
     const readmeContent = `# ${blogName}
 
 A blog built with [Hugo](https://gohugo.io) and managed by [StaticPress](https://staticpress.me).
@@ -323,35 +320,50 @@ You can also deploy to:
 - [Vercel](https://vercel.com)
 - [Netlify](https://netlify.com)
 `
+    files.push({ path: 'README.md', content: readmeContent })
 
-    // Get the SHA of existing README to update it
-    try {
-      const { data } = await this.octokit.rest.repos.getContent({
-        owner,
-        repo,
-        path: 'README.md',
-      })
-
-      if (!Array.isArray(data) && data.sha) {
-        await this.createOrUpdateFile(
+    // Create blobs for all files
+    const treeItems = await Promise.all(
+      files.map(async (file) => {
+        const { data: blob } = await this.octokit.rest.git.createBlob({
           owner,
           repo,
-          'README.md',
-          readmeContent,
-          'Update README with setup instructions',
-          data.sha
-        )
-      }
-    } catch {
-      // README doesn't exist, create it
-      await this.createOrUpdateFile(
-        owner,
-        repo,
-        'README.md',
-        readmeContent,
-        'Add README with setup instructions'
-      )
-    }
+          content: Buffer.from(file.content).toString('base64'),
+          encoding: 'base64',
+        })
+        return {
+          path: file.path,
+          mode: '100644' as const,
+          type: 'blob' as const,
+          sha: blob.sha,
+        }
+      })
+    )
+
+    // Create a new tree with all files
+    const { data: newTree } = await this.octokit.rest.git.createTree({
+      owner,
+      repo,
+      base_tree: baseTreeSha,
+      tree: treeItems,
+    })
+
+    // Create a commit
+    const { data: newCommit } = await this.octokit.rest.git.createCommit({
+      owner,
+      repo,
+      message: 'Initialize Hugo project with StaticPress',
+      tree: newTree.sha,
+      parents: [latestCommitSha],
+    })
+
+    // Update the branch reference
+    await this.octokit.rest.git.updateRef({
+      owner,
+      repo,
+      ref: `heads/${defaultBranch}`,
+      sha: newCommit.sha,
+    })
 
     return true
   }
