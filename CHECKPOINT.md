@@ -1,7 +1,7 @@
 # StaticPress Development Checkpoint
 
-**Date:** November 19, 2025
-**Session:** Context continuation - performance & image handling fixes
+**Date:** November 20, 2025
+**Session:** Create New Blog flow - Phase 1 implementation (RESOLVED)
 
 ---
 
@@ -11,199 +11,120 @@ StaticPress is a WYSIWYG editor for Hugo static site blogs with GitHub integrati
 
 **Live URL:** www.staticpress.me
 **Repo:** github.com/jacobmr/staticpress
+**Current Version:** v0.4.0
 
 ---
 
-## What We Built This Session
+## This Session: BLOCKING ISSUE RESOLVED
 
-### 1. Progressive Loading for Posts
-- Dashboard now loads only **first 5 posts** for fast initial render
-- Remaining posts load in background via API
-- API supports `limit` and `offset` pagination
-- **Files:** `app/api/posts/route.ts`, `app/dashboard/page.tsx`, `components/dashboard-client.tsx`
+### The Problem (Previous Session)
 
-### 2. Image Upload & Display Fixes
-- **Problem:** Private repos can't use GitHub raw URLs; images showed placeholders
-- **Solution:** Use base64 data URLs for immediate preview
-- Upload to GitHub in background
-- Store mapping of base64 → hugo URL
-- Convert base64 to relative Hugo path when saving
-- **Files:** `components/editor.tsx`, `components/dashboard-client.tsx`, `app/api/images/upload/route.ts`
+After creating a repository via the GitHub API, all attempts to create files in it failed with "Not Found" error from the Contents API. Multiple approaches were tried (delays, retries, Git Data API) but none worked.
 
-### 3. Image Paste from Clipboard
-- Added `handlePaste` to TipTap editor
-- Detects image files in clipboard
-- Uploads and inserts into editor
-- **File:** `components/editor.tsx`
+### The Solution: Template Repository
 
-### 4. Auth Button Loading States
-- All sign-in/sign-out buttons show loading feedback
-- Created reusable `AuthButton` component
-- Variants: primary, secondary, outline
-- **Files:** `components/auth-buttons.tsx`, `lib/auth-actions.ts`
+Switched from creating files programmatically to using GitHub's **Template Repository** feature:
 
-### 5. Sign Out Redirect Fix
-- Server action redirects don't work in client form handlers
-- Added client-side navigation after sign out
-- **File:** `components/auth-buttons.tsx`
+1. **Created template repository:** `jacobmr/staticpress-hugo-template`
+   - Contains Hugo project structure
+   - Marked as template repository on GitHub
 
-### 6. Server Cache Invalidation
-- Created `/api/cache/clear` endpoint
-- Dashboard calls this on publish/delete
-- **File:** `app/api/cache/clear/route.ts`
+2. **Updated API to use `createRepositoryFromTemplate`:**
+   - GitHub handles all file copying internally
+   - No timing or permissions issues
+   - Much more reliable
+
+### Files Modified
+
+- `app/api/repos/create/route.ts` - Now uses `createRepositoryFromTemplate()` instead of manual file creation
+- `app/page.tsx` - Version updated to v0.4.0
+- `app/setup/setup-client.tsx` - Version updated to v0.4.0
+
+### Template Repository Contents
+
+`jacobmr/staticpress-hugo-template`:
+- `hugo.toml` - Hugo config
+- `content/posts/welcome.md` - Welcome post
+- `content/posts/.gitkeep` - Keep directory
+- `static/images/.gitkeep` - Keep directory
+- `.github/workflows/hugo.yml` - GitHub Pages deployment
+- `README.md` - Setup instructions
 
 ---
 
-## Current Architecture
+## Current Status
 
-### Authentication Flow
-- NextAuth v5 with GitHub OAuth
-- JWT sessions stored in cookies (30-day expiry)
-- GitHub numeric ID stored in session for database lookups
-- Server actions for sign in/out
+### Completed
+- [x] Setup page with dual options (Connect/Create)
+- [x] Repository creation via template
+- [x] API endpoints for create/connect
+- [x] Version display in footer and header
 
-### Image Handling
-- **Existing posts:** Relative URLs transformed to absolute (docnotes.com) for display
-- **Uploaded images:** Base64 preview → upload to GitHub → convert to relative on save
-- Transform functions in `dashboard-client.tsx`:
-  - `transformImageUrls()` - relative → absolute
-  - `reverseTransformImageUrls()` - base64/absolute → relative
+### Awaiting Test
+- [ ] Test Create New Blog flow in production
 
-### Caching
-- **Server:** NodeCache with 24-hour TTL
-- **Client:** localStorage for posts
-- Cache key format: `posts:{owner}:{repo}:{tier}`
-
-### Database (Supabase)
-- `users` - GitHub user info, subscription tier
-- `repositories` - Connected repo config
-- `usage_tracking` - Post edit counts
-- `analytics_events` - Event tracking
+### Next Phases
+- [ ] Phase 2: Onboarding wizard with progress checklist
+- [ ] Phase 3: Help documentation pages
+- [ ] Phase 4: Deployment setup guide (Cloudflare/Vercel)
 
 ---
 
-## In Progress: Onboarding System
+## Previous Session Work (Still Working)
 
-### Phase 1: Create New Blog Flow (NEXT UP)
-- Add "Create New Blog" option to setup page
-- Create Hugo repo from template via GitHub API
-- Auto-configure in StaticPress
-- **Endpoint needed:** `POST /api/repos/create`
-
-### Phase 2: Onboarding Wizard
-- Progress checklist in dashboard
-- Steps: Account → Blog → First Post → Deploy
-- Tooltips for first-time users
-
-### Phase 3: Help Documentation
-- `/help` pages
-- Getting started guide
-- Deployment instructions
-
-### Phase 4: Deployment Guide
-- Interactive wizard for Cloudflare/Vercel/Netlify
-- Step-by-step with verification
+- Progressive loading for posts
+- Image paste from clipboard
+- Base64 preview for uploaded images
+- Auth button loading states
+- Sign out redirect fix
+- Server cache invalidation
 
 ---
 
 ## TBD List
 
-### High Priority
-- [ ] **Create New Blog flow** - Allow users to create Hugo repo from template
-- [ ] **Onboarding checklist** - Guide new users through setup
-- [ ] **Deployment setup wizard** - Help connect to Cloudflare/Vercel
-- [ ] **Make image base URL configurable** - Currently hardcoded to docnotes.com
-
 ### Medium Priority
-- [ ] **Help documentation** - `/help` pages with guides
-- [ ] **First post prompt** - Encourage empty dashboard users to create post
-- [ ] **Theme gallery** - Browse and apply Hugo themes (SMB+ tier)
-- [ ] **Custom domain setup** - Guide for pointing domain to deployed site
-- [ ] **Draft preview** - Preview posts before publishing
-
-### Low Priority / Future
-- [ ] **Remove debug console.logs** - Clean up [Paste], [PasteImage] logs
-- [ ] **Image optimization** - Resize/compress before upload
-- [ ] **Scheduled publishing** - Set future publish date
-- [ ] **Post analytics** - View counts, engagement
-- [ ] **Team collaboration** - Multiple editors per repo (Pro tier)
-- [ ] **Markdown import/export** - Bulk content management
-- [ ] **SEO tools** - Meta tags, sitemap generation
+- [ ] Make image base URL configurable (hardcoded to docnotes.com)
+- [ ] Remove debug console.logs ([Paste], [PasteImage])
+- [ ] First post prompt for empty dashboards
 
 ### Technical Debt
-- [ ] **TypeScript strict mode** - Fix any remaining type issues
-- [ ] **Test coverage** - Add unit/integration tests
-- [ ] **Error boundaries** - Better error handling in React components
-- [ ] **Rate limiting** - Protect API endpoints
-- [ ] **Logging service** - Structured logging for debugging
+- [ ] TypeScript strict mode
+- [ ] Test coverage
+- [ ] Error boundaries
+- [ ] Rate limiting
+- [ ] Logging service
 
 ---
 
-## Environment Setup
+## Environment
 
-Required env vars for local development:
-```
-AUTH_SECRET=
-NEXTAUTH_URL=http://localhost:3000
-AUTH_GITHUB_ID=
-AUTH_GITHUB_SECRET=
-NEXT_PUBLIC_SUPABASE_URL=
-SUPABASE_SERVICE_ROLE_KEY=
-STRIPE_SECRET_KEY=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_PERSONAL_MONTHLY_PRICE_ID=
-STRIPE_PERSONAL_YEARLY_PRICE_ID=
-(etc for SMB/Pro tiers)
-```
-
----
-
-## Key Files Reference
-
-### Core Components
-- `components/editor.tsx` - TipTap WYSIWYG editor with image handling
-- `components/dashboard-client.tsx` - Main editing UI, URL transforms
-- `components/file-browser.tsx` - Post list sidebar
-- `components/auth-buttons.tsx` - Sign in/out with loading states
-
-### API Routes
-- `app/api/posts/route.ts` - List posts with pagination
-- `app/api/posts/publish/route.ts` - Create/update posts
-- `app/api/images/upload/route.ts` - Upload images to GitHub
-- `app/api/cache/clear/route.ts` - Clear server cache
-
-### Auth
-- `lib/auth.ts` - NextAuth config with lazy DB imports
-- `lib/auth-actions.ts` - Server actions for sign in/out
-- `lib/cookies.ts` - Repository config from session
-
-### Database
-- `lib/db.ts` - Supabase client with lazy initialization
-- `lib/cache.ts` - NodeCache for server-side caching
-- `lib/client-cache.ts` - localStorage for client-side caching
+Required env vars in `.env.local`:
+- AUTH_SECRET, NEXTAUTH_URL
+- AUTH_GITHUB_ID, AUTH_GITHUB_SECRET
+- NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
+- STRIPE_SECRET_KEY, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+- STRIPE_WEBHOOK_SECRET
+- Stripe price IDs for all tiers
 
 ---
 
 ## Recent Commits
 
 ```
-8f87f84 fix: add client-side redirect after sign out
-5d32084 fix: use base64 preview for uploaded images
-56d11f7 debug: add console logs for paste image handler
-cb9dece fix: use GitHub raw URLs for uploaded images
-8adc584 feat: implement progressive loading for posts
-11ea62b feat: add loading states to all auth buttons
-33a7453 feat: add clipboard image paste support to editor
+3ecdfb5 feat: switch to template repository approach for Create New Blog (v0.4.0)
+8dc18fc fix: verify repo accessible before creating files (v0.3.2)
+8ef0097 feat: add version to setup page header
+e8525d9 fix: handle SHA error by getting SHA and retrying (v0.3.1)
+c756c33 fix: remove per-file SHA check, increase delay to 10s (v0.3.0)
 ```
 
 ---
 
 ## Next Steps
 
-1. Start Phase 1 of onboarding: Create New Blog flow
-2. Need a Hugo template repository (or use existing public template)
-3. Implement `/api/repos/create` endpoint
-4. Update setup page with dual options
+1. **Test the Create New Blog flow** - Verify the template approach works in production
+2. **Start Phase 2** - Onboarding wizard with progress checklist
+3. **Continue with Phase 3-4** as planned
 
-**Ready to continue from this checkpoint.**
+**Ready to test the fix!**
