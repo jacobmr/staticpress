@@ -1,34 +1,28 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTheme } from 'next-themes'
 
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<'light' | 'dark'>('dark')
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
 
+  // useEffect only runs on the client, so now we can safely show the UI
   useEffect(() => {
-    // Check localStorage or system preference on mount
-    const stored = localStorage.getItem('theme') as 'light' | 'dark' | null
-    if (stored) {
-      setTheme(stored)
-      document.documentElement.classList.toggle('dark', stored === 'dark')
-    } else {
-      // Default to system preference
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      setTheme(isDark ? 'dark' : 'light')
-      document.documentElement.classList.toggle('dark', isDark)
-    }
+    setMounted(true)
   }, [])
 
-  const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light'
-    setTheme(newTheme)
-    localStorage.setItem('theme', newTheme)
-    document.documentElement.classList.toggle('dark', newTheme === 'dark')
+  if (!mounted) {
+    return (
+      <div className="h-9 w-9 rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-800">
+        <div className="h-5 w-5" />
+      </div>
+    )
   }
 
   return (
     <button
-      onClick={toggleTheme}
+      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className="rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
       aria-label="Toggle theme"
       title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}

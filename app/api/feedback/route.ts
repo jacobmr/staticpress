@@ -33,9 +33,10 @@ export async function POST(req: NextRequest) {
 
         if (error) {
             console.error('Feedback insert error:', error)
-            return NextResponse.json({ error: 'Failed to save feedback' }, { status: 500 })
+            return NextResponse.json({ error: 'Failed to save feedback: ' + error.message }, { status: 500 })
         }
 
+        console.log('Feedback saved successfully for user:', user.id)
         return NextResponse.json({ success: true })
 
     } catch (error) {

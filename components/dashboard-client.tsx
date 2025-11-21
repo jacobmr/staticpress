@@ -354,7 +354,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
                   disabled={isSaving}
                   className="rounded-lg bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md disabled:opacity-50"
                 >
-                  {isSaving ? 'Publishing...' : 'Publish'}
+                  {isSaving ? 'Publishing...' : 'Review & Publish'}
                 </button>
                 {engine === 'hugo' && (
                   <button
