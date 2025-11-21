@@ -97,7 +97,10 @@ export function UpgradeModal({ isOpen, onClose, reason = 'post_limit' }: Upgrade
         {/* Pricing Cards */}
         <div className="grid gap-6 md:grid-cols-3">
           {/* Personal Tier */}
-          <div className="rounded-lg border-2 border-blue-500 bg-blue-50 p-6 dark:bg-blue-950">
+          <div className="relative rounded-lg border-2 border-blue-500 bg-blue-50 p-6 shadow-lg dark:bg-blue-950">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-blue-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+              MOST POPULAR
+            </div>
             <div className="mb-4">
               <h3 className="text-xl font-bold">Personal</h3>
               <div className="mt-2">
@@ -136,16 +139,16 @@ export function UpgradeModal({ isOpen, onClose, reason = 'post_limit' }: Upgrade
               <button
                 onClick={() => handleUpgrade('personal', 'monthly')}
                 disabled={isLoading}
-                className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                className="w-full rounded-md bg-blue-600 px-4 py-2 font-medium text-white shadow-md transition-transform hover:scale-105 hover:bg-blue-700 disabled:opacity-50"
               >
                 {isLoading ? 'Loading...' : 'Monthly ($2.50)'}
               </button>
               <button
                 onClick={() => handleUpgrade('personal', 'yearly')}
                 disabled={isLoading}
-                className="w-full rounded-md border border-blue-600 px-4 py-2 font-medium text-blue-600 hover:bg-blue-50 disabled:opacity-50 dark:hover:bg-blue-950"
+                className="w-full rounded-md border-2 border-blue-600 bg-white px-4 py-2 font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-50 disabled:opacity-50 dark:bg-transparent dark:hover:bg-blue-950"
               >
-                {isLoading ? 'Loading...' : 'Yearly ($20)'}
+                {isLoading ? 'Loading...' : 'Yearly ($20) - Best Value'}
               </button>
             </div>
           </div>

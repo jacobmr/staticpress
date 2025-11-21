@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { marked } from 'marked'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
+import { EmptyState } from './empty-state'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
 import { setCachedPosts, clearCachedPosts } from '@/lib/client-cache'
@@ -31,7 +32,9 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
   const [content, setContent] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
+
+
+  const [showEmptyState, setShowEmptyState] = useState(initialPosts.length === 0)
 
   // Track uploaded images: base64 → hugo URL
   const uploadedImagesRef = useRef<Map<string, string>>(new Map())
@@ -47,7 +50,6 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     if (!hasMorePosts) return
 
     const fetchRemainingPosts = async () => {
-      setIsLoadingMore(true)
       try {
         const response = await fetch(`/api/posts?offset=${initialPosts.length}`)
         if (response.ok) {
@@ -61,8 +63,6 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
         }
       } catch (error) {
         console.error('Error fetching remaining posts:', error)
-      } finally {
-        setIsLoadingMore(false)
       }
     }
 
@@ -117,14 +117,18 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     // Convert markdown to HTML for TipTap editor
     const htmlContent = marked.parse(post.content) as string
     setContent(transformImageUrls(htmlContent))
+
     setSaveMessage('')
+    setShowEmptyState(false)
   }
 
   const handleNewPost = () => {
     setSelectedPost(null)
     setTitle('')
     setContent('')
+
     setSaveMessage('')
+    setShowEmptyState(false)
   }
 
   const handlePublish = async () => {
@@ -267,7 +271,13 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       clearCachedPosts(repoKey)
 
       // Remove post from list
-      setPosts((prev) => prev.filter((p) => p.path !== post.path))
+      setPosts((prev) => {
+        const newPosts = prev.filter((p) => p.path !== post.path)
+        if (newPosts.length === 0) {
+          setShowEmptyState(true)
+        }
+        return newPosts
+      })
 
       // Clear editor if deleted post was selected
       if (selectedPost?.path === post.path) {
@@ -300,59 +310,63 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
       {/* Editor Area */}
       <main className="flex-1 overflow-y-auto p-8">
-        <div className="mx-auto max-w-4xl">
-          <div className="space-y-6">
-            {/* Title Field */}
-            <div>
-              <input
-                type="text"
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full border-none bg-transparent px-0 text-4xl font-bold placeholder-gray-400 focus:ring-0 dark:text-white"
-                placeholder="Post Title"
-              />
-            </div>
+        {showEmptyState ? (
+          <EmptyState onCreatePost={handleNewPost} />
+        ) : (
+          <div className="mx-auto max-w-4xl">
+            <div className="space-y-6">
+              {/* Title Field */}
+              <div>
+                <input
+                  type="text"
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  className="w-full border-none bg-transparent px-0 text-4xl font-bold placeholder-gray-400 focus:ring-0 dark:text-white"
+                  placeholder="Post Title"
+                />
+              </div>
 
-            {/* Content Editor */}
-            <div>
-              <label htmlFor="content" className="mb-2 block text-sm font-medium">
-                Content
-              </label>
-              <Editor
-                content={content}
-                onChange={setContent}
-                placeholder="Start writing your post..."
-                onImageUploaded={handleImageUploaded}
-              />
-            </div>
+              {/* Content Editor */}
+              <div>
+                <label htmlFor="content" className="mb-2 block text-sm font-medium">
+                  Content
+                </label>
+                <Editor
+                  content={content}
+                  onChange={setContent}
+                  placeholder="Start writing your post..."
+                  onImageUploaded={handleImageUploaded}
+                />
+              </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={handlePublish}
-                disabled={isSaving}
-                className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-              >
-                {isSaving ? 'Publishing...' : 'Publish'}
-              </button>
-              {engine === 'hugo' && (
+              {/* Action Buttons */}
+              <div className="flex items-center gap-4">
                 <button
-                  onClick={handleSaveDraft}
+                  onClick={handlePublish}
                   disabled={isSaving}
-                  className="rounded-md border border-gray-300 px-6 py-2 font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 disabled:opacity-50"
+                  className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {isSaving ? 'Saving...' : 'Save Draft'}
+                  {isSaving ? 'Publishing...' : 'Publish'}
                 </button>
-              )}
-              {saveMessage && (
-                <span className={`text-sm ${saveMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
-                  {saveMessage}
-                </span>
-              )}
+                {engine === 'hugo' && (
+                  <button
+                    onClick={handleSaveDraft}
+                    disabled={isSaving}
+                    className="rounded-md border border-gray-300 px-6 py-2 font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 disabled:opacity-50"
+                  >
+                    {isSaving ? 'Saving...' : 'Save Draft'}
+                  </button>
+                )}
+                {saveMessage && (
+                  <span className={`text-sm ${saveMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
+                    {saveMessage}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   )

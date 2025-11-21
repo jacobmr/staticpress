@@ -6,8 +6,6 @@ import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import Link from '@tiptap/extension-link'
 import Image from '@tiptap/extension-image'
-import BubbleMenuExtension from '@tiptap/extension-bubble-menu'
-import { EditorBubbleMenu } from './editor-bubble-menu'
 import { SlashCommand, suggestion } from './editor-slash-command'
 import {
   Bold,
@@ -148,14 +146,14 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
           class: 'max-w-full h-auto rounded-lg my-4 shadow-md',
         },
       }),
-      BubbleMenuExtension,
+
       SlashCommand.configure({
         suggestion: suggestion,
       }),
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-lg dark:prose-invert mx-auto focus:outline-none min-h-[400px] px-8 py-6 max-w-3xl',
+        class: 'prose prose-lg dark:prose-invert mx-auto focus:outline-none min-h-[300px] md:min-h-[400px] px-4 md:px-8 py-6 max-w-3xl',
       },
       handlePaste: (view, event) => {
         const items = event.clipboardData?.items
@@ -423,7 +421,7 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         <EditorContent editor={editor} />
       </div>
 
-      <EditorBubbleMenu editor={editor} />
+
 
       {/* Link Modal */}
       {showLinkModal && (

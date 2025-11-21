@@ -58,14 +58,12 @@
 - [ ] Update TipTap editor configuration
   - [ ] Add Image extension: `npm install @tiptap/extension-image`
   - [ ] Add image toolbar button (only shown for Personal+ tiers)
-  - [ ] Implement drag-and-drop image support
-- [ ] Create `/app/api/upload-image/route.ts`
+  - [x] **Image Drag & Drop in Editor**
+- [x] Create `/app/api/upload-image/route.ts`
   - [ ] Check user tier (Personal/SMB/Pro only)
   - [ ] Accept image upload (validate type: jpg, png, webp, gif)
-  - [ ] Optimize image:
-    - [ ] Convert to WebP format (use `sharp` library)
-    - [ ] Enforce max size (e.g., 2MB per image, 10MB total per post)
-  - [ ] Upload to GitHub via API: `/static/images/YYYY/MM/filename.webp`
+  - [x] **Image Upload API** (Resize/Optimize)
+  - [x] **Image Hosting on GitHub** (`static/images/...`)
   - [ ] Return image URL for editor insertion
 - [ ] Add image size enforcement UI feedback
 - [ ] Handle image deletion when post is saved (cleanup unused images)
@@ -89,6 +87,9 @@
 - [ ] Handle images in preview (show uploaded images from static path)
 
 ### Documentation & Onboarding
+- [x] **Interactive "Getting Started" Walkthrough** (Empty State implemented)
+- [x] **Feedback Widget** (In-app feedback form)
+- [ ] **Documentation Site** (Help Center)
 - [ ] Write "Getting Started" guide
   - [ ] GitHub OAuth flow
   - [ ] Selecting/creating a Hugo repo
