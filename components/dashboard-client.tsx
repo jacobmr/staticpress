@@ -132,10 +132,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
   }
 
   const handlePublish = async () => {
-    if (!title.trim()) {
-      setSaveMessage('Please enter a title')
-      return
-    }
+    const postTitle = title.trim() || 'Untitled Post'
 
     setIsSaving(true)
     setSaveMessage('')
@@ -147,7 +144,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title,
+          title: postTitle,
           content: reverseTransformImageUrls(content),
           path: selectedPost?.path,
           draft: false,
@@ -167,9 +164,9 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
       const newPath: string = result.path
       const newPost: HugoPost = {
-        title,
+        title: postTitle,
         date: new Date().toISOString(),
-        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/, '') || title,
+        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/, '') || postTitle,
         content,
         path: newPath,
       }
@@ -186,13 +183,11 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     } finally {
       setIsSaving(false)
     }
+
   }
 
   const handleSaveDraft = async () => {
-    if (!title.trim()) {
-      setSaveMessage('Please enter a title')
-      return
-    }
+    const postTitle = title.trim() || 'Untitled Draft'
 
     setIsSaving(true)
     setSaveMessage('')
@@ -204,7 +199,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          title,
+          title: postTitle,
           content: reverseTransformImageUrls(content),
           path: selectedPost?.path,
           draft: true,
@@ -224,9 +219,9 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
       const newPath: string = result.path
       const newPost: HugoPost = {
-        title,
+        title: postTitle,
         date: new Date().toISOString(),
-        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/, '') || title,
+        slug: newPath.split('/').pop()?.replace(/\.(md|markdown)$/, '') || postTitle,
         content,
         path: newPath,
       }
