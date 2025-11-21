@@ -5,6 +5,7 @@ import { marked } from 'marked'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
 import { EmptyState } from './empty-state'
+import { PublishModal } from './publish-modal'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
 import { setCachedPosts, clearCachedPosts } from '@/lib/client-cache'
@@ -32,8 +33,9 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
   const [content, setContent] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
-
-
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [showPublishModal, setShowPublishModal] = useState(false)
+  const [showDraftModal, setShowDraftModal] = useState(false)
   const [showEmptyState, setShowEmptyState] = useState(initialPosts.length === 0)
 
   // Track uploaded images: base64 → hugo URL
@@ -136,6 +138,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
     setIsSaving(true)
     setSaveMessage('')
+    setSaveStatus('saving')
 
     try {
       const response = await fetch('/api/posts/publish', {
@@ -157,6 +160,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
       const result = await response.json()
       setSaveMessage(`✓ Published: ${result.path}`)
+      setSaveStatus('saved')
 
       // Clear both server and client caches to force refresh on next load
       await fetch('/api/cache/clear', { method: 'POST' })
@@ -177,13 +181,17 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
         }
         return [newPost, ...prev]
       })
+
+      // Reset to idle after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (error) {
       setSaveMessage('Error publishing post')
+      setSaveStatus('error')
       console.error(error)
+      setTimeout(() => setSaveStatus('idle'), 3000)
     } finally {
       setIsSaving(false)
     }
-
   }
 
   const handleSaveDraft = async () => {
@@ -191,6 +199,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
     setIsSaving(true)
     setSaveMessage('')
+    setSaveStatus('saving')
 
     try {
       const response = await fetch('/api/posts/publish', {
@@ -212,6 +221,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
 
       const result = await response.json()
       setSaveMessage(`✓ Draft saved: ${result.path}`)
+      setSaveStatus('saved')
 
       // Clear both server and client caches to force refresh on next load
       await fetch('/api/cache/clear', { method: 'POST' })
@@ -232,9 +242,14 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
         }
         return [newPost, ...prev]
       })
+
+      // Reset to idle after 3 seconds
+      setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (error) {
       setSaveMessage('Error saving draft')
+      setSaveStatus('error')
       console.error(error)
+      setTimeout(() => setSaveStatus('idle'), 3000)
     } finally {
       setIsSaving(false)
     }
@@ -317,16 +332,13 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
                   id="title"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full border-none bg-transparent px-0 text-4xl font-bold placeholder-gray-400 focus:ring-0 dark:text-white"
-                  placeholder="Post Title"
+                  className="w-full border-none bg-transparent px-0 text-5xl font-bold placeholder-gray-300 focus:outline-none focus:ring-0 dark:text-white dark:placeholder-gray-600"
+                  placeholder="Untitled"
                 />
               </div>
 
               {/* Content Editor */}
-              <div>
-                <label htmlFor="content" className="mb-2 block text-sm font-medium">
-                  Content
-                </label>
+              <div className="mt-2">
                 <Editor
                   content={content}
                   onChange={setContent}
@@ -338,31 +350,70 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
               {/* Action Buttons */}
               <div className="flex items-center gap-4">
                 <button
-                  onClick={handlePublish}
+                  onClick={() => setShowPublishModal(true)}
                   disabled={isSaving}
-                  className="rounded-md bg-blue-600 px-6 py-2 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                  className="rounded-lg bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md disabled:opacity-50"
                 >
                   {isSaving ? 'Publishing...' : 'Publish'}
                 </button>
                 {engine === 'hugo' && (
                   <button
-                    onClick={handleSaveDraft}
+                    onClick={() => setShowDraftModal(true)}
                     disabled={isSaving}
-                    className="rounded-md border border-gray-300 px-6 py-2 font-medium text-gray-700 hover:bg-gray-100 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800 disabled:opacity-50"
+                    className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
                   >
                     {isSaving ? 'Saving...' : 'Save Draft'}
                   </button>
                 )}
-                {saveMessage && (
-                  <span className={`text-sm ${saveMessage.startsWith('✓') ? 'text-green-600' : 'text-red-600'}`}>
-                    {saveMessage}
-                  </span>
-                )}
+
+                {/* Enhanced Save Status Indicator */}
+                <div className="flex items-center gap-2">
+                  {saveStatus === 'saving' && (
+                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600"></div>
+                      <span>Saving...</span>
+                    </div>
+                  )}
+                  {saveStatus === 'saved' && (
+                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400">
+                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                      <span>Saved</span>
+                    </div>
+                  )}
+                  {saveStatus === 'error' && (
+                    <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                      <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                      </svg>
+                      <span>Error</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
         )}
       </main>
+
+      {/* Publish Modal */}
+      <PublishModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onConfirm={handlePublish}
+        currentTitle={title}
+        isDraft={false}
+      />
+
+      {/* Draft Modal */}
+      <PublishModal
+        isOpen={showDraftModal}
+        onClose={() => setShowDraftModal(false)}
+        onConfirm={handleSaveDraft}
+        currentTitle={title}
+        isDraft={true}
+      />
     </div>
   )
 }
