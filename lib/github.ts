@@ -68,6 +68,27 @@ export class GitHubClient {
     }
   }
 
+  async getFile(owner: string, repo: string, path: string): Promise<{ content: string; sha: string } | null> {
+    try {
+      const { data } = await this.octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path,
+      })
+
+      if (!Array.isArray(data) && data.type === "file" && data.content) {
+        return {
+          content: Buffer.from(data.content, "base64").toString("utf-8"),
+          sha: data.sha
+        }
+      }
+      return null
+    } catch (error) {
+      // Don't log 404s as errors, just return null
+      return null
+    }
+  }
+
   async createOrUpdateFile(
     owner: string,
     repo: string,

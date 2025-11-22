@@ -35,6 +35,9 @@ export async function POST(req: NextRequest) {
 
         const github = new GitHubClient(session.accessToken)
 
+        // Check if favicon already exists to get SHA
+        const existingFile = await github.getFile(repoOwner, repoName, 'static/favicon.ico')
+
         // Upload to static/favicon.ico
         try {
             await github.createOrUpdateFile(
@@ -43,7 +46,7 @@ export async function POST(req: NextRequest) {
                 'static/favicon.ico',
                 base64Content,
                 'Update favicon via StaticPress',
-                undefined,
+                existingFile?.sha,
                 true
             )
         } catch (uploadError) {

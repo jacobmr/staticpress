@@ -21,21 +21,22 @@ export async function POST() {
 
         // Get current config file
         let configFilename = 'hugo.toml'
-        let hugoConfigContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, 'hugo.toml')
+        let configFile = await github.getFile(repoConfig.owner, repoConfig.repo, 'hugo.toml')
 
-        if (!hugoConfigContent) {
-            hugoConfigContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, 'hugo.yaml')
+        if (!configFile) {
+            configFile = await github.getFile(repoConfig.owner, repoConfig.repo, 'hugo.yaml')
             configFilename = 'hugo.yaml'
         }
-        if (!hugoConfigContent) {
-            hugoConfigContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, 'config.toml')
+        if (!configFile) {
+            configFile = await github.getFile(repoConfig.owner, repoConfig.repo, 'config.toml')
             configFilename = 'config.toml'
         }
 
-        if (!hugoConfigContent) {
+        if (!configFile) {
             return NextResponse.json({ error: 'Could not find hugo.toml, hugo.yaml, or config.toml' }, { status: 404 })
         }
 
+        let hugoConfigContent = configFile.content
         let modified = false
         let fixMessage = ''
 
@@ -93,7 +94,8 @@ export async function POST() {
                 repoConfig.repo,
                 configFilename,
                 hugoConfigContent,
-                `fix: Repair configuration (StaticPress)\n\n${fixMessage}`
+                `fix: Repair configuration (StaticPress)\n\n${fixMessage}`,
+                configFile.sha
             )
 
             // Trigger build

@@ -31,14 +31,16 @@ export function FaviconUploader({ repoOwner, repoName }: FaviconUploaderProps) {
             })
 
             if (!response.ok) {
-                throw new Error('Upload failed')
+                const data = await response.json()
+                throw new Error(data.error || 'Upload failed')
             }
 
             setMessage('✓ Favicon updated successfully')
             if (fileInputRef.current) fileInputRef.current.value = ''
         } catch (error) {
             console.error(error)
-            setMessage('Error uploading favicon')
+            const errorMessage = error instanceof Error ? error.message : 'Error uploading favicon'
+            setMessage(errorMessage)
         } finally {
             setIsUploading(false)
         }
