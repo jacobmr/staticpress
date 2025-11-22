@@ -88,6 +88,55 @@ export async function POST() {
             fixMessage += 'Added missing author params. '
         }
 
+        // Fix 3: Update baseURL if it's still example.org
+        if (hugoConfigContent.match(/baseURL\s*=\s*["']https?:\/\/example\.org\/?["']/)) {
+            const isUserSite = repoConfig.repo.toLowerCase() === `${repoConfig.owner.toLowerCase()}.github.io`
+            const newBaseURL = isUserSite
+                ? `https://${repoConfig.owner}.github.io/`
+                : `https://${repoConfig.owner}.github.io/${repoConfig.repo}/`
+
+            hugoConfigContent = hugoConfigContent.replace(
+                /baseURL\s*=\s*["']https?:\/\/example\.org\/?["']/,
+                `baseURL = "${newBaseURL}"`
+            )
+            modified = true
+            fixMessage += 'Updated baseURL to GitHub Pages URL. '
+        }
+
+        // Fix 4: Install Image Render Hook (fixes broken images in subdirectories)
+        // This ensures markdown images ![](/images/foo.jpg) are correctly resolved relative to baseURL
+        const renderHookPath = 'layouts/_default/_markup/render-image.html'
+        const renderHookContent = `{{- $u := .Destination -}}
+{{- $isRemote := or (hasPrefix $u "http") (hasPrefix $u "//") -}}
+{{- if not $isRemote -}}
+  {{- $u = $u | absURL -}}
+{{- end -}}
+<img src="{{ $u }}" alt="{{ .Text }}" {{ with .Title}} title="{{ . }}"{{ end }} />`
+
+        // Check if hook exists
+        const hookFile = await github.getFile(repoConfig.owner, repoConfig.repo, renderHookPath)
+        if (!hookFile || hookFile.content !== renderHookContent) {
+            await github.createOrUpdateFile(
+                repoConfig.owner,
+                repoConfig.repo,
+                renderHookPath,
+                renderHookContent,
+                'fix: Add image render hook for correct path resolution',
+                hookFile?.sha
+            )
+            // We don't set modified=true here because this is a separate file update
+            // But we should append to message so user knows
+            fixMessage += 'Installed image render hook. '
+
+            // If we only updated the hook, we still need to trigger a build
+            // If modified is true, the build trigger below handles it.
+            // If modified is false, we need to ensure we trigger build.
+            if (!modified) {
+                await github.triggerWorkflowDispatch(repoConfig.owner, repoConfig.repo)
+                return NextResponse.json({ success: true, message: fixMessage })
+            }
+        }
+
         if (modified) {
             await github.createOrUpdateFile(
                 repoConfig.owner,
