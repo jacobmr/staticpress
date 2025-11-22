@@ -16,6 +16,7 @@ const turndownService = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
 })
+turndownService.keep(['img'])
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
 
     // Convert HTML to markdown
     const markdownContent = turndownService.turndown(content)
+    console.log('Generated Markdown:', markdownContent)
 
     // Determine engine (default to hugo for existing repos)
     const engine = repoConfig.engine || 'hugo'

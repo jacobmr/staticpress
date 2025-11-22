@@ -438,6 +438,11 @@ theme = "ananke"
 [params]
   author = "StaticPress User"
   description = "A blog created with StaticPress"
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
 `,
       },
       {

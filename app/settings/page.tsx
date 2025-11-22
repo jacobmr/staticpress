@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import Link from "next/link"
 import { ThemeSelector } from "./theme-selector"
 import { FaviconUploader } from "./favicon-uploader"
+import { ConfigRepair } from "./config-repair"
 
 export const dynamic = 'force-dynamic'
 
@@ -170,6 +171,11 @@ export default async function SettingsPage() {
           {/* Favicon Uploader */}
           {currentConfig && (
             <FaviconUploader repoOwner={currentConfig.owner} repoName={currentConfig.repo} />
+          )}
+
+          {/* Config Repair */}
+          {currentConfig && (
+            <ConfigRepair />
           )}
 
           {/* Change Repository */}
