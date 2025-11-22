@@ -103,11 +103,15 @@ export async function POST() {
             if (!hugoConfigContent.match(/^\s*author\s*=/m)) {
                 if (hugoConfigContent.includes('[params]')) {
                     hugoConfigContent = hugoConfigContent.replace('[params]', `[params]
-  author = "StaticPress User"`)
+  author = "StaticPress User"
+  show_reading_time = false
+  mainSections = ["posts"]`)
                 } else {
                     hugoConfigContent += `
 [params]
   author = "StaticPress User"
+  show_reading_time = false
+  mainSections = ["posts"]
 `
                 }
                 modified = true

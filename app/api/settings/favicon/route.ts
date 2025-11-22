@@ -39,21 +39,28 @@ export async function POST(req: NextRequest) {
         const existingSha = await github.getFileSha(repoOwner, repoName, 'static/favicon.ico')
         console.log('Existing favicon SHA:', existingSha)
 
-        // Upload to static/favicon.ico
-        try {
-            await github.createOrUpdateFile(
-                repoOwner,
-                repoName,
-                'static/favicon.ico',
-                base64Content,
-                'Update favicon via StaticPress',
-                existingSha || undefined,
-                true
-            )
-        } catch (uploadError) {
-            console.error('GitHub upload error:', uploadError)
-            const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error'
-            return NextResponse.json({ error: `GitHub upload failed: ${errorMessage}` }, { status: 500 })
+        // Upload to both locations for maximum theme compatibility
+        const locations = [
+            'static/favicon.ico',      // Standard location
+            'static/images/favicon.ico' // Ananke theme location
+        ]
+
+        for (const location of locations) {
+            const sha = await github.getFileSha(repoOwner, repoName, location)
+            try {
+                await github.createOrUpdateFile(
+                    repoOwner,
+                    repoName,
+                    location,
+                    base64Content,
+                    'Update favicon via StaticPress',
+                    sha || undefined,
+                    true
+                )
+            } catch (uploadError) {
+                console.error(`GitHub upload error for ${location}:`, uploadError)
+                // Continue to next location even if one fails
+            }
         }
 
         return NextResponse.json({ success: true })
