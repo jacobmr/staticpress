@@ -95,7 +95,7 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         }
 
         const data = await response.json()
-        const { hugoUrl } = data
+        const { url: hugoUrl } = data
         console.log('[PasteImage] Upload successful, Hugo URL:', hugoUrl)
 
         // Store mapping for conversion when saving

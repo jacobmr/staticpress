@@ -5,6 +5,7 @@ import { getRepoConfig } from "@/lib/cookies"
 import { revalidatePath } from "next/cache"
 import Link from "next/link"
 import { ThemeSelector } from "./theme-selector"
+import { FaviconUploader } from "./favicon-uploader"
 
 export const dynamic = 'force-dynamic'
 
@@ -164,6 +165,11 @@ export default async function SettingsPage() {
           {/* Theme Selector */}
           {currentConfig && (
             <ThemeSelector currentTheme={currentTheme} />
+          )}
+
+          {/* Favicon Uploader */}
+          {currentConfig && (
+            <FaviconUploader repoOwner={currentConfig.owner} repoName={currentConfig.repo} />
           )}
 
           {/* Change Repository */}

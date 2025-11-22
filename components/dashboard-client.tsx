@@ -350,15 +350,15 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
               {/* Action Buttons */}
               <div className="flex items-center gap-4">
                 <button
-                  onClick={() => setShowPublishModal(true)}
+                  onClick={handlePublish}
                   disabled={isSaving}
                   className="rounded-lg bg-blue-600 px-6 py-2.5 font-medium text-white shadow-sm transition-all hover:bg-blue-700 hover:shadow-md disabled:opacity-50"
                 >
-                  {isSaving ? 'Publishing...' : 'Review & Publish'}
+                  {isSaving ? 'Publishing...' : 'Publish'}
                 </button>
                 {engine === 'hugo' && (
                   <button
-                    onClick={() => setShowDraftModal(true)}
+                    onClick={handleSaveDraft}
                     disabled={isSaving}
                     className="rounded-lg border border-gray-300 bg-white px-6 py-2.5 font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 hover:shadow-md dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 disabled:opacity-50"
                   >
@@ -396,24 +396,6 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
           </div>
         )}
       </main>
-
-      {/* Publish Modal */}
-      <PublishModal
-        isOpen={showPublishModal}
-        onClose={() => setShowPublishModal(false)}
-        onConfirm={handlePublish}
-        currentTitle={title}
-        isDraft={false}
-      />
-
-      {/* Draft Modal */}
-      <PublishModal
-        isOpen={showDraftModal}
-        onClose={() => setShowDraftModal(false)}
-        onConfirm={handleSaveDraft}
-        currentTitle={title}
-        isDraft={true}
-      />
     </div>
   )
 }
