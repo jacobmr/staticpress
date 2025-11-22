@@ -18,6 +18,8 @@ export function DeploymentStatus() {
     const [showLogs, setShowLogs] = useState(false)
     const [logs, setLogs] = useState<string | null>(null)
     const [loadingLogs, setLoadingLogs] = useState(false)
+    const [isFixing, setIsFixing] = useState(false)
+    const [fixResult, setFixResult] = useState<string | null>(null)
 
     const fetchStatus = async () => {
         try {
@@ -61,6 +63,31 @@ export function DeploymentStatus() {
             setLogs('Error fetching logs.')
         } finally {
             setLoadingLogs(false)
+        }
+    }
+
+    const handleAutoFix = async () => {
+        if (!logs) return
+        setIsFixing(true)
+        setFixResult(null)
+        try {
+            const response = await fetch('/api/deployment/fix', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ logs }),
+            })
+            const data = await response.json()
+            if (data.success) {
+                setFixResult(`✅ Fixed! ${data.message}. Rebuilding...`)
+                // Refresh status after a short delay
+                setTimeout(fetchStatus, 5000)
+            } else {
+                setFixResult(`❌ ${data.message || 'Could not auto-fix.'}`)
+            }
+        } catch (e) {
+            setFixResult('❌ Error attempting fix.')
+        } finally {
+            setIsFixing(false)
         }
     }
 
@@ -144,7 +171,21 @@ export function DeploymentStatus() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
                     <div className="relative w-full max-w-4xl rounded-xl bg-gray-900 shadow-2xl flex flex-col max-h-[80vh]">
                         <div className="flex items-center justify-between border-b border-gray-800 p-4">
-                            <h3 className="text-lg font-medium text-white">Build Logs</h3>
+                            <div className="flex items-center gap-4">
+                                <h3 className="text-lg font-medium text-white">Build Logs</h3>
+                                {!loadingLogs && logs && (
+                                    <button
+                                        onClick={handleAutoFix}
+                                        disabled={isFixing || !!fixResult}
+                                        className="rounded-md bg-blue-600 px-3 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+                                    >
+                                        {isFixing ? 'Attempting Fix...' : '✨ Attempt Auto-Fix'}
+                                    </button>
+                                )}
+                                {fixResult && (
+                                    <span className="text-xs text-gray-300">{fixResult}</span>
+                                )}
+                            </div>
                             <button
                                 onClick={() => setShowLogs(false)}
                                 className="rounded-lg p-1 text-gray-400 hover:bg-gray-800 hover:text-white"
