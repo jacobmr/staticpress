@@ -69,8 +69,13 @@ export async function POST() {
             fixMessage += 'Enabled unsafe markup for images. '
         }
 
-        // Ensure basic params exist (fixes Poison theme crashes)
-        if (!hugoConfigContent.includes('[params.author]')) {
+        // Ensure basic params exist (theme-specific fixes)
+        // Detect which theme is being used
+        const isPoisonTheme = hugoConfigContent.includes('theme = "poison"')
+        const isAnankeTheme = hugoConfigContent.includes('theme = "ananke"')
+
+        if (isPoisonTheme && !hugoConfigContent.includes('[params.author]')) {
+            // Poison theme needs author as a nested object
             if (hugoConfigContent.includes('[params]')) {
                 hugoConfigContent = hugoConfigContent.replace('[params]', `[params]
   [params.author]
@@ -85,7 +90,29 @@ export async function POST() {
 `
             }
             modified = true
-            fixMessage += 'Added missing author params. '
+            fixMessage += 'Added missing author params for Poison theme. '
+        } else if (isAnankeTheme) {
+            // Ananke theme needs author as a simple string
+            // Remove nested author if it exists
+            if (hugoConfigContent.includes('[params.author]')) {
+                // Remove the nested author block
+                hugoConfigContent = hugoConfigContent.replace(/\[params\.author\][^\[]*/, '')
+                modified = true
+            }
+            // Ensure simple author param exists
+            if (!hugoConfigContent.match(/^\s*author\s*=/m)) {
+                if (hugoConfigContent.includes('[params]')) {
+                    hugoConfigContent = hugoConfigContent.replace('[params]', `[params]
+  author = "StaticPress User"`)
+                } else {
+                    hugoConfigContent += `
+[params]
+  author = "StaticPress User"
+`
+                }
+                modified = true
+                fixMessage += 'Fixed author param for Ananke theme. '
+            }
         }
 
         // Fix 3: Update baseURL if it's still example.org
