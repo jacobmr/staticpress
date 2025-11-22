@@ -133,12 +133,14 @@ export async function POST() {
         // Fix 4: Install Image Render Hook (fixes broken images in subdirectories)
         // This ensures markdown images ![](/images/foo.jpg) are correctly resolved relative to baseURL
         const renderHookPath = 'layouts/_default/_markup/render-image.html'
-        const renderHookContent = `{{- $u := .Destination -}}
-{{- $isRemote := or (hasPrefix $u "http") (hasPrefix $u "//") -}}
-{{- if not $isRemote -}}
-  {{- $u = $u | absURL -}}
+        const renderHookContent = `{{- $u := urls.Parse .Destination -}}
+{{- $isRemote := or (strings.HasPrefix .Destination "http://") (strings.HasPrefix .Destination "https://") (strings.HasPrefix .Destination "//") -}}
+{{- if $isRemote -}}
+  {{- $u = .Destination -}}
+{{- else -}}
+  {{- $u = .Destination | absURL | safeURL -}}
 {{- end -}}
-<img src="{{ $u }}" alt="{{ .Text }}" {{ with .Title}} title="{{ . }}"{{ end }} />`
+<img src="{{ $u }}" alt="{{ .Text }}"{{ with .Title }} title="{{ . }}"{{ end }} loading="lazy" />`
 
         // Check if hook exists
         const hookFile = await github.getFile(repoConfig.owner, repoConfig.repo, renderHookPath)
