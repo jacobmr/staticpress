@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { SignOutButton } from "@/components/auth-buttons"
 import { signOutUser } from "@/lib/auth-actions"
 import { FeedbackButton } from "@/components/feedback-button"
+import { DeploymentStatus } from "@/components/deployment-status"
 
 export const dynamic = 'force-dynamic'
 
@@ -110,6 +111,7 @@ export default async function Dashboard() {
                   user.subscription_tier === 'personal' ? 'Personal' :
                     user.subscription_tier === 'smb' ? 'SMB' : 'Pro'}
               </Link>
+              <DeploymentStatus />
               <ThemeToggle />
               <Link
                 href="/help"

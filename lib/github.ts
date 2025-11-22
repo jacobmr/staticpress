@@ -323,19 +323,19 @@ export class GitHubClient {
         sha?: string | null
         content?: string
       }> = [
-        {
-          path: '.gitmodules',
-          mode: '100644',
-          type: 'blob',
-          content: gitmodulesContent,
-        },
-        {
-          path: `themes/${themeId}`,
-          mode: '160000', // Git submodule mode
-          type: 'commit',
-          sha: themeCommitSha,
-        },
-      ]
+          {
+            path: '.gitmodules',
+            mode: '100644',
+            type: 'blob',
+            content: gitmodulesContent,
+          },
+          {
+            path: `themes/${themeId}`,
+            mode: '160000', // Git submodule mode
+            type: 'commit',
+            sha: themeCommitSha,
+          },
+        ]
 
       // Add deletions for old themes
       for (const oldTheme of existingThemes) {
@@ -666,6 +666,89 @@ You can also deploy to:
 
     await traverseDirectory(contentPath)
     return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }
+
+  async getLatestDeploymentStatus(owner: string, repo: string, branch: string = 'main') {
+    try {
+      // 1. Get latest commit SHA
+      const { data: refData } = await this.octokit.rest.git.getRef({
+        owner,
+        repo,
+        ref: `heads/${branch}`,
+      })
+      const sha = refData.object.sha
+
+      // 2. Get Check Runs (GitHub Actions, Cloudflare Pages, etc. often use this)
+      const { data: checkRunsData } = await this.octokit.rest.checks.listForRef({
+        owner,
+        repo,
+        ref: sha,
+      })
+
+      // 3. Get Commit Statuses (Older integrations might use this)
+      const { data: statusesData } = await this.octokit.rest.repos.listCommitStatusesForRef({
+        owner,
+        repo,
+        ref: sha,
+      })
+
+      // Prioritize Check Runs as they are more modern
+      // Look for relevant checks (pages-build-deployment, Cloudflare Pages, Vercel, Netlify)
+      const relevantChecks = checkRunsData.check_runs.filter(run =>
+        run.name.includes('pages') ||
+        run.name.includes('deploy') ||
+        run.name.includes('Cloudflare') ||
+        run.name.includes('Vercel') ||
+        run.name.includes('Netlify')
+      )
+
+      if (relevantChecks.length > 0) {
+        // Sort by completion time (most recent first)
+        relevantChecks.sort((a, b) => {
+          const dateA = a.completed_at ? new Date(a.completed_at).getTime() : new Date(a.started_at || 0).getTime()
+          const dateB = b.completed_at ? new Date(b.completed_at).getTime() : new Date(b.started_at || 0).getTime()
+          return dateB - dateA
+        })
+
+        const latest = relevantChecks[0]
+
+        // Map GitHub status to our simplified status
+        let state: 'pending' | 'success' | 'failure' | 'error' = 'pending'
+        if (latest.status === 'completed') {
+          if (latest.conclusion === 'success') state = 'success'
+          else if (latest.conclusion === 'failure' || latest.conclusion === 'timed_out') state = 'failure'
+          else state = 'error'
+        } else {
+          state = 'pending'
+        }
+
+        return {
+          provider: latest.app?.name || latest.name,
+          state,
+          description: latest.output?.title || latest.name,
+          url: latest.html_url,
+          updated_at: latest.completed_at || latest.started_at
+        }
+      }
+
+      // Fallback to Commit Statuses
+      if (statusesData.length > 0) {
+        const latest = statusesData[0]
+        return {
+          provider: latest.context,
+          state: latest.state as 'pending' | 'success' | 'failure' | 'error',
+          description: latest.description,
+          url: latest.target_url,
+          updated_at: latest.updated_at
+        }
+      }
+
+      return null
+
+    } catch (error) {
+      console.error('Error getting deployment status:', error)
+      return null
+    }
   }
 
   private parseHugoPost(content: string, path: string): HugoPost | null {
