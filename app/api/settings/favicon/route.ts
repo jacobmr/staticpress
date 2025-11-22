@@ -35,8 +35,17 @@ export async function POST(req: NextRequest) {
 
         const github = new GitHubClient(session.accessToken)
 
-        // Check if favicon already exists to get SHA
-        const existingFile = await github.getFile(repoOwner, repoName, 'static/favicon.ico')
+        // Try to get existing favicon to determine if we're creating or updating
+        let existingSha: string | undefined
+        try {
+            const existingFile = await github.getFile(repoOwner, repoName, 'static/favicon.ico')
+            if (existingFile) {
+                existingSha = existingFile.sha
+            }
+        } catch (error) {
+            // File doesn't exist, that's fine - we'll create it
+            console.log('No existing favicon found, will create new one')
+        }
 
         // Upload to static/favicon.ico
         try {
@@ -46,7 +55,7 @@ export async function POST(req: NextRequest) {
                 'static/favicon.ico',
                 base64Content,
                 'Update favicon via StaticPress',
-                existingFile?.sha,
+                existingSha,
                 true
             )
         } catch (uploadError) {

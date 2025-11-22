@@ -99,6 +99,7 @@ export async function POST(request: Request) {
     }
 
     const fileContent = `${frontmatter}\n\n${markdownContent}`
+    console.log('Final file content to save:', fileContent)
 
     // Commit to GitHub
     const commitMessage = path
