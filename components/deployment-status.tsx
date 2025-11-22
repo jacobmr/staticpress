@@ -100,8 +100,8 @@ export function DeploymentStatus() {
         return () => clearInterval(interval)
     }, [])
 
-    if (error) return null
-    if (!status && !loading) return null
+    // Only hide if there's a persistent error
+    if (error && !status) return null
 
     return (
         <>

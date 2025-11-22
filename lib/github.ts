@@ -89,6 +89,24 @@ export class GitHubClient {
     }
   }
 
+  async getFileSha(owner: string, repo: string, path: string): Promise<string | null> {
+    try {
+      const { data } = await this.octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path,
+      })
+
+      if (!Array.isArray(data) && data.type === "file") {
+        return data.sha
+      }
+      return null
+    } catch (error) {
+      // File doesn't exist
+      return null
+    }
+  }
+
   async createOrUpdateFile(
     owner: string,
     repo: string,
