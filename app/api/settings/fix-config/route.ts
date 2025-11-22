@@ -19,15 +19,21 @@ export async function POST() {
 
         const github = new GitHubClient(session.accessToken)
 
-        // Get current hugo.toml
-        let hugoConfigContent = await github.getFileContent(
-            repoConfig.owner,
-            repoConfig.repo,
-            'hugo.toml'
-        )
+        // Get current config file
+        let configFilename = 'hugo.toml'
+        let hugoConfigContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, 'hugo.toml')
 
         if (!hugoConfigContent) {
-            return NextResponse.json({ error: 'Could not read hugo.toml' }, { status: 500 })
+            hugoConfigContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, 'hugo.yaml')
+            configFilename = 'hugo.yaml'
+        }
+        if (!hugoConfigContent) {
+            hugoConfigContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, 'config.toml')
+            configFilename = 'config.toml'
+        }
+
+        if (!hugoConfigContent) {
+            return NextResponse.json({ error: 'Could not find hugo.toml, hugo.yaml, or config.toml' }, { status: 404 })
         }
 
         let modified = false
@@ -85,7 +91,7 @@ export async function POST() {
             await github.createOrUpdateFile(
                 repoConfig.owner,
                 repoConfig.repo,
-                'hugo.toml',
+                configFilename,
                 hugoConfigContent,
                 `fix: Repair configuration (StaticPress)\n\n${fixMessage}`
             )

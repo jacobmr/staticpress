@@ -36,15 +36,21 @@ export async function POST(req: NextRequest) {
         const github = new GitHubClient(session.accessToken)
 
         // Upload to static/favicon.ico
-        await github.createOrUpdateFile(
-            repoOwner,
-            repoName,
-            'static/favicon.ico',
-            base64Content,
-            'Update favicon via StaticPress',
-            undefined,
-            true
-        )
+        try {
+            await github.createOrUpdateFile(
+                repoOwner,
+                repoName,
+                'static/favicon.ico',
+                base64Content,
+                'Update favicon via StaticPress',
+                undefined,
+                true
+            )
+        } catch (uploadError) {
+            console.error('GitHub upload error:', uploadError)
+            const errorMessage = uploadError instanceof Error ? uploadError.message : 'Unknown error'
+            return NextResponse.json({ error: `GitHub upload failed: ${errorMessage}` }, { status: 500 })
+        }
 
         return NextResponse.json({ success: true })
 
