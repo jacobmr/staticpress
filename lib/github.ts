@@ -19,7 +19,7 @@ export interface HugoPost {
 }
 
 export class GitHubClient {
-  private octokit: Octokit
+  public octokit: Octokit
 
   constructor(accessToken: string) {
     this.octokit = new Octokit({
@@ -727,7 +727,11 @@ You can also deploy to:
           state,
           description: latest.output?.title || latest.name,
           url: latest.html_url,
-          updated_at: latest.completed_at || latest.started_at
+          updated_at: latest.completed_at || latest.started_at,
+          // Check runs don't always have a direct workflow run ID, but we can try to infer or fetch it if needed
+          // For GitHub Actions, the external_id often maps to something useful, or we might need to fetch workflow runs separately
+          // For now, let's just return the check run ID which might be useful
+          id: latest.id
         }
       }
 
@@ -747,6 +751,32 @@ You can also deploy to:
 
     } catch (error) {
       console.error('Error getting deployment status:', error)
+      return null
+    }
+  }
+
+  async getDeploymentLogs(owner: string, repo: string, runId: number): Promise<string | null> {
+    try {
+      // This endpoint downloads the logs as a zip, which is complex to handle in browser/serverless
+      // Instead, we'll try to list the jobs for the run and get logs for the failed job
+      const { data: jobsData } = await this.octokit.rest.actions.listJobsForWorkflowRun({
+        owner,
+        repo,
+        run_id: runId,
+      })
+
+      const failedJob = jobsData.jobs.find(job => job.conclusion === 'failure')
+      if (!failedJob) return null
+
+      const { data: logs } = await this.octokit.rest.actions.downloadJobLogsForWorkflowRun({
+        owner,
+        repo,
+        job_id: failedJob.id,
+      })
+
+      return String(logs)
+    } catch (error) {
+      console.error('Error getting deployment logs:', error)
       return null
     }
   }
