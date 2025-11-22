@@ -42,33 +42,56 @@ export async function POST(req: NextRequest) {
         // Fix 1: Poison Theme / Author Param Issue
         // Error: can't evaluate field name in type string
         // Context: .Site.Language.Params.Author.name
-        if (logs.includes("can't evaluate field name in type string") && logs.includes("Author.name")) {
+        // Also catches: "nil pointer dereference" in partials/head/meta.html which is often related
+        if (logs.includes("can't evaluate field name in type string") || logs.includes("partials/head/meta.html")) {
             // The theme expects [params.author] to be a table with a name field, but it might be a string
             // or it expects it under [languages.en.params.author]
 
             let newConfig = hugoConfigContent
+            let modified = false
 
             // Check if author is a simple string and convert to object
-            if (newConfig.match(/author\s*=\s*["'][^"']+["']/)) {
+            if (newConfig.match(/^author\s*=\s*["'][^"']+["']/m)) {
                 newConfig = newConfig.replace(
-                    /author\s*=\s*(["'])([^"']+)(["'])/,
+                    /^author\s*=\s*(["'])([^"']+)(["'])/m,
                     `[params.author]\n    name = $1$2$3`
                 )
                 fixMessage = 'Converted author param to object structure'
-                fixed = true
-            }
-            // If [params.author] doesn't exist, add it
-            else if (!newConfig.includes('[params.author]')) {
-                newConfig += `
-[params.author]
-  name = "StaticPress User"
-  bio = "Writer"
-`
-                fixMessage = 'Added missing [params.author] configuration'
-                fixed = true
+                modified = true
             }
 
-            if (fixed) {
+            // If [params.author] doesn't exist at all, add it
+            if (!newConfig.includes('[params.author]')) {
+                // If [params] exists, append to it
+                if (newConfig.includes('[params]')) {
+                    newConfig = newConfig.replace('[params]', `[params]
+  [params.author]
+    name = "StaticPress User"
+    bio = "Writer"`)
+                } else {
+                    // Otherwise append to end
+                    newConfig += `
+[params]
+  [params.author]
+    name = "StaticPress User"
+    bio = "Writer"
+`
+                }
+                fixMessage = 'Added missing [params.author] configuration'
+                modified = true
+            }
+
+            // Also ensure brand param exists (another common Poison issue)
+            if (!newConfig.includes('brand =')) {
+                if (newConfig.includes('[params]')) {
+                    newConfig = newConfig.replace('[params]', `[params]
+  brand = "My Blog"`)
+                    modified = true
+                }
+            }
+
+            if (modified) {
+                fixed = true
                 await github.createOrUpdateFile(
                     repoConfig.owner,
                     repoConfig.repo,
