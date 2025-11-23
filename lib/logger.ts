@@ -12,7 +12,7 @@ class Logger {
 
   private log(level: LogLevel, message: string, context?: LogContext) {
     const timestamp = new Date().toISOString()
-    const logEntry = {
+    const logEntry: Record<string, unknown> = {
       timestamp,
       level,
       message,
@@ -20,9 +20,9 @@ class Logger {
     }
 
     // Remove sensitive data
-    if (logEntry.accessToken) delete logEntry.accessToken
-    if (logEntry.password) delete logEntry.password
-    if (logEntry.secret) delete logEntry.secret
+    if ('accessToken' in logEntry) delete logEntry.accessToken
+    if ('password' in logEntry) delete logEntry.password
+    if ('secret' in logEntry) delete logEntry.secret
 
     // In production, output structured JSON
     // In development, more readable format

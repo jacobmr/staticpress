@@ -82,6 +82,14 @@ export type EventName =
   | 'post_published'
   | 'post_deleted'
   | 'theme_changed'
+  | 'platform_connected'
+  | 'platform_disconnected'
+  | 'platform_oauth_completed'
+  | 'deployment_triggered'
+  | 'deployment_project_created'
+  | 'deployment_project_deleted'
+  | 'custom_domain_added'
+  | 'custom_domain_removed'
 
 /**
  * Get or create user by GitHub ID
