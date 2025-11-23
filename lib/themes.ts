@@ -6,47 +6,32 @@ export interface HugoTheme {
   preview?: string // Preview image URL
 }
 
+// Only fully supported themes - these have proper frontmatter and config handling
 export const HUGO_THEMES: HugoTheme[] = [
   {
     id: 'papermod',
     name: 'PaperMod',
-    description: 'Fast, clean, SEO-friendly. Great for blogs.',
+    description: 'Modern, fast, and feature-rich. Ideal for blogs and portfolios.',
     repo: 'https://github.com/adityatelange/hugo-PaperMod.git',
   },
   {
     id: 'ananke',
     name: 'Ananke',
-    description: 'Simple and clean. Official Hugo starter theme.',
+    description: 'Clean and simple. Official Hugo starter theme with great defaults.',
     repo: 'https://github.com/theNewDynamic/gohugo-theme-ananke.git',
-  },
-  {
-    id: 'terminal',
-    name: 'Terminal',
-    description: 'Retro terminal aesthetic for developers.',
-    repo: 'https://github.com/panr/hugo-theme-terminal.git',
-  },
-  {
-    id: 'coder',
-    name: 'Coder',
-    description: 'Minimal portfolio style for developers.',
-    repo: 'https://github.com/luizdepra/hugo-coder.git',
-  },
-  {
-    id: 'poison',
-    name: 'Poison',
-    description: 'Professional dark theme with sidebar.',
-    repo: 'https://github.com/lukeorth/poison.git',
-  },
-  {
-    id: 'risotto',
-    name: 'Risotto',
-    description: 'Minimalist, monospace design.',
-    repo: 'https://github.com/joeroe/risotto.git',
   },
 ]
 
+// Legacy themes that are no longer fully supported
+// Users with these themes will see a migration warning
+export const LEGACY_THEMES = ['terminal', 'coder', 'poison', 'risotto']
+
 export function getThemeById(id: string): HugoTheme | undefined {
-  return HUGO_THEMES.find(theme => theme.id === id)
+  return HUGO_THEMES.find(theme => theme.id === id || theme.id === id.toLowerCase())
+}
+
+export function isLegacyTheme(id: string): boolean {
+  return LEGACY_THEMES.includes(id.toLowerCase())
 }
 
 export const DEFAULT_THEME_ID = 'papermod'

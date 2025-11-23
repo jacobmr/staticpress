@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { getRepoConfig } from '@/lib/cookies'
 import { GitHubClient } from '@/lib/github'
+import { getThemeProfile, isThemeSupported } from '@/lib/theme-profiles'
+import { logger } from '@/lib/logger'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,7 +42,17 @@ export async function POST() {
         let modified = false
         let fixMessage = ''
 
-        // Ensure unsafe markup is enabled (required for images)
+        // Detect theme from config
+        const themeMatch = hugoConfigContent.match(/theme\s*=\s*["']([^"']+)["']/)
+        const themeId = themeMatch?.[1] || repoConfig.theme || 'papermod'
+
+        // Get theme profile (will fall back to papermod for unsupported themes)
+        const themeProfile = getThemeProfile(themeId)
+
+        // Validate current config
+        const validation = themeProfile.validateConfig(hugoConfigContent)
+
+        // Fix 1: Ensure unsafe markup is enabled (required for images)
         if (!hugoConfigContent.includes('unsafe = true')) {
             if (hugoConfigContent.includes('[markup.goldmark.renderer]')) {
                 hugoConfigContent = hugoConfigContent.replace(
@@ -69,53 +81,27 @@ export async function POST() {
             fixMessage += 'Enabled unsafe markup for images. '
         }
 
-        // Ensure basic params exist (theme-specific fixes)
-        // Detect which theme is being used
-        const isPoisonTheme = hugoConfigContent.includes('theme = "poison"')
-        const isAnankeTheme = hugoConfigContent.includes('theme = "ananke"')
-
-        if (isPoisonTheme && !hugoConfigContent.includes('[params.author]')) {
-            // Poison theme needs author as a nested object
-            if (hugoConfigContent.includes('[params]')) {
-                hugoConfigContent = hugoConfigContent.replace('[params]', `[params]
-  [params.author]
-    name = "StaticPress User"
-    bio = "Writer"`)
-            } else {
-                hugoConfigContent += `
-[params]
-  [params.author]
-    name = "StaticPress User"
-    bio = "Writer"
-`
-            }
+        // Fix 2: Add missing params based on theme profile
+        if (!hugoConfigContent.includes('[params]')) {
+            hugoConfigContent += '\n' + themeProfile.config.paramsTemplate + '\n'
             modified = true
-            fixMessage += 'Added missing author params for Poison theme. '
-        } else if (isAnankeTheme) {
-            // Ananke theme needs author as a simple string
-            // Remove nested author if it exists
-            if (hugoConfigContent.includes('[params.author]')) {
-                // Remove the nested author block
-                hugoConfigContent = hugoConfigContent.replace(/\[params\.author\][^\[]*/, '')
-                modified = true
-            }
-            // Ensure simple author param exists
-            if (!hugoConfigContent.match(/^\s*author\s*=/m)) {
-                if (hugoConfigContent.includes('[params]')) {
-                    hugoConfigContent = hugoConfigContent.replace('[params]', `[params]
-  author = "StaticPress User"
-  show_reading_time = false
-  mainSections = ["posts"]`)
-                } else {
-                    hugoConfigContent += `
-[params]
-  author = "StaticPress User"
-  show_reading_time = false
-  mainSections = ["posts"]
-`
+            fixMessage += `Added missing params for ${themeProfile.name} theme. `
+        } else if (validation.errors.length > 0) {
+            // Theme-specific fixes based on validation errors
+            for (const error of validation.errors) {
+                if (error.includes('nested [params.author]') && themeId === 'ananke') {
+                    // Remove nested author block for Ananke
+                    hugoConfigContent = hugoConfigContent.replace(/\[params\.author\][^\[]*/, '')
+                    // Add simple author if missing
+                    if (!hugoConfigContent.match(/^\s*author\s*=/m)) {
+                        hugoConfigContent = hugoConfigContent.replace(
+                            '[params]',
+                            `[params]\n  author = "StaticPress User"`
+                        )
+                    }
+                    modified = true
+                    fixMessage += 'Fixed author param format for Ananke theme. '
                 }
-                modified = true
-                fixMessage += 'Fixed author param for Ananke theme. '
             }
         }
 
@@ -135,7 +121,6 @@ export async function POST() {
         }
 
         // Fix 4: Install Image Render Hook (fixes broken images in subdirectories)
-        // This ensures markdown images ![](/images/foo.jpg) are correctly resolved relative to baseURL
         const renderHookPath = 'layouts/_default/_markup/render-image.html'
         const renderHookContent = `{{- $u := urls.Parse .Destination -}}
 {{- $isRemote := or (strings.HasPrefix .Destination "http://") (strings.HasPrefix .Destination "https://") (strings.HasPrefix .Destination "//") -}}
@@ -157,13 +142,9 @@ export async function POST() {
                 'fix: Add image render hook for correct path resolution',
                 hookFile?.sha
             )
-            // We don't set modified=true here because this is a separate file update
-            // But we should append to message so user knows
             fixMessage += 'Installed image render hook. '
 
-            // If we only updated the hook, we still need to trigger a build
-            // If modified is true, the build trigger below handles it.
-            // If modified is false, we need to ensure we trigger build.
+            // If we only updated the hook, trigger build
             if (!modified) {
                 await github.triggerWorkflowDispatch(repoConfig.owner, repoConfig.repo)
                 return NextResponse.json({ success: true, message: fixMessage })
@@ -186,10 +167,21 @@ export async function POST() {
             return NextResponse.json({ success: true, message: fixMessage })
         }
 
+        // Add warning if using unsupported theme
+        if (!isThemeSupported(themeId)) {
+            return NextResponse.json({
+                success: true,
+                message: 'Configuration is already correct.',
+                warning: `Theme "${themeId}" is no longer fully supported. Consider switching to PaperMod or Ananke for best results.`
+            })
+        }
+
         return NextResponse.json({ success: true, message: 'Configuration is already correct.' })
 
     } catch (error) {
-        console.error('Fix config API error:', error)
+        logger.error('Fix config API error', {
+            error: error instanceof Error ? error.message : 'Unknown error'
+        })
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
     }
 }

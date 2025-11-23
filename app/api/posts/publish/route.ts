@@ -4,12 +4,14 @@ import { GitHubClient } from '@/lib/github'
 import { getRepoConfig } from '@/lib/cookies'
 import {
   generateHugoPath,
-  generateFrontmatter,
   extractFirstImageUrl,
   generateKremsPath,
   generateKremsFrontmatter
 } from '@/lib/hugo'
-import { clearCachePattern } from '@/lib/cache'
+import { clearCachePattern, userRateLimitCheck, RATE_LIMITS } from '@/lib/cache'
+import { validateRequest, publishPostSchema } from '@/lib/validation'
+import { getThemeProfile } from '@/lib/theme-profiles'
+import { logger } from '@/lib/logger'
 import TurndownService from 'turndown'
 
 const turndownService = new TurndownService({
@@ -20,15 +22,26 @@ turndownService.keep(['img'])
 
 export async function POST(request: Request) {
   try {
+    // IP-based rate limiting
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous'
     const { rateLimitCheck } = await import('@/lib/cache')
     if (!rateLimitCheck(`publish:${ip}`, 10, 60)) {
       return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
     }
+
     const session = await auth()
 
     if (!session?.user || !session.accessToken) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // User-based rate limiting
+    const { limit, window } = RATE_LIMITS.publish
+    if (!userRateLimitCheck(session.user.id, 'publish', limit, window)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please try again later.' },
+        { status: 429 }
+      )
     }
 
     const repoConfig = await getRepoConfig()
@@ -37,11 +50,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'No repository configured' }, { status: 400 })
     }
 
-    const { title, content, path, draft = false } = await request.json()
+    // Validate input with Zod
+    const validation = await validateRequest(request, publishPostSchema)
+    if ('error' in validation) return validation.error
 
-    if (!title || !content) {
-      return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
-    }
+    const { title, content, path, draft } = validation.data
 
     const github = new GitHubClient(session.accessToken)
 
@@ -50,7 +63,6 @@ export async function POST(request: Request) {
 
     // Convert HTML to markdown
     const markdownContent = turndownService.turndown(content)
-    console.log('Generated Markdown:', markdownContent)
 
     // Determine engine (default to hugo for existing repos)
     const engine = repoConfig.engine || 'hugo'
@@ -88,18 +100,18 @@ export async function POST(request: Request) {
       }
       frontmatter = generateKremsFrontmatter(frontmatterData)
     } else {
-      // Hugo with draft support
-      const frontmatterData = {
+      // Hugo - use theme profile for correct frontmatter
+      const themeProfile = getThemeProfile(repoConfig.theme || 'papermod')
+      frontmatter = themeProfile.generateFrontmatter({
         title,
         date: new Date().toISOString(),
         draft,
-        ...(featureImageUrl && { featureimage: featureImageUrl }),
-      }
-      frontmatter = generateFrontmatter(frontmatterData)
+        content: markdownContent,
+        featuredImage: featureImageUrl || undefined,
+      })
     }
 
     const fileContent = `${frontmatter}\n\n${markdownContent}`
-    console.log('Final file content to save:', fileContent)
 
     // Commit to GitHub
     const commitMessage = path
@@ -156,7 +168,9 @@ export async function POST(request: Request) {
       sha: result.content?.sha,
     })
   } catch (error) {
-    console.error('Error publishing post:', error)
+    logger.error('Failed to publish post', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
     return NextResponse.json(
       { error: 'Failed to publish post' },
       { status: 500 }

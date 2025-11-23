@@ -1,4 +1,5 @@
 import slugify from "slugify"
+import yaml from "js-yaml"
 
 export interface HugoFrontmatter {
   title: string
@@ -100,71 +101,28 @@ export function createHugoPost(frontmatter: HugoFrontmatter, content: string): s
 
 /**
  * Parse Hugo post to extract frontmatter and content
+ * Uses js-yaml for robust parsing of nested objects, multi-line strings, etc.
  */
 export function parseHugoPost(fileContent: string): {
   frontmatter: Record<string, unknown>
   content: string
 } {
+  // Match YAML frontmatter between --- delimiters
   const yamlMatch = fileContent.match(/^---\n([\s\S]*?)\n---/)
 
-  const frontmatter: Record<string, unknown> = {}
-  let content = fileContent
-
-  if (yamlMatch) {
-    const yamlContent = yamlMatch[1]
-    content = fileContent.slice(yamlMatch[0].length).trim()
-
-    // Simple YAML parser
-    const lines = yamlContent.split("\n")
-    let currentKey = ""
-    let currentArray: string[] = []
-
-    lines.forEach((line) => {
-      if (line.trim().startsWith("- ")) {
-        // Array item
-        const item = line.trim().slice(2).replace(/^["']|["']$/g, "")
-        currentArray.push(item)
-      } else {
-        // Save previous array if exists
-        if (currentKey && currentArray.length > 0) {
-          frontmatter[currentKey] = currentArray
-          currentArray = []
-        }
-
-        const colonIndex = line.indexOf(":")
-        if (colonIndex > 0) {
-          currentKey = line.slice(0, colonIndex).trim()
-          let value = line.slice(colonIndex + 1).trim()
-
-          if (value) {
-            // Remove quotes and unescape
-            if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-              value = value.slice(1, -1)
-              // Unescape backslash-escaped characters
-              value = value.replace(/\\"/g, '"').replace(/\\\\/g, '\\')
-            }
-
-            // Parse booleans
-            if (value === "true") {
-              frontmatter[currentKey] = true
-            } else if (value === "false") {
-              frontmatter[currentKey] = false
-            } else {
-              frontmatter[currentKey] = value
-            }
-            currentKey = ""
-          }
-        }
-      }
-    })
-
-    // Save final array if exists
-    if (currentKey && currentArray.length > 0) {
-      frontmatter[currentKey] = currentArray
-    }
+  if (!yamlMatch) {
+    return { frontmatter: {}, content: fileContent }
   }
 
-  return { frontmatter, content }
+  try {
+    const frontmatter = yaml.load(yamlMatch[1]) as Record<string, unknown>
+    const content = fileContent.slice(yamlMatch[0].length).trim()
+    return { frontmatter: frontmatter || {}, content }
+  } catch (error) {
+    // Log error but don't crash - return empty frontmatter
+    console.error('Failed to parse YAML frontmatter:', error)
+    return { frontmatter: {}, content: fileContent }
+  }
 }
 
 /**

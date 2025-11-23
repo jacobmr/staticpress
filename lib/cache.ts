@@ -40,3 +40,37 @@ export function rateLimitCheck(key: string, limit: number, windowSeconds: number
   cache.set(compositeKey, current + 1, windowSeconds)
   return true
 }
+
+/**
+ * Per-user rate limiting (in addition to IP-based)
+ */
+export function userRateLimitCheck(
+  userId: number | string,
+  action: string,
+  limit: number,
+  windowSeconds: number
+): boolean {
+  const key = `user:${userId}:${action}`
+  return rateLimitCheck(key, limit, windowSeconds)
+}
+
+/**
+ * Rate limit configuration for different actions
+ */
+export const RATE_LIMITS = {
+  publish: { limit: 30, window: 3600 },      // 30 posts/hour
+  imageUpload: { limit: 50, window: 3600 },  // 50 images/hour
+  themeChange: { limit: 10, window: 3600 },  // 10 changes/hour
+  configFix: { limit: 20, window: 3600 },    // 20 fixes/hour
+  delete: { limit: 30, window: 3600 },       // 30 deletes/hour
+}
+
+/**
+ * Create a safe cache key that handles special characters
+ */
+export function createCacheKey(type: string, ...parts: string[]): string {
+  const safeParts = parts.map(part =>
+    encodeURIComponent(part).replace(/[.]/g, '%2E')
+  )
+  return `${type}:${safeParts.join(':')}`
+}
