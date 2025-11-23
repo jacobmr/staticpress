@@ -76,9 +76,19 @@ export async function GET(
     const { searchParams } = new URL(request.url)
     const customRedirectUri = searchParams.get('redirect_uri')
 
-    // Build callback URL
+    // Build callback URL - use platform-specific URLs where configured
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
-    const redirectUri = customRedirectUri || `${baseUrl}/api/deployment/oauth/${validPlatform}/callback`
+    let redirectUri = customRedirectUri
+
+    if (!redirectUri) {
+      // Platform-specific callback URLs
+      const platformCallbacks: Record<string, string> = {
+        'netlify': `${baseUrl}/api/netlify/callback`,
+        'vercel': `${baseUrl}/api/deployment/oauth/vercel/callback`,
+        'cloudflare': `${baseUrl}/api/deployment/oauth/cloudflare/callback`,
+      }
+      redirectUri = platformCallbacks[validPlatform] || `${baseUrl}/api/deployment/oauth/${validPlatform}/callback`
+    }
 
     // Get authorization URL from provider
     const authorizationUrl = provider.getAuthorizationUrl(redirectUri, state)
