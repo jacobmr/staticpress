@@ -29,9 +29,11 @@ interface EditorProps {
   onChange: (content: string) => void
   placeholder?: string
   onImageUploaded?: (base64: string, hugoUrl: string) => void
+  repoOwner: string
+  repoName: string
 }
 
-export function Editor({ content, onChange, placeholder = 'Write something...', onImageUploaded }: EditorProps) {
+export function Editor({ content, onChange, placeholder = 'Write something...', onImageUploaded, repoOwner, repoName }: EditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -250,19 +252,22 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
 
         // Upload to GitHub
         try {
+          const formData = new FormData()
+          formData.append('file', file)
+          formData.append('owner', repoOwner)
+          formData.append('repo', repoName)
+
           const response = await fetch('/api/images/upload', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              filename: file.name,
-              content: base64.split(',')[1],
-              contentType: file.type,
-            }),
+            body: formData,
           })
 
           if (response.ok) {
             const data = await response.json()
             onImageUploaded?.(base64, data.url)
+          } else {
+            const error = await response.json()
+            throw new Error(error.error || 'Failed to upload image')
           }
         } catch (err) {
           console.error('Failed to upload image:', err)

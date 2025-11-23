@@ -365,6 +365,8 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
                   onChange={setContent}
                   placeholder="Start writing your post..."
                   onImageUploaded={handleImageUploaded}
+                  repoOwner={repoOwner}
+                  repoName={repoName}
                 />
               </div>
 
