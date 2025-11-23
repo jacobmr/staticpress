@@ -15,7 +15,7 @@ function getStripe(): Stripe {
   }
 
   _stripe = new Stripe(stripeSecretKey, {
-    apiVersion: '2025-09-30.clover',
+    apiVersion: '2025-10-29.clover',
     typescript: true,
   })
 
@@ -45,7 +45,7 @@ function getPriceIds(): PriceIdsType {
   if (_priceIds) {
     return _priceIds
   }
-  
+
   _priceIds = {
     personal: {
       monthly: process.env.STRIPE_PERSONAL_MONTHLY_PRICE_ID!,
@@ -60,7 +60,7 @@ function getPriceIds(): PriceIdsType {
       yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID!,
     },
   }
-  
+
   return _priceIds
 }
 
@@ -96,9 +96,9 @@ function getPricingConfig(): PricingConfigType {
   if (_pricingConfig) {
     return _pricingConfig
   }
-  
+
   const priceIds = getPriceIds()
-  
+
   _pricingConfig = {
     personal: {
       name: 'Personal',
@@ -134,7 +134,7 @@ function getPricingConfig(): PricingConfigType {
       ],
     },
   }
-  
+
   return _pricingConfig
 }
 
@@ -202,7 +202,7 @@ export async function createPortalSession({
   returnUrl: string
 }): Promise<Stripe.BillingPortal.Session> {
   const stripeClient = getStripe()
-  
+
   const session = await stripeClient.billingPortal.sessions.create({
     customer: customerId,
     return_url: returnUrl,
