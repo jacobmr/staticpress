@@ -326,7 +326,7 @@ export class NetlifyProvider implements DeploymentProvider {
         hasMore,
         nextCursor: hasMore ? String(startIndex + pageSize) : undefined,
       }
-    } catch (error) {
+    } catch (_error) {
       return {
         logs: [],
         hasMore: false,
@@ -360,7 +360,7 @@ export class NetlifyProvider implements DeploymentProvider {
       )
 
       const isDomainConfigured = site.domain_aliases.includes(domain) ||
-                                  site.custom_domain === domain
+        site.custom_domain === domain
 
       // Get DNS records for the domain
       const dnsRecords = await this.getDnsInstructions(credentials, projectId, domain)

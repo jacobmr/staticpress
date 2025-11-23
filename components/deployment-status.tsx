@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { ExternalLink, RefreshCw, AlertCircle, CheckCircle, Clock } from 'lucide-react'
+import { ExternalLink, RefreshCw, AlertCircle, CheckCircle } from 'lucide-react'
 
 interface DeploymentStatus {
     provider: string
@@ -84,7 +84,7 @@ export function DeploymentStatus() {
             } else {
                 setFixResult(`❌ ${data.message || 'Could not auto-fix.'}`)
             }
-        } catch (e) {
+        } catch {
             setFixResult('❌ Error attempting fix.')
         } finally {
             setIsFixing(false)

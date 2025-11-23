@@ -5,7 +5,6 @@ import { marked } from 'marked'
 import { Editor } from './editor'
 import { FileBrowser } from './file-browser'
 import { EmptyState } from './empty-state'
-import { PublishModal } from './publish-modal'
 import { HugoPost } from '@/lib/github'
 import { User } from '@/lib/db'
 import { setCachedPosts, clearCachedPosts } from '@/lib/client-cache'
@@ -34,8 +33,6 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
-  const [showPublishModal, setShowPublishModal] = useState(false)
-  const [showDraftModal, setShowDraftModal] = useState(false)
   const [showEmptyState, setShowEmptyState] = useState(initialPosts.length === 0)
 
   // Track uploaded images: base64 → hugo URL

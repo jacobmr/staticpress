@@ -65,7 +65,7 @@ export async function GET(
       .single()
 
     // Get domain details from provider if credentials exist
-    let domains = project.custom_domains || []
+    const domains = project.custom_domains || []
     const domainDetails: Array<{
       domain: string
       configured: boolean

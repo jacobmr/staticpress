@@ -22,7 +22,7 @@ export function ConfigRepair() {
             } else {
                 setMessage(`❌ ${data.error || 'Failed to repair'}`)
             }
-        } catch (error) {
+        } catch (_error) {
             setMessage('❌ Error repairing configuration')
         } finally {
             setIsRepairing(false)

@@ -547,7 +547,7 @@ export class CloudflareProvider implements DeploymentProvider {
 
       const domainResult = response.result
       const isVerified = domainResult.status === 'active' ||
-                         domainResult.verification_data?.status === 'active'
+        domainResult.verification_data?.status === 'active'
 
       // Get DNS instructions for the domain
       const dnsRecords = await this.getDnsInstructions(credentials, projectId, domain)

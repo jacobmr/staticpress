@@ -28,12 +28,10 @@ interface EditorProps {
   content: string
   onChange: (content: string) => void
   placeholder?: string
-  readOnly?: boolean
   onImageUploaded?: (base64: string, hugoUrl: string) => void
-  uploadImage?: (file: File) => Promise<string | null>
 }
 
-export function Editor({ content, onChange, placeholder = 'Start writing your post...', readOnly = false, onImageUploaded, uploadImage }: EditorProps) {
+export function Editor({ content, onChange, placeholder = 'Write something...', onImageUploaded }: EditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false)
   const [linkUrl, setLinkUrl] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -242,21 +240,35 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
     setIsUploading(true)
 
     try {
-      if (uploadImage) {
-        const url = await uploadImage(file)
-        if (url) {
-          editor.chain().focus().setImage({ src: url }).run()
+      // Convert to base64 and upload
+      const reader = new FileReader()
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string
+
+        // Show preview
+        editor.chain().focus().setImage({ src: base64 }).run()
+
+        // Upload to GitHub
+        try {
+          const response = await fetch('/api/images/upload', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              filename: file.name,
+              content: base64.split(',')[1],
+              contentType: file.type,
+            }),
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            onImageUploaded?.(base64, data.url)
+          }
+        } catch (err) {
+          console.error('Failed to upload image:', err)
         }
-      } else {
-        // Fallback to base64
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          editor.chain().focus().setImage({ src: result }).run()
-          onImageUploaded?.(result, '')
-        }
-        reader.readAsDataURL(file)
       }
+      reader.readAsDataURL(file)
     } catch (error) {
       console.error('Image upload error:', error)
       alert('Failed to upload image')
@@ -266,7 +278,7 @@ export function Editor({ content, onChange, placeholder = 'Start writing your po
         fileInputRef.current.value = ''
       }
     }
-  }, [editor, uploadImage, onImageUploaded])
+  }, [editor, onImageUploaded])
 
   // Update editor content when content prop changes
   useEffect(() => {

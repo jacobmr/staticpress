@@ -83,7 +83,7 @@ export class GitHubClient {
         }
       }
       return null
-    } catch (error) {
+    } catch (_error) {
       // Don't log 404s as errors, just return null
       return null
     }
@@ -101,7 +101,7 @@ export class GitHubClient {
         return data.sha
       }
       return null
-    } catch (error) {
+    } catch (_error) {
       // File doesn't exist
       return null
     }
@@ -252,7 +252,7 @@ export class GitHubClient {
         cname: data.cname,
         https_enforced: data.https_enforced,
       }
-    } catch (error) {
+    } catch (_error) {
       // Pages not enabled yet
       return null
     }

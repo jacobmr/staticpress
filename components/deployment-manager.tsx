@@ -47,7 +47,7 @@ interface DeploymentManagerProps {
   repositoryId: string
 }
 
-export function DeploymentManager({ repositoryId }: DeploymentManagerProps) {
+export function DeploymentManager({ repositoryId: _repositoryId }: DeploymentManagerProps) {
   // URL search params for success state
   const searchParams = useSearchParams()
 
@@ -559,13 +559,12 @@ export function DeploymentManager({ repositoryId }: DeploymentManagerProps) {
                     {domain.domain}
                   </span>
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                      domain.status === 'active'
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${domain.status === 'active'
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         : domain.status === 'pending'
-                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                        : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                    }`}
+                          ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      }`}
                   >
                     {domain.status}
                   </span>

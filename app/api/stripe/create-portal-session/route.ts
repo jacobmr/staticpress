@@ -4,7 +4,7 @@ import { createPortalSession } from '@/lib/stripe'
 
 export const dynamic = 'force-dynamic'
 
-export async function POST(req: NextRequest) {
+export async function POST(_req: NextRequest) {
   try {
     // Check authentication
     const session = await auth()
