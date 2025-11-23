@@ -266,6 +266,7 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
           }
         } catch (err) {
           console.error('Failed to upload image:', err)
+          alert('Failed to upload image to server. Please try again.')
         }
       }
       reader.readAsDataURL(file)

@@ -172,7 +172,7 @@ export async function POST(request: Request) {
       error: error instanceof Error ? error.message : 'Unknown error',
     })
     return NextResponse.json(
-      { error: 'Failed to publish post' },
+      { error: error instanceof Error ? error.message : 'Failed to publish post' },
       { status: 500 }
     )
   }

@@ -137,6 +137,17 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     setSaveMessage('')
     setSaveStatus('saving')
 
+    const processedContent = reverseTransformImageUrls(content)
+
+    // Check for base64 images which indicate failed uploads
+    if (processedContent.includes('data:image')) {
+      setSaveMessage('Error: Some images failed to upload. Please remove and re-add them.')
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 5000)
+      setIsSaving(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/posts/publish', {
         method: 'POST',
@@ -145,14 +156,15 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
         },
         body: JSON.stringify({
           title: postTitle,
-          content: reverseTransformImageUrls(content),
+          content: processedContent,
           path: selectedPost?.path,
           draft: false,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to publish post')
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to publish post')
       }
 
       const result = await response.json()
@@ -182,7 +194,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       // Reset to idle after 3 seconds
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (error) {
-      setSaveMessage('Error publishing post')
+      setSaveMessage(error instanceof Error ? error.message : 'Error publishing post')
       setSaveStatus('error')
       console.error(error)
       setTimeout(() => setSaveStatus('idle'), 3000)
@@ -198,6 +210,17 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     setSaveMessage('')
     setSaveStatus('saving')
 
+    const processedContent = reverseTransformImageUrls(content)
+
+    // Check for base64 images which indicate failed uploads
+    if (processedContent.includes('data:image')) {
+      setSaveMessage('Error: Some images failed to upload. Please remove and re-add them.')
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 5000)
+      setIsSaving(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/posts/publish', {
         method: 'POST',
@@ -206,14 +229,15 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
         },
         body: JSON.stringify({
           title: postTitle,
-          content: reverseTransformImageUrls(content),
+          content: processedContent,
           path: selectedPost?.path,
           draft: true,
         }),
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save draft')
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to save draft')
       }
 
       const result = await response.json()
@@ -243,7 +267,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
       // Reset to idle after 3 seconds
       setTimeout(() => setSaveStatus('idle'), 3000)
     } catch (error) {
-      setSaveMessage('Error saving draft')
+      setSaveMessage(error instanceof Error ? error.message : 'Error saving draft')
       setSaveStatus('error')
       console.error(error)
       setTimeout(() => setSaveStatus('idle'), 3000)
@@ -384,7 +408,7 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
                       <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                       </svg>
-                      <span>Error</span>
+                      <span>{saveMessage || 'Error'}</span>
                     </div>
                   )}
                 </div>
