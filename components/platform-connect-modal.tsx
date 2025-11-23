@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ExternalLink, Loader2, AlertCircle, CheckCircle, Github, Cloud } from 'lucide-react'
+import { ExternalLink, Loader2, AlertCircle, CheckCircle, Github } from 'lucide-react'
 import type { Platform } from './platform-selector'
 
 interface PlatformConnectModalProps {
@@ -22,10 +22,6 @@ export function PlatformConnectModal({ platform, isOpen, onClose, onSuccess }: P
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
-
-  // Cloudflare-specific form state
-  const [apiToken, setApiToken] = useState('')
-  const [accountId, setAccountId] = useState('')
 
   const info = platformInfo[platform]
 
@@ -55,34 +51,6 @@ export function PlatformConnectModal({ platform, isOpen, onClose, onSuccess }: P
     }
   }
 
-  const handleCloudflareConnect = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
-
-    try {
-      const response = await fetch('/api/deployment/connect/cloudflare', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiToken, accountId }),
-      })
-
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.error || 'Failed to connect Cloudflare')
-      }
-
-      setSuccess(true)
-      setTimeout(() => {
-        onSuccess()
-        onClose()
-      }, 1500)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleGitHubPagesConnect = async () => {
     setIsLoading(true)
@@ -134,8 +102,6 @@ export function PlatformConnectModal({ platform, isOpen, onClose, onSuccess }: P
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
             {platform === 'github-pages'
               ? 'GitHub Pages will be enabled for your repository.'
-              : platform === 'cloudflare'
-              ? 'Enter your Cloudflare API credentials to connect.'
               : `Authorize StaticPress to deploy to ${info.name}.`}
           </p>
         </div>
@@ -192,12 +158,12 @@ export function PlatformConnectModal({ platform, isOpen, onClose, onSuccess }: P
               </div>
             )}
 
-            {(platform === 'vercel' || platform === 'netlify') && (
+            {(platform === 'vercel' || platform === 'netlify' || platform === 'cloudflare') && (
               <div className="space-y-4">
                 <div className="rounded-md bg-gray-50 p-4 dark:bg-gray-800">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
-                    You&apos;ll be redirected to {info.name} to authorize StaticPress. After approval, you&apos;ll be
-                    returned here automatically.
+                    You&apos;ll be redirected to {info.name} to authorize StaticPress. After approval, your deployment
+                    will be automatically configured.
                   </p>
                 </div>
 
@@ -207,7 +173,9 @@ export function PlatformConnectModal({ platform, isOpen, onClose, onSuccess }: P
                   className={`w-full rounded-md px-4 py-3 font-medium text-white disabled:opacity-50 ${
                     platform === 'vercel'
                       ? 'bg-black hover:bg-gray-900 dark:bg-white dark:text-black dark:hover:bg-gray-100'
-                      : 'bg-teal-500 hover:bg-teal-600'
+                      : platform === 'netlify'
+                      ? 'bg-teal-500 hover:bg-teal-600'
+                      : 'bg-orange-500 hover:bg-orange-600'
                   }`}
                 >
                   {isLoading ? (
@@ -223,84 +191,6 @@ export function PlatformConnectModal({ platform, isOpen, onClose, onSuccess }: P
                   )}
                 </button>
               </div>
-            )}
-
-            {platform === 'cloudflare' && (
-              <form onSubmit={handleCloudflareConnect} className="space-y-4">
-                <div>
-                  <label
-                    htmlFor="apiToken"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    API Token
-                  </label>
-                  <input
-                    id="apiToken"
-                    type="password"
-                    value={apiToken}
-                    onChange={e => setApiToken(e.target.value)}
-                    placeholder="Enter your Cloudflare API token"
-                    required
-                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Create a token with &quot;Edit Cloudflare Pages&quot; permissions.
-                  </p>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="accountId"
-                    className="block text-sm font-medium text-gray-700 dark:text-gray-300"
-                  >
-                    Account ID
-                  </label>
-                  <input
-                    id="accountId"
-                    type="text"
-                    value={accountId}
-                    onChange={e => setAccountId(e.target.value)}
-                    placeholder="Enter your Cloudflare Account ID"
-                    required
-                    className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-gray-600 dark:bg-gray-800"
-                  />
-                  <p className="mt-1 text-xs text-gray-500">
-                    Found in your Cloudflare dashboard URL or account settings.
-                  </p>
-                </div>
-
-                <div className="rounded-md bg-orange-50 p-4 dark:bg-orange-900/20">
-                  <div className="flex items-start gap-3">
-                    <Cloud className="h-5 w-5 flex-shrink-0 text-orange-600 dark:text-orange-400 mt-0.5" />
-                    <div className="text-sm text-orange-700 dark:text-orange-300">
-                      <a
-                        href="https://dash.cloudflare.com/profile/api-tokens"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium underline hover:no-underline"
-                      >
-                        Get your API token
-                      </a>
-                      {' '}from the Cloudflare dashboard.
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading || !apiToken || !accountId}
-                  className="w-full rounded-md bg-orange-500 px-4 py-3 font-medium text-white hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Connecting...
-                    </span>
-                  ) : (
-                    'Connect Cloudflare'
-                  )}
-                </button>
-              </form>
             )}
           </>
         )}

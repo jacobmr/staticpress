@@ -10,6 +10,8 @@ import type {
   ProjectConfig,
   ProviderCapabilities,
   DeploymentStatus,
+  AutoSetupConfig,
+  AutoSetupResult,
 } from '../types'
 
 interface CloudflareApiResponse<T> {
@@ -137,6 +139,52 @@ export class CloudflareProvider implements DeploymentProvider {
 
   private readonly baseUrl = 'https://api.cloudflare.com/client/v4'
 
+  // OAuth methods
+  getAuthorizationUrl(redirectUri: string, state: string): string {
+    const params = new URLSearchParams({
+      client_id: process.env.CLOUDFLARE_CLIENT_ID!,
+      redirect_uri: redirectUri,
+      response_type: 'code',
+      state,
+      scope: 'account:read pages:write',
+    })
+    return `https://dash.cloudflare.com/oauth2/authorize?${params.toString()}`
+  }
+
+  async exchangeCodeForToken(code: string, redirectUri: string): Promise<string> {
+    const response = await fetch('https://dash.cloudflare.com/oauth2/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: process.env.CLOUDFLARE_CLIENT_ID!,
+        client_secret: process.env.CLOUDFLARE_CLIENT_SECRET!,
+        code,
+        redirect_uri: redirectUri,
+      }),
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(data.error_description || 'Token exchange failed')
+    return data.access_token
+  }
+
+  async getAccountId(accessToken: string): Promise<string> {
+    const response = await fetch('https://api.cloudflare.com/client/v4/accounts', {
+      headers: { 'Authorization': `Bearer ${accessToken}` },
+    })
+    const data = await response.json()
+    if (!data.success || !data.result?.length) {
+      throw new Error('No Cloudflare accounts found')
+    }
+    // Return first account (or could return all for user selection)
+    return data.result[0].id
+  }
+
+  private async getAccountIdFromCredentials(credentials: DeploymentCredentials): Promise<string> {
+    if (credentials.accountId) return credentials.accountId
+    return this.getAccountId(credentials.accessToken!)
+  }
+
   private async request<T>(
     credentials: DeploymentCredentials,
     endpoint: string,
@@ -172,11 +220,11 @@ export class CloudflareProvider implements DeploymentProvider {
     }
 
     try {
-      const response = await this.request<CloudflareAccount[]>(
-        credentials,
-        '/accounts'
-      )
-      return response.success && Array.isArray(response.result)
+      const response = await fetch('https://api.cloudflare.com/client/v4/user/tokens/verify', {
+        headers: { 'Authorization': `Bearer ${credentials.accessToken}` },
+      })
+      const data = await response.json()
+      return data.success === true
     } catch {
       return false
     }
@@ -188,10 +236,7 @@ export class CloudflareProvider implements DeploymentProvider {
     repoOwner: string,
     repoName: string
   ): Promise<DeploymentProject> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     const envVars: Record<string, { value: string }> = {}
     if (config.environmentVariables) {
@@ -259,10 +304,7 @@ export class CloudflareProvider implements DeploymentProvider {
     credentials: DeploymentCredentials,
     projectId: string
   ): Promise<DeploymentProject | null> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       const response = await this.request<CloudflareProject>(
@@ -303,10 +345,7 @@ export class CloudflareProvider implements DeploymentProvider {
       isProduction?: boolean
     }
   ): Promise<DeploymentResult> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       // Cloudflare Pages deployments are triggered via webhook from GitHub
@@ -360,10 +399,7 @@ export class CloudflareProvider implements DeploymentProvider {
     projectId: string,
     deploymentId: string
   ): Promise<DeploymentStatusResult> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       const response = await this.request<CloudflareDeployment>(
@@ -421,10 +457,7 @@ export class CloudflareProvider implements DeploymentProvider {
     deploymentId: string,
     cursor?: string
   ): Promise<DeploymentLogsResult> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       // Get deployment details which includes build logs
@@ -491,10 +524,7 @@ export class CloudflareProvider implements DeploymentProvider {
     projectId: string,
     domain: string
   ): Promise<CustomDomainResult> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       const response = await this.request<CloudflareDomain>(
@@ -544,10 +574,7 @@ export class CloudflareProvider implements DeploymentProvider {
     projectId: string,
     domain: string
   ): Promise<boolean> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       const response = await this.request<null>(
@@ -613,10 +640,7 @@ export class CloudflareProvider implements DeploymentProvider {
     projectId: string,
     deploymentId: string
   ): Promise<DeploymentResult> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       // Get the deployment to rollback to
@@ -666,10 +690,7 @@ export class CloudflareProvider implements DeploymentProvider {
     credentials: DeploymentCredentials,
     projectId: string
   ): Promise<boolean> {
-    const accountId = credentials.accountId
-    if (!accountId) {
-      throw new Error('Account ID is required for Cloudflare Pages')
-    }
+    const accountId = await this.getAccountIdFromCredentials(credentials)
 
     try {
       const response = await this.request<null>(
@@ -683,6 +704,90 @@ export class CloudflareProvider implements DeploymentProvider {
       return response.success
     } catch {
       return false
+    }
+  }
+
+  /**
+   * One-click auto-setup for Cloudflare Pages
+   * - Auto-detects account ID if not provided
+   * - Creates Pages project linked to GitHub
+   * - Configures Hugo build settings
+   * - Returns pages.dev URL
+   */
+  async autoSetupProject(
+    credentials: DeploymentCredentials,
+    githubRepo: { owner: string; name: string; defaultBranch: string },
+    config: AutoSetupConfig
+  ): Promise<AutoSetupResult> {
+    const { owner, name: repoName } = githubRepo
+
+    // Get account ID (auto-detect if not provided)
+    const accountId = await this.getAccountIdFromCredentials(credentials)
+
+    // Generate project name from repo name (sanitize for Cloudflare)
+    let projectName = repoName.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+
+    // Check if project already exists
+    let existingProject = await this.getProject(
+      { ...credentials, accountId },
+      projectName
+    )
+    let suffix = 1
+    const baseProjectName = projectName
+
+    while (existingProject) {
+      // Check if it's linked to the same GitHub repo
+      try {
+        const response = await this.request<CloudflareProject>(
+          { ...credentials, accountId },
+          `/accounts/${accountId}/pages/projects/${projectName}`
+        )
+
+        if (
+          response.success &&
+          response.result?.source?.config?.owner === owner &&
+          response.result?.source?.config?.repo_name === repoName
+        ) {
+          // Same repo, use existing project
+          return {
+            project: existingProject,
+            deploymentUrl: existingProject.productionUrl,
+            webhookConfigured: true,
+          }
+        }
+      } catch {
+        // Error checking project, continue with suffix
+      }
+
+      // Different repo, try with suffix
+      projectName = `${baseProjectName}-${suffix}`
+      suffix++
+      existingProject = await this.getProject(
+        { ...credentials, accountId },
+        projectName
+      )
+    }
+
+    // Create project config
+    const projectConfig: ProjectConfig = {
+      name: projectName,
+      framework: config.framework,
+      buildCommand: 'hugo --minify',
+      outputDirectory: 'public',
+    }
+
+    // Create the project with accountId in credentials
+    const project = await this.createProject(
+      { ...credentials, accountId },
+      projectConfig,
+      owner,
+      repoName
+    )
+
+    return {
+      project,
+      deploymentUrl: project.productionUrl,
+      webhookConfigured: true, // Cloudflare auto-deploys from GitHub
     }
   }
 }

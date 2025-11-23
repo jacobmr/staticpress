@@ -82,6 +82,17 @@ export interface ProjectConfig {
   rootDirectory?: string
 }
 
+export interface AutoSetupConfig {
+  framework: 'hugo' | 'other'
+  hugoVersion?: string
+}
+
+export interface AutoSetupResult {
+  project: DeploymentProject
+  deploymentUrl: string
+  webhookConfigured: boolean
+}
+
 export interface ProviderCapabilities {
   supportsPreviewDeployments: boolean
   supportsCustomDomains: boolean
@@ -223,6 +234,19 @@ export interface DeploymentProvider {
     code: string,
     redirectUri: string
   ): Promise<string>
+
+  /**
+   * One-click auto-setup after OAuth
+   * - Detect account/team
+   * - Create project linked to GitHub repo
+   * - Configure build settings
+   * - Return deployment URL
+   */
+  autoSetupProject(
+    credentials: DeploymentCredentials,
+    githubRepo: { owner: string; name: string; defaultBranch: string },
+    config: AutoSetupConfig
+  ): Promise<AutoSetupResult>
 }
 
 /**

@@ -17,6 +17,8 @@ import type {
   ProjectConfig,
   ProviderCapabilities,
   DeploymentStatus,
+  AutoSetupConfig,
+  AutoSetupResult,
 } from '../types'
 
 const NETLIFY_API_BASE = 'https://api.netlify.com/api/v1'
@@ -552,6 +554,78 @@ export class NetlifyProvider implements DeploymentProvider {
 
     const data = await response.json() as { access_token: string }
     return data.access_token
+  }
+
+  /**
+   * One-click auto-setup for Netlify
+   * - Creates site linked to GitHub repo
+   * - Configures Hugo build settings
+   * - Returns netlify.app URL
+   */
+  async autoSetupProject(
+    credentials: DeploymentCredentials,
+    githubRepo: { owner: string; name: string; defaultBranch: string },
+    config: AutoSetupConfig
+  ): Promise<AutoSetupResult> {
+    if (!credentials.accessToken) {
+      throw new Error('Access token is required')
+    }
+
+    const { owner, name: repoName } = githubRepo
+
+    // Generate site name from repo name (sanitize for Netlify)
+    let siteName = repoName.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+
+    // Check if site with this name already exists by trying to get it
+    // Netlify doesn't have a direct "get by name" endpoint, so we list sites and filter
+    try {
+      const sites = await this.makeRequest<NetlifySite[]>(
+        '/sites',
+        credentials.accessToken
+      )
+
+      let existingSite = sites.find(s => s.name === siteName)
+      let suffix = 1
+      const baseSiteName = siteName
+
+      while (existingSite) {
+        // Check if it's linked to the same GitHub repo
+        if (
+          existingSite.build_settings?.repo_url?.includes(`${owner}/${repoName}`)
+        ) {
+          // Same repo, use existing site
+          return {
+            project: this.transformSiteToProject(existingSite),
+            deploymentUrl: existingSite.ssl_url || existingSite.url,
+            webhookConfigured: true,
+          }
+        }
+
+        // Different repo, try with suffix
+        siteName = `${baseSiteName}-${suffix}`
+        suffix++
+        existingSite = sites.find(s => s.name === siteName)
+      }
+    } catch {
+      // Error fetching sites, proceed with original name
+    }
+
+    // Create project config
+    const projectConfig: ProjectConfig = {
+      name: siteName,
+      framework: config.framework,
+      buildCommand: 'hugo --minify',
+      outputDirectory: 'public',
+    }
+
+    // Create the site
+    const project = await this.createProject(credentials, projectConfig, owner, repoName)
+
+    return {
+      project,
+      deploymentUrl: project.productionUrl,
+      webhookConfigured: true, // Netlify auto-deploys from GitHub
+    }
   }
 
   private transformSiteToProject(site: NetlifySite): DeploymentProject {

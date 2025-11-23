@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { CheckCircle, ExternalLink, Globe, Zap, Cloud, Github } from 'lucide-react'
+import { CheckCircle, Globe, Cloud, Github } from 'lucide-react'
 
 export type Platform = 'github-pages' | 'vercel' | 'netlify' | 'cloudflare'
 
@@ -47,7 +47,7 @@ const platformData: Omit<PlatformInfo, 'connected'>[] = [
     name: 'Cloudflare Pages',
     description: 'Ultra-fast edge network with unlimited bandwidth',
     capabilities: ['Unlimited bandwidth', 'Edge functions', 'Web analytics', 'Custom domains'],
-    requiresOAuth: false,
+    requiresOAuth: true,
   },
 ]
 

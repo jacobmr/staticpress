@@ -11,6 +11,8 @@ import type {
   ProjectConfig,
   ProviderCapabilities,
   DeploymentStatus,
+  AutoSetupConfig,
+  AutoSetupResult,
 } from '../types'
 
 /**
@@ -652,6 +654,39 @@ export class GitHubPagesProvider implements DeploymentProvider {
     } catch (error) {
       console.error('Failed to disable GitHub Pages:', error)
       return false
+    }
+  }
+
+  /**
+   * One-click auto-setup for GitHub Pages
+   * - Enables GitHub Pages with workflow source
+   * - Returns the github.io URL
+   * - Webhook is already configured via GitHub
+   */
+  async autoSetupProject(
+    credentials: DeploymentCredentials,
+    githubRepo: { owner: string; name: string; defaultBranch: string },
+    config: AutoSetupConfig
+  ): Promise<AutoSetupResult> {
+    const { owner, name: repo } = githubRepo
+
+    // Create project config for Hugo
+    const projectConfig: ProjectConfig = {
+      name: repo,
+      framework: config.framework,
+      buildCommand: 'hugo --minify',
+      outputDirectory: 'public',
+    }
+
+    // Enable GitHub Pages with workflow source
+    const project = await this.createProject(credentials, projectConfig, owner, repo)
+
+    // GitHub Pages automatically deploys via GitHub Actions workflow
+    // No additional webhook configuration needed
+    return {
+      project,
+      deploymentUrl: project.productionUrl,
+      webhookConfigured: true, // GitHub handles this automatically
     }
   }
 }

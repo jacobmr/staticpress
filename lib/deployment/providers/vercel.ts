@@ -20,6 +20,8 @@ import type {
   DnsRecord,
   ProjectConfig,
   DeploymentStatus,
+  AutoSetupConfig,
+  AutoSetupResult,
 } from '../types'
 
 const VERCEL_API_BASE = 'https://api.vercel.com'
@@ -620,6 +622,71 @@ export class VercelProvider implements DeploymentProvider {
 
     const data = (await response.json()) as { access_token: string }
     return data.access_token
+  }
+
+  /**
+   * One-click auto-setup for Vercel
+   * - Auto-detects personal account or team
+   * - Creates project linked to GitHub repo
+   * - Configures Hugo build settings
+   * - Returns vercel.app URL
+   */
+  async autoSetupProject(
+    credentials: DeploymentCredentials,
+    githubRepo: { owner: string; name: string; defaultBranch: string },
+    config: AutoSetupConfig
+  ): Promise<AutoSetupResult> {
+    const { owner, name: repoName } = githubRepo
+
+    // Generate project name from repo name (sanitize for Vercel)
+    let projectName = repoName.toLowerCase().replace(/[^a-z0-9-]/g, '-')
+
+    // Check if project already exists, append suffix if needed
+    let existingProject = await this.getProject(credentials, projectName)
+    let suffix = 1
+    const baseProjectName = projectName
+    while (existingProject) {
+      // Check if it's linked to the same GitHub repo
+      const existingProjectFull = await this.apiRequest<VercelProject>(
+        'GET',
+        `/v9/projects/${encodeURIComponent(projectName)}`,
+        credentials
+      )
+
+      if (
+        existingProjectFull.link?.org === owner &&
+        existingProjectFull.link?.repo === repoName
+      ) {
+        // Same repo, use existing project
+        return {
+          project: existingProject,
+          deploymentUrl: existingProject.productionUrl,
+          webhookConfigured: true,
+        }
+      }
+
+      // Different repo, try with suffix
+      projectName = `${baseProjectName}-${suffix}`
+      suffix++
+      existingProject = await this.getProject(credentials, projectName)
+    }
+
+    // Create project config
+    const projectConfig: ProjectConfig = {
+      name: projectName,
+      framework: config.framework,
+      buildCommand: 'hugo --minify',
+      outputDirectory: 'public',
+    }
+
+    // Create the project
+    const project = await this.createProject(credentials, projectConfig, owner, repoName)
+
+    return {
+      project,
+      deploymentUrl: project.productionUrl,
+      webhookConfigured: true, // Vercel auto-deploys from GitHub
+    }
   }
 
   /**

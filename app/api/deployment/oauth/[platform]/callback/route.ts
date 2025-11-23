@@ -142,7 +142,108 @@ export async function GET(
       platform: validPlatform,
     })
 
-    // Redirect to success page
+    // Get user's repository for auto-setup
+    const { data: repository } = await supabase
+      .from('repositories')
+      .select('id')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (repository) {
+      // Auto-setup deployment project
+      try {
+        const { getDeploymentProvider } = await import('@/lib/deployment')
+        const provider = await getDeploymentProvider(validPlatform)
+
+        // Get repository details for project config
+        const { data: repoDetails } = await supabase
+          .from('repositories')
+          .select('*')
+          .eq('id', repository.id)
+          .single()
+
+        if (repoDetails) {
+          // Build credentials
+          const credentials = {
+            platform: validPlatform,
+            accessToken,
+            teamId: undefined,
+            accountId: undefined,
+          }
+
+          // Build project configuration
+          const projectConfig = {
+            name: `${repoDetails.owner}-${repoDetails.repo}`,
+            framework: repoDetails.engine === 'hugo' ? 'hugo' as const : 'other' as const,
+            buildCommand: repoDetails.engine === 'hugo' ? 'hugo --gc --minify' : 'npm run build',
+            outputDirectory: repoDetails.engine === 'hugo' ? 'public' : 'dist',
+            environmentVariables: {
+              HUGO_VERSION: '0.123.0',
+            },
+          }
+
+          // Create deployment project
+          const project = await provider.createProject(
+            credentials,
+            projectConfig,
+            repoDetails.owner,
+            repoDetails.repo
+          )
+
+          // Save project to database
+          const { data: existingProject } = await supabase
+            .from('deployment_projects')
+            .select('id')
+            .eq('repository_id', repository.id)
+            .eq('platform', validPlatform)
+            .single()
+
+          if (existingProject) {
+            await supabase
+              .from('deployment_projects')
+              .update({
+                project_id: project.id,
+                project_name: project.name,
+                production_url: project.productionUrl,
+                custom_domains: project.customDomains,
+                is_active: true,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', existingProject.id)
+          } else {
+            await supabase
+              .from('deployment_projects')
+              .insert({
+                repository_id: repository.id,
+                platform: validPlatform,
+                project_id: project.id,
+                project_name: project.name,
+                production_url: project.productionUrl,
+                custom_domains: project.customDomains,
+                is_active: true,
+              })
+          }
+
+          // Log deployment project creation
+          await logEvent('deployment_project_created', user.id, {
+            platform: validPlatform,
+            projectId: project.id,
+            repositoryId: repository.id,
+          })
+
+          // Redirect to deploy page with success
+          return NextResponse.redirect(getSetupSuccessRedirectUrl(validPlatform, project.productionUrl))
+        }
+      } catch (setupError) {
+        console.error('Auto-setup error:', setupError)
+        // If auto-setup fails, still redirect to success (platform is connected)
+        return NextResponse.redirect(getSuccessRedirectUrl(validPlatform))
+      }
+    }
+
+    // Redirect to success page (fallback if no repository)
     return NextResponse.redirect(getSuccessRedirectUrl(validPlatform))
   } catch (error) {
     console.error('OAuth callback error:', error)
@@ -158,4 +259,9 @@ function getErrorRedirectUrl(error: string): string {
 function getSuccessRedirectUrl(platform: string): string {
   const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
   return `${baseUrl}/settings?tab=deployment&success=${encodeURIComponent(`${platform} connected successfully`)}`
+}
+
+function getSetupSuccessRedirectUrl(platform: string, productionUrl: string): string {
+  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
+  return `${baseUrl}/deploy?success=true&platform=${encodeURIComponent(platform)}&url=${encodeURIComponent(productionUrl)}`
 }

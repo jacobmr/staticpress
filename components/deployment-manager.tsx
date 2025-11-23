@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   RefreshCw,
   Rocket,
@@ -16,6 +17,7 @@ import {
   Copy,
   ChevronDown,
   ChevronUp,
+  PartyPopper,
 } from 'lucide-react'
 import { PlatformSelector, Platform } from './platform-selector'
 import { PlatformConnectModal } from './platform-connect-modal'
@@ -46,6 +48,9 @@ interface DeploymentManagerProps {
 }
 
 export function DeploymentManager({ repositoryId }: DeploymentManagerProps) {
+  // URL search params for success state
+  const searchParams = useSearchParams()
+
   // State
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(null)
   const [currentPlatform, setCurrentPlatform] = useState<Platform | null>(null)
@@ -68,6 +73,31 @@ export function DeploymentManager({ repositoryId }: DeploymentManagerProps) {
   const [error, setError] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
   const [copiedDns, setCopiedDns] = useState(false)
+
+  // Success state from OAuth redirect
+  const [setupComplete, setSetupComplete] = useState(false)
+  const [setupPlatform, setSetupPlatform] = useState<string | null>(null)
+  const [productionUrl, setProductionUrl] = useState<string | null>(null)
+
+  // Check for success state from URL params
+  useEffect(() => {
+    const success = searchParams.get('success')
+    const platform = searchParams.get('platform')
+    const url = searchParams.get('url')
+
+    if (success === 'true' && platform && url) {
+      setSetupComplete(true)
+      setSetupPlatform(platform)
+      setProductionUrl(url)
+      setCurrentPlatform(platform as Platform)
+
+      // Clear the URL params after reading
+      if (typeof window !== 'undefined') {
+        const newUrl = window.location.pathname
+        window.history.replaceState({}, '', newUrl)
+      }
+    }
+  }, [searchParams])
 
   // Fetch deployment data
   const fetchDeploymentData = useCallback(async () => {
@@ -297,6 +327,43 @@ export function DeploymentManager({ repositoryId }: DeploymentManagerProps) {
 
   return (
     <div className="space-y-8">
+      {/* Success state after auto-setup */}
+      {setupComplete && productionUrl && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-6 dark:border-green-800 dark:bg-green-900/20">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-800">
+              <PartyPopper className="h-6 w-6 text-green-600 dark:text-green-400" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
+                Deployment Configured!
+              </h3>
+              <p className="mt-1 text-sm text-green-700 dark:text-green-300">
+                Your site is now connected to {setupPlatform === 'github-pages' ? 'GitHub Pages' : setupPlatform?.charAt(0).toUpperCase() + (setupPlatform?.slice(1) || '')}.
+                It will deploy automatically on every push to your repository.
+              </p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <a
+                  href={productionUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  View your site
+                </a>
+                <button
+                  onClick={() => setSetupComplete(false)}
+                  className="text-sm text-green-700 hover:text-green-900 dark:text-green-300 dark:hover:text-green-100"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Error display */}
       {error && (
         <div className="flex items-start gap-3 rounded-md bg-red-50 p-4 text-red-700 dark:bg-red-900/20 dark:text-red-400">

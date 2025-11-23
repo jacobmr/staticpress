@@ -139,3 +139,11 @@ export const oauthCallbackSchema = z.object({
   code: z.string().min(1, 'Authorization code is required'),
   state: z.string().min(1, 'State is required'),
 })
+
+// Setup deployment schema
+export const setupDeploymentSchema = z.object({
+  platform: z.enum(['github-pages', 'vercel', 'netlify', 'cloudflare']),
+  repositoryId: z.number().int().positive('Repository ID is required'),
+})
+
+export type SetupDeploymentInput = z.infer<typeof setupDeploymentSchema>
