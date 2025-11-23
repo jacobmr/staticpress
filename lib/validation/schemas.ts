@@ -66,7 +66,7 @@ export type FeedbackInput = z.infer<typeof feedbackSchema>
 // Analytics event schema
 export const analyticsEventSchema = z.object({
   event: z.string().min(1).max(100),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 })
 
 export type AnalyticsEventInput = z.infer<typeof analyticsEventSchema>
@@ -78,3 +78,64 @@ export const faviconUploadSchema = z.object({
 })
 
 export type FaviconUploadInput = z.infer<typeof faviconUploadSchema>
+
+// Deployment platform schema
+export const deploymentPlatformSchema = z.enum(['github-pages', 'vercel', 'netlify', 'cloudflare'])
+
+export type DeploymentPlatformInput = z.infer<typeof deploymentPlatformSchema>
+
+// Connect platform schema
+export const connectPlatformSchema = z.object({
+  platform: deploymentPlatformSchema,
+  accessToken: z.string().min(1, 'Access token is required'),
+  teamId: z.string().optional(),
+  accountId: z.string().optional(),
+})
+
+export type ConnectPlatformInput = z.infer<typeof connectPlatformSchema>
+
+// Create deployment project schema
+export const createDeploymentProjectSchema = z.object({
+  platform: deploymentPlatformSchema,
+  name: z.string().min(1).max(100).regex(/^[a-zA-Z0-9-_.]+$/, 'Invalid project name'),
+  repositoryId: z.number().int().positive('Repository ID is required'),
+  framework: z.enum(['hugo', 'other'] as const).default('hugo'),
+  buildCommand: z.string().max(500).default('hugo --gc --minify'),
+  outputDirectory: z.string().max(200).default('public'),
+  environmentVariables: z.record(z.string(), z.string()).optional(),
+  rootDirectory: z.string().max(200).optional(),
+})
+
+export type CreateDeploymentProjectInput = z.infer<typeof createDeploymentProjectSchema>
+
+// Deploy schema
+export const deploySchema = z.object({
+  branch: z.string().max(100).optional(),
+  commitSha: z.string().max(40).optional(),
+  isProduction: z.boolean().default(true),
+})
+
+export type DeployInput = z.infer<typeof deploySchema>
+
+// Add custom domain schema
+export const addDomainSchema = z.object({
+  domain: z.string().min(1).max(253).regex(
+    /^([a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,
+    'Invalid domain format'
+  ),
+})
+
+export type AddDomainInput = z.infer<typeof addDomainSchema>
+
+// Remove custom domain schema
+export const removeDomainSchema = z.object({
+  domain: z.string().min(1).max(253),
+})
+
+export type RemoveDomainInput = z.infer<typeof removeDomainSchema>
+
+// OAuth callback schema
+export const oauthCallbackSchema = z.object({
+  code: z.string().min(1, 'Authorization code is required'),
+  state: z.string().min(1, 'State is required'),
+})

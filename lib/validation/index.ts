@@ -17,8 +17,8 @@ export async function validateRequest<T>(
     return { data }
   } catch (error) {
     if (error instanceof ZodError) {
-      const details = error.errors.map(err => ({
-        field: err.path.join('.'),
+      const details = error.issues.map((err) => ({
+        field: err.path.map(String).join('.'),
         message: err.message,
       }))
       return {
@@ -57,8 +57,8 @@ export function validateData<T>(
     return { success: true, data: parsed }
   } catch (error) {
     if (error instanceof ZodError) {
-      const errors = error.errors.map(err =>
-        `${err.path.join('.')}: ${err.message}`
+      const errors = error.issues.map((err) =>
+        `${err.path.map(String).join('.')}: ${err.message}`
       )
       return { success: false, errors }
     }

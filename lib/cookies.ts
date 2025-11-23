@@ -7,6 +7,7 @@ export interface RepoConfig {
   contentPath?: string // e.g., "content/posts"
   engine?: BlogEngine // 'hugo' or 'krems'
   siteUrl?: string | null // Published site URL
+  theme?: string // Hugo theme name
 }
 
 /**
