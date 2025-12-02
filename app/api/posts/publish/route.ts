@@ -6,7 +6,8 @@ import {
   generateHugoPath,
   extractFirstImageUrl,
   generateKremsPath,
-  generateKremsFrontmatter
+  generateKremsFrontmatter,
+  parseHugoPost
 } from '@/lib/hugo'
 import { clearCachePattern, userRateLimitCheck, RATE_LIMITS } from '@/lib/cache'
 import { validateRequest, publishPostSchema } from '@/lib/validation'
@@ -77,11 +78,29 @@ export async function POST(request: Request) {
       filePath = generateHugoPath(title)
     }
 
-    // Get existing file SHA if updating
+    // Get existing file SHA and original date if updating
     let existingSha: string | undefined
+    let originalDate: string | undefined
     if (path) {
       existingSha = await github.getFileSha(repoConfig.owner, repoConfig.repo, path) ?? undefined
+
+      // Fetch existing file to preserve original publication date
+      try {
+        const existingContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, path)
+        if (existingContent) {
+          const parsed = parseHugoPost(existingContent)
+          if (parsed.frontmatter.date) {
+            originalDate = String(parsed.frontmatter.date)
+          }
+        }
+      } catch {
+        // If we can't fetch the original, we'll use today's date
+        logger.warn('Could not fetch original post date, using current date')
+      }
     }
+
+    // Use original date for updates, current date for new posts
+    const postDate = originalDate || new Date().toISOString()
 
     // Create frontmatter based on engine
     let frontmatter: string
@@ -89,7 +108,7 @@ export async function POST(request: Request) {
       // Krems doesn't support draft mode
       const frontmatterData = {
         title,
-        date: new Date().toISOString(),
+        date: postDate,
       }
       frontmatter = generateKremsFrontmatter(frontmatterData)
     } else {
@@ -97,7 +116,7 @@ export async function POST(request: Request) {
       const themeProfile = getThemeProfile(repoConfig.theme || 'papermod')
       frontmatter = themeProfile.generateFrontmatter({
         title,
-        date: new Date().toISOString(),
+        date: postDate,
         draft,
         content: markdownContent,
         featuredImage: featureImageUrl || undefined,
