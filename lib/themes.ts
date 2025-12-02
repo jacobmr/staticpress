@@ -20,6 +20,12 @@ export const HUGO_THEMES: HugoTheme[] = [
     description: 'Clean and simple. Official Hugo starter theme with great defaults.',
     repo: 'https://github.com/theNewDynamic/gohugo-theme-ananke.git',
   },
+  {
+    id: 'blowfish',
+    name: 'Blowfish',
+    description: 'Powerful, lightweight theme with dark mode and extensive customization.',
+    repo: 'https://github.com/nunocoracao/blowfish.git',
+  },
 ]
 
 // Legacy themes that are no longer fully supported
