@@ -80,14 +80,7 @@ export async function POST(request: Request) {
     // Get existing file SHA if updating
     let existingSha: string | undefined
     if (path) {
-      const existingContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, path)
-      if (existingContent) {
-        // Extract SHA from the file
-        const fileData = await github.getRepoContents(repoConfig.owner, repoConfig.repo, path)
-        if (fileData.length > 0 && !Array.isArray(fileData[0])) {
-          existingSha = fileData[0].sha
-        }
-      }
+      existingSha = await github.getFileSha(repoConfig.owner, repoConfig.repo, path) ?? undefined
     }
 
     // Create frontmatter based on engine

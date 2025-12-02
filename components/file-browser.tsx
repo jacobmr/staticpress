@@ -13,27 +13,38 @@ interface FileBrowserProps {
   userTier: User['subscription_tier']
 }
 
-// Extract first image URL from HTML content
-function extractFirstImage(htmlContent: string): string | null {
-  const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
-  const match = htmlContent.match(imgRegex)
-  if (match) {
-    let imageUrl = match[1]
-    console.log('Original image URL:', imageUrl)
-    // Convert relative URLs to absolute URLs (use docnotes.com not .net)
-    if (imageUrl.startsWith('/')) {
-      imageUrl = `https://docnotes.com${imageUrl}`
-      console.log('Converted to absolute URL:', imageUrl)
-    }
-    // Convert docnotes.net to docnotes.com (redirect in place)
-    if (imageUrl.includes('docnotes.net')) {
-      imageUrl = imageUrl.replace('docnotes.net', 'docnotes.com')
-      console.log('Changed .net to .com:', imageUrl)
-    }
-    return imageUrl
+// Extract first image URL from content (supports both Markdown and HTML)
+function extractFirstImage(content: string): string | null {
+  // Try Markdown image syntax first: ![alt](url) or ![alt](url "title")
+  const markdownImgRegex = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/
+  const mdMatch = content.match(markdownImgRegex)
+  if (mdMatch) {
+    const imageUrl = mdMatch[1]
+    return normalizeImageUrl(imageUrl)
   }
-  console.log('No image found in content')
+
+  // Fall back to HTML <img> tags
+  const htmlImgRegex = /<img[^>]+src=["']([^"']+)["']/i
+  const htmlMatch = content.match(htmlImgRegex)
+  if (htmlMatch) {
+    const imageUrl = htmlMatch[1]
+    return normalizeImageUrl(imageUrl)
+  }
+
   return null
+}
+
+// Normalize image URLs (convert relative to absolute, fix domain)
+function normalizeImageUrl(imageUrl: string): string {
+  // Convert relative URLs to absolute URLs (use docnotes.com not .net)
+  if (imageUrl.startsWith('/')) {
+    imageUrl = `https://docnotes.com${imageUrl}`
+  }
+  // Convert docnotes.net to docnotes.com (redirect in place)
+  if (imageUrl.includes('docnotes.net')) {
+    imageUrl = imageUrl.replace('docnotes.net', 'docnotes.com')
+  }
+  return imageUrl
 }
 
 export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost, userTier }: FileBrowserProps) {
@@ -138,11 +149,7 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                           alt={post.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            console.error('Failed to load image:', imageUrl, e)
                             e.currentTarget.style.display = 'none'
-                          }}
-                          onLoad={() => {
-                            console.log('Successfully loaded image:', imageUrl)
                           }}
                         />
                       </div>

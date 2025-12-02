@@ -23,6 +23,39 @@ import {
   Minimize2,
   X,
 } from 'lucide-react'
+import { marked } from 'marked'
+
+// Detect if text looks like markdown
+function looksLikeMarkdown(text: string): boolean {
+  // Check for common markdown patterns
+  const markdownPatterns = [
+    /^#{1,6}\s+.+$/m,           // Headers: # Header
+    /^\*\*[^*]+\*\*/m,          // Bold: **text**
+    /^\*[^*]+\*/m,              // Italic: *text*
+    /^[-*+]\s+.+$/m,            // Unordered list: - item
+    /^\d+\.\s+.+$/m,            // Ordered list: 1. item
+    /^>\s+.+$/m,                // Blockquote: > text
+    /\[.+\]\(.+\)/,             // Links: [text](url)
+    /^```[\s\S]*?```/m,         // Code blocks: ```code```
+    /^---\s*$/m,                // Horizontal rule: ---
+    /!\[.*?\]\(.*?\)/,          // Images: ![alt](url)
+  ]
+
+  // If at least 2 patterns match, likely markdown
+  let matchCount = 0
+  for (const pattern of markdownPatterns) {
+    if (pattern.test(text)) {
+      matchCount++
+      if (matchCount >= 2) return true
+    }
+  }
+
+  // Single strong indicator (frontmatter or multiple headers)
+  if (/^---\n[\s\S]*?\n---/.test(text)) return true
+  if ((text.match(/^#{1,6}\s+.+$/gm) || []).length >= 2) return true
+
+  return false
+}
 
 interface EditorProps {
   content: string
@@ -160,6 +193,7 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
         console.log('[Paste] Clipboard items:', items?.length || 0)
         if (!items) return false
 
+        // Check for images first
         for (let i = 0; i < items.length; i++) {
           const item = items[i]
           console.log('[Paste] Item type:', item.type)
@@ -172,6 +206,33 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
               return true
             }
           }
+        }
+
+        // Check for text/plain that looks like markdown
+        const plainText = event.clipboardData?.getData('text/plain')
+        const htmlText = event.clipboardData?.getData('text/html')
+
+        // Only convert if we have plain text, no HTML, and it looks like markdown
+        if (plainText && !htmlText && looksLikeMarkdown(plainText)) {
+          console.log('[Paste] Detected markdown content, converting to HTML')
+          event.preventDefault()
+
+          // Strip frontmatter if present before converting
+          let markdownToConvert = plainText
+          const frontmatterMatch = plainText.match(/^---\n([\s\S]*?)\n---\n?/)
+          if (frontmatterMatch) {
+            markdownToConvert = plainText.slice(frontmatterMatch[0].length).trim()
+          }
+
+          // Convert markdown to HTML using marked
+          const html = marked.parse(markdownToConvert, { async: false }) as string
+
+          // Use TipTap's insertContent command via the editor
+          if (editorRef.current) {
+            editorRef.current.chain().focus().insertContent(html).run()
+          }
+
+          return true
         }
 
         return false
