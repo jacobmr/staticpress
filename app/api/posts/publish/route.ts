@@ -63,7 +63,9 @@ export async function POST(request: Request) {
     const featureImageUrl = extractFirstImageUrl(content)
 
     // Convert HTML to markdown
+    logger.info('[Publish] HTML content received (first 500 chars):', { content: content.substring(0, 500) })
     const markdownContent = turndownService.turndown(content)
+    logger.info('[Publish] After Turndown (first 500 chars):', { markdown: markdownContent.substring(0, 500) })
 
     // Determine engine (default to hugo for existing repos)
     const engine = repoConfig.engine || 'hugo'

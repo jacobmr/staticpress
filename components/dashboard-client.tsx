@@ -114,7 +114,9 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     setSelectedPost(post)
     setTitle(post.title)
     // Convert markdown to HTML for TipTap editor
+    console.log('[SelectPost] Raw markdown from GitHub:', post.content.substring(0, 500))
     const htmlContent = marked.parse(post.content) as string
+    console.log('[SelectPost] After marked.parse():', htmlContent.substring(0, 500))
     setContent(transformImageUrls(htmlContent))
 
     setSaveMessage('')
@@ -149,6 +151,8 @@ export function DashboardClient({ initialPosts, repoOwner, repoName, userTier, h
     }
 
     try {
+      console.log('[Publish] Content being sent (first 500 chars):', processedContent.substring(0, 500))
+
       const response = await fetch('/api/posts/publish', {
         method: 'POST',
         headers: {

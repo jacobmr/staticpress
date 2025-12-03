@@ -215,6 +215,7 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
         // Only convert if we have plain text, no HTML, and it looks like markdown
         if (plainText && !htmlText && looksLikeMarkdown(plainText)) {
           console.log('[Paste] Detected markdown content, converting to HTML')
+          console.log('[Paste] Raw markdown (first 300 chars):', plainText.substring(0, 300))
           event.preventDefault()
 
           // Strip frontmatter if present before converting
@@ -222,14 +223,28 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
           const frontmatterMatch = plainText.match(/^---\n([\s\S]*?)\n---\n?/)
           if (frontmatterMatch) {
             markdownToConvert = plainText.slice(frontmatterMatch[0].length).trim()
+            console.log('[Paste] Stripped frontmatter, remaining:', markdownToConvert.substring(0, 300))
           }
 
           // Convert markdown to HTML using marked
           const html = marked.parse(markdownToConvert, { async: false }) as string
+          console.log('[Paste] After marked.parse():', html.substring(0, 300))
 
-          // Use TipTap's insertContent command via the editor
+          // Use TipTap's insertContent with parseOptions to ensure HTML is parsed correctly
           if (editorRef.current) {
-            editorRef.current.chain().focus().insertContent(html).run()
+            editorRef.current
+              .chain()
+              .focus()
+              .insertContent(html, {
+                parseOptions: {
+                  preserveWhitespace: false,
+                },
+              })
+              .run()
+            // Log what TipTap actually stored
+            setTimeout(() => {
+              console.log('[Paste] TipTap getHTML() after insert:', editorRef.current?.getHTML()?.substring(0, 300))
+            }, 100)
           }
 
           return true
