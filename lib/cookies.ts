@@ -41,7 +41,7 @@ export async function getRepoConfig(): Promise<RepoConfig | null> {
     contentPath: repository.content_path,
     engine: repository.engine || 'hugo', // Default to hugo for existing repos
     siteUrl: repository.site_url,
-    theme: repository.theme,
+    theme: repository.theme ?? undefined,
   }
 }
 
