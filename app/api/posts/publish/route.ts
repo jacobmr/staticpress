@@ -116,12 +116,21 @@ export async function POST(request: Request) {
     } else {
       // Hugo - use theme profile for correct frontmatter
       const themeProfile = getThemeProfile(repoConfig.theme || 'papermod')
+
+      // Blowfish requires absolute URLs for featureimage
+      let resolvedFeatureImage = featureImageUrl || undefined
+      if (resolvedFeatureImage?.startsWith('/') && repoConfig.siteUrl && repoConfig.theme === 'blowfish') {
+        // Remove trailing slash from siteUrl if present
+        const baseUrl = repoConfig.siteUrl.replace(/\/$/, '')
+        resolvedFeatureImage = `${baseUrl}${resolvedFeatureImage}`
+      }
+
       frontmatter = themeProfile.generateFrontmatter({
         title,
         date: postDate,
         draft,
         content: markdownContent,
-        featuredImage: featureImageUrl || undefined,
+        featuredImage: resolvedFeatureImage,
       })
     }
 
