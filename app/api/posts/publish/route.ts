@@ -92,7 +92,15 @@ export async function POST(request: Request) {
         if (existingContent) {
           const parsed = parseHugoPost(existingContent)
           if (parsed.frontmatter.date) {
-            originalDate = String(parsed.frontmatter.date)
+            // Ensure ISO format - YAML parser may return Date object or string
+            const dateValue = parsed.frontmatter.date
+            if (dateValue instanceof Date) {
+              originalDate = dateValue.toISOString()
+            } else if (typeof dateValue === 'string') {
+              // Validate it's a proper ISO date, not a JS Date.toString() format
+              const isoDate = new Date(dateValue)
+              originalDate = isNaN(isoDate.getTime()) ? undefined : isoDate.toISOString()
+            }
           }
         }
       } catch {
