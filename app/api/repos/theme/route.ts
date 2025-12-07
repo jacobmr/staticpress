@@ -107,10 +107,20 @@ export async function POST(request: Request) {
       // Non-fatal - the push should trigger it anyway
     }
 
-    // Log the theme change
-    const { getUserByGithubId, logEvent } = await import('@/lib/db')
+    // Update theme in database so publish uses correct frontmatter format
+    const { getUserByGithubId, logEvent, upsertUserRepository } = await import('@/lib/db')
     const user = await getUserByGithubId(session.user.id as string)
     if (user) {
+      // Update the theme in the database
+      await upsertUserRepository(user.id, {
+        owner,
+        repo,
+        contentPath: repoConfig.contentPath || 'content/posts',
+        engine: repoConfig.engine,
+        theme,
+      })
+
+      // Log the theme change
       await logEvent('theme_changed', user.id, {
         repository: `${owner}/${repo}`,
         theme,

@@ -2,12 +2,15 @@ import { ThemeProfile } from './types'
 import { papermodProfile } from './papermod'
 import { anankeProfile } from './ananke'
 import { blowfishProfile } from './blowfish'
+import { genericProfile } from './generic'
+import { logger } from '@/lib/logger'
 
 export type { ThemeProfile, PostData, ValidationResult } from './types'
 export { escapeYaml } from './types'
 export { papermodProfile } from './papermod'
 export { anankeProfile } from './ananke'
 export { blowfishProfile } from './blowfish'
+export { genericProfile } from './generic'
 
 // Registry of supported themes
 const profileRegistry = new Map<string, ThemeProfile>([
@@ -17,18 +20,20 @@ const profileRegistry = new Map<string, ThemeProfile>([
   ['Ananke', anankeProfile],
   ['blowfish', blowfishProfile],
   ['Blowfish', blowfishProfile],
+  ['generic', genericProfile],
 ])
 
 /**
  * Get theme profile by ID
- * Falls back to PaperMod for unknown themes
+ * Falls back to generic profile for unknown themes (preserves all existing frontmatter)
  */
 export function getThemeProfile(id: string): ThemeProfile {
   const profile = profileRegistry.get(id)
   if (!profile) {
-    // Log warning but don't crash - fall back to PaperMod
-    console.warn(`Unknown theme: ${id}, falling back to PaperMod`)
-    return papermodProfile
+    // Log warning but don't crash - fall back to generic profile
+    // Generic profile preserves all existing frontmatter fields
+    logger.warn(`Unknown theme: ${id}, falling back to generic profile`)
+    return genericProfile
   }
   return profile
 }

@@ -1,29 +1,33 @@
 import yaml from 'js-yaml'
 import { ThemeProfile, PostData, escapeYaml, mergeExistingFrontmatter } from './types'
 
-export const anankeProfile: ThemeProfile = {
-  id: 'ananke',
-  name: 'Ananke',
-  repo: 'https://github.com/theNewDynamic/gohugo-theme-ananke.git',
-  description: 'Clean and simple. Official Hugo starter theme with great defaults.',
+/**
+ * Generic theme profile for unknown Hugo themes.
+ *
+ * Uses minimal, widely-compatible frontmatter and preserves
+ * ALL existing frontmatter fields to prevent data loss.
+ */
+export const genericProfile: ThemeProfile = {
+  id: 'generic',
+  name: 'Generic Hugo Theme',
+  repo: '',
+  description: 'Basic Hugo frontmatter for unsupported themes. Preserves existing fields.',
 
   frontmatter: {
-    featuredImageField: 'featured_image',
+    featuredImageField: 'image',
     featuredImageIsNested: false,
-    authorField: null,  // Ananke uses global author in config
-    summaryField: 'description',
+    authorField: 'author',
+    summaryField: 'summary',
   },
 
   config: {
     paramsTemplate: `[params]
-  author = "StaticPress User"
-  show_reading_time = false
-  mainSections = ["posts"]`,
+  # Generic params - customize as needed`,
     requiredSections: ['markup.goldmark.renderer'],
   },
 
   generateFrontmatter: (data: PostData): string => {
-    // Build managed fields with Ananke-specific structure
+    // Build managed fields with generic/standard field names
     const managedFields: Record<string, unknown> = {
       title: data.title,
       date: data.date,
@@ -31,11 +35,15 @@ export const anankeProfile: ThemeProfile = {
     }
 
     if (data.summary) {
-      managedFields.description = data.summary
+      managedFields.summary = data.summary
+    }
+
+    if (data.author) {
+      managedFields.author = data.author
     }
 
     if (data.featuredImage) {
-      managedFields.featured_image = data.featuredImage
+      managedFields.image = data.featuredImage
     }
 
     if (data.tags && data.tags.length > 0) {
@@ -53,7 +61,7 @@ export const anankeProfile: ThemeProfile = {
     const yamlContent = yaml.dump(merged, {
       quotingType: '"',
       forceQuotes: false,
-      lineWidth: -1,
+      lineWidth: -1, // Don't wrap lines
     })
 
     return `---\n${yamlContent}---`
@@ -63,18 +71,12 @@ export const anankeProfile: ThemeProfile = {
     const errors: string[] = []
     const warnings: string[] = []
 
-    if (!config.includes('[params]')) {
-      errors.push('Missing [params] section')
-    }
-    // Ananke-specific: warn if nested author exists (should be simple string)
-    if (config.includes('[params.author]')) {
-      errors.push('Ananke requires simple author string in [params], not nested [params.author]')
+    // Generic validation - just check for basic structure
+    if (!config.includes('theme =')) {
+      warnings.push('No theme specified in config')
     }
     if (!config.includes('unsafe = true')) {
-      warnings.push('Goldmark unsafe rendering not enabled - images may not display correctly')
-    }
-    if (config.includes('theme = "PaperMod"') || config.includes('theme = "papermod"')) {
-      errors.push('Config has wrong theme - expected ananke')
+      warnings.push('Goldmark unsafe rendering not enabled - HTML in markdown may not render')
     }
 
     return { valid: errors.length === 0, errors, warnings }
@@ -83,12 +85,6 @@ export const anankeProfile: ThemeProfile = {
   getDefaultConfig: (blogName = 'My Blog', baseURL = 'https://example.org/'): string => `baseURL = "${baseURL}"
 languageCode = "en-us"
 title = "${escapeYaml(blogName)}"
-theme = "ananke"
-
-[params]
-  author = "StaticPress User"
-  show_reading_time = false
-  mainSections = ["posts"]
 
 [markup]
   [markup.goldmark]

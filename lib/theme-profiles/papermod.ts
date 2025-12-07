@@ -1,4 +1,5 @@
-import { ThemeProfile, PostData, escapeYaml } from './types'
+import yaml from 'js-yaml'
+import { ThemeProfile, PostData, escapeYaml, mergeExistingFrontmatter } from './types'
 
 export const papermodProfile: ThemeProfile = {
   id: 'papermod',
@@ -30,38 +31,48 @@ export const papermodProfile: ThemeProfile = {
   },
 
   generateFrontmatter: (data: PostData): string => {
-    const lines = ['---']
-    lines.push(`title: "${escapeYaml(data.title)}"`)
-    lines.push(`date: ${data.date}`)
-    lines.push(`draft: ${data.draft}`)
+    // Build managed fields with PaperMod-specific structure
+    const managedFields: Record<string, unknown> = {
+      title: data.title,
+      date: data.date,
+      draft: data.draft,
+    }
 
     if (data.summary) {
-      lines.push(`summary: "${escapeYaml(data.summary)}"`)
+      managedFields.summary = data.summary
     }
 
     if (data.author) {
-      lines.push(`author: "${escapeYaml(data.author)}"`)
+      managedFields.author = data.author
     }
 
     if (data.featuredImage) {
-      lines.push('cover:')
-      lines.push(`  image: "${data.featuredImage}"`)
-      lines.push(`  alt: "${escapeYaml(data.title)}"`)
-      lines.push('  hidden: false')
+      managedFields.cover = {
+        image: data.featuredImage,
+        alt: data.title,
+        hidden: false,
+      }
     }
 
     if (data.tags && data.tags.length > 0) {
-      lines.push('tags:')
-      data.tags.forEach(tag => lines.push(`  - "${escapeYaml(tag)}"`))
+      managedFields.tags = data.tags
     }
 
     if (data.categories && data.categories.length > 0) {
-      lines.push('categories:')
-      data.categories.forEach(cat => lines.push(`  - "${escapeYaml(cat)}"`))
+      managedFields.categories = data.categories
     }
 
-    lines.push('---')
-    return lines.join('\n')
+    // Merge with existing frontmatter to preserve unknown fields
+    const merged = mergeExistingFrontmatter(managedFields, data.existingFrontmatter)
+
+    // Use js-yaml for proper serialization
+    const yamlContent = yaml.dump(merged, {
+      quotingType: '"',
+      forceQuotes: false,
+      lineWidth: -1,
+    })
+
+    return `---\n${yamlContent}---`
   },
 
   validateConfig: (config: string) => {

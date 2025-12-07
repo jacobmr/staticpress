@@ -80,17 +80,21 @@ export async function POST(request: Request) {
       filePath = generateHugoPath(title)
     }
 
-    // Get existing file SHA and original date if updating
+    // Get existing file SHA, original date, and existing frontmatter if updating
     let existingSha: string | undefined
     let originalDate: string | undefined
+    let existingFrontmatter: Record<string, unknown> | undefined
     if (path) {
       existingSha = await github.getFileSha(repoConfig.owner, repoConfig.repo, path) ?? undefined
 
-      // Fetch existing file to preserve original publication date
+      // Fetch existing file to preserve original publication date and custom frontmatter
       try {
         const existingContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, path)
         if (existingContent) {
           const parsed = parseHugoPost(existingContent)
+          // Preserve existing frontmatter for non-destructive updates
+          existingFrontmatter = parsed.frontmatter
+
           if (parsed.frontmatter.date) {
             // Ensure ISO format - YAML parser may return Date object or string
             const dateValue = parsed.frontmatter.date
@@ -139,6 +143,7 @@ export async function POST(request: Request) {
         draft,
         content: markdownContent,
         featuredImage: resolvedFeatureImage,
+        existingFrontmatter,
       })
     }
 

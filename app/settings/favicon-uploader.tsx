@@ -25,14 +25,29 @@ export function FaviconUploader({ repoOwner, repoName }: FaviconUploaderProps) {
         formData.append('repo', repoName)
 
         try {
+            // Check file size (max 500KB for favicons)
+            if (file.size > 500 * 1024) {
+                throw new Error('File too large. Favicon should be under 500KB. Try using favicon.io to generate optimized icons.')
+            }
+
             const response = await fetch('/api/settings/favicon', {
                 method: 'POST',
                 body: formData,
             })
 
             if (!response.ok) {
-                const data = await response.json()
-                throw new Error(data.error || 'Upload failed')
+                // Handle non-JSON error responses (e.g., from edge/proxy)
+                const contentType = response.headers.get('content-type')
+                if (contentType?.includes('application/json')) {
+                    const data = await response.json()
+                    throw new Error(data.error || 'Upload failed')
+                } else {
+                    const text = await response.text()
+                    if (text.includes('Request Entity Too Large') || response.status === 413) {
+                        throw new Error('File too large. Try a smaller image or use favicon.io to generate optimized icons.')
+                    }
+                    throw new Error(`Upload failed: ${response.status}`)
+                }
             }
 
             setMessage('✓ Favicon updated successfully')
