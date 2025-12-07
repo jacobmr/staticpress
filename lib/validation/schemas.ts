@@ -25,9 +25,23 @@ export const connectRepoSchema = z.object({
   contentPath: z.string().max(500).default('content/posts'),
   engine: z.enum(['hugo', 'krems']).default('hugo'),
   theme: z.string().optional(),
+  siteUrl: z.string().url().optional().or(z.literal('')),
+  // User info passed from client
+  userId: z.string().optional(),
+  userEmail: z.string().email().optional().or(z.literal('')),
+  userName: z.string().optional().nullable(),
+  userImage: z.string().optional().nullable(),
 })
 
 export type ConnectRepoInput = z.infer<typeof connectRepoSchema>
+
+// Repository detect schema (query params)
+export const detectRepoSchema = z.object({
+  owner: z.string().min(1).max(100).regex(/^[a-zA-Z0-9-]+$/, 'Invalid owner name'),
+  repo: z.string().min(1).max(100).regex(/^[a-zA-Z0-9-_.]+$/, 'Invalid repo name'),
+})
+
+export type DetectRepoInput = z.infer<typeof detectRepoSchema>
 
 // Repository create schema
 export const createRepoSchema = z.object({

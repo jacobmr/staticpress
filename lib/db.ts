@@ -173,6 +173,7 @@ export async function upsertUserRepository(
     contentPath: string
     engine?: BlogEngine
     theme?: string
+    siteUrl?: string
   }
 ): Promise<Repository> {
   const supabase = await getSupabase()
@@ -194,6 +195,7 @@ export async function upsertUserRepository(
         content_path: repoConfig.contentPath,
         engine: repoConfig.engine || existing.engine || 'hugo',
         theme: repoConfig.theme || null,
+        site_url: repoConfig.siteUrl || existing.site_url || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', existing.id)
@@ -214,6 +216,7 @@ export async function upsertUserRepository(
       content_path: repoConfig.contentPath,
       engine: repoConfig.engine || 'hugo',
       theme: repoConfig.theme || null,
+      site_url: repoConfig.siteUrl || null,
     })
     .select()
     .single()
