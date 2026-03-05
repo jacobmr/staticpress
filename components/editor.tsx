@@ -1,12 +1,12 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useCallback, useRef } from 'react'
-import { useEditor, EditorContent } from '@tiptap/react'
-import StarterKit from '@tiptap/starter-kit'
-import Placeholder from '@tiptap/extension-placeholder'
-import Link from '@tiptap/extension-link'
-import Image from '@tiptap/extension-image'
-import { SlashCommand, suggestion } from './editor-slash-command'
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import Link from "@tiptap/extension-link";
+import Image from "@tiptap/extension-image";
+import { SlashCommand, suggestion } from "./editor-slash-command";
 import {
   Bold,
   Italic,
@@ -22,139 +22,144 @@ import {
   Maximize2,
   Minimize2,
   X,
-} from 'lucide-react'
-import { marked } from 'marked'
+} from "lucide-react";
+import { marked } from "marked";
 
 // Detect if text looks like markdown
 function looksLikeMarkdown(text: string): boolean {
   // Check for common markdown patterns
   const markdownPatterns = [
-    /^#{1,6}\s+.+$/m,           // Headers: # Header
-    /^\*\*[^*]+\*\*/m,          // Bold: **text**
-    /^\*[^*]+\*/m,              // Italic: *text*
-    /^[-*+]\s+.+$/m,            // Unordered list: - item
-    /^\d+\.\s+.+$/m,            // Ordered list: 1. item
-    /^>\s+.+$/m,                // Blockquote: > text
-    /\[.+\]\(.+\)/,             // Links: [text](url)
-    /^```[\s\S]*?```/m,         // Code blocks: ```code```
-    /^---\s*$/m,                // Horizontal rule: ---
-    /!\[.*?\]\(.*?\)/,          // Images: ![alt](url)
-  ]
+    /^#{1,6}\s+.+$/m, // Headers: # Header
+    /^\*\*[^*]+\*\*/m, // Bold: **text**
+    /^\*[^*]+\*/m, // Italic: *text*
+    /^[-*+]\s+.+$/m, // Unordered list: - item
+    /^\d+\.\s+.+$/m, // Ordered list: 1. item
+    /^>\s+.+$/m, // Blockquote: > text
+    /\[.+\]\(.+\)/, // Links: [text](url)
+    /^```[\s\S]*?```/m, // Code blocks: ```code```
+    /^---\s*$/m, // Horizontal rule: ---
+    /!\[.*?\]\(.*?\)/, // Images: ![alt](url)
+  ];
 
   // If at least 2 patterns match, likely markdown
-  let matchCount = 0
+  let matchCount = 0;
   for (const pattern of markdownPatterns) {
     if (pattern.test(text)) {
-      matchCount++
-      if (matchCount >= 2) return true
+      matchCount++;
+      if (matchCount >= 2) return true;
     }
   }
 
   // Single strong indicator (frontmatter or multiple headers)
-  if (/^---\n[\s\S]*?\n---/.test(text)) return true
-  if ((text.match(/^#{1,6}\s+.+$/gm) || []).length >= 2) return true
+  if (/^---\n[\s\S]*?\n---/.test(text)) return true;
+  if ((text.match(/^#{1,6}\s+.+$/gm) || []).length >= 2) return true;
 
-  return false
+  return false;
 }
 
 interface EditorProps {
-  content: string
-  onChange: (content: string) => void
-  placeholder?: string
-  onImageUploaded?: (base64: string, hugoUrl: string) => void
-  repoOwner: string
-  repoName: string
+  content: string;
+  onChange: (content: string) => void;
+  placeholder?: string;
+  onImageUploaded?: (base64: string, hugoUrl: string) => void;
+  repoOwner: string;
+  repoName: string;
 }
 
-export function Editor({ content, onChange, placeholder = 'Write something...', onImageUploaded, repoOwner, repoName }: EditorProps) {
-  const [showLinkModal, setShowLinkModal] = useState(false)
-  const [linkUrl, setLinkUrl] = useState('')
-  const [isUploading, setIsUploading] = useState(false)
-  const [isFocusMode, setIsFocusMode] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const editorRef = useRef<ReturnType<typeof useEditor>>(null)
+export function Editor({
+  content,
+  onChange,
+  placeholder = "Write something...",
+  onImageUploaded,
+  repoOwner,
+  repoName,
+}: EditorProps) {
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [linkUrl, setLinkUrl] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<ReturnType<typeof useEditor>>(null);
   // Track uploaded images: base64 src → hugo URL
-  const uploadedImagesRef = useRef<Map<string, string>>(new Map())
+  const uploadedImagesRef = useRef<Map<string, string>>(new Map());
 
   // Handle pasting images from clipboard
   const handlePastedImage = useCallback(async (file: File) => {
-    console.log('[PasteImage] Starting upload for:', file.name, file.size)
-    const currentEditor = editorRef.current
+    console.log("[PasteImage] Starting upload for:", file.name, file.size);
+    const currentEditor = editorRef.current;
     if (!currentEditor) {
-      console.error('[PasteImage] No editor available!')
-      return
+      console.error("[PasteImage] No editor available!");
+      return;
     }
 
     // Validate file type
-    if (!file.type.startsWith('image/')) {
-      console.log('[PasteImage] Not an image:', file.type)
-      return
+    if (!file.type.startsWith("image/")) {
+      console.log("[PasteImage] Not an image:", file.type);
+      return;
     }
 
     // Validate file size (max 5MB)
     if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be smaller than 5MB')
-      return
+      alert("Image must be smaller than 5MB");
+      return;
     }
 
-    setIsUploading(true)
+    setIsUploading(true);
 
     try {
       // Convert file to base64
-      const reader = new FileReader()
+      const reader = new FileReader();
       reader.onload = async (e) => {
-        const base64 = e.target?.result as string
+        const base64 = e.target?.result as string;
 
         // Insert base64 preview immediately (works for private repos)
-        currentEditor.chain().focus().setImage({ src: base64 }).run()
-        console.log('[PasteImage] Base64 preview inserted')
+        currentEditor.chain().focus().setImage({ src: base64 }).run();
+        console.log("[PasteImage] Base64 preview inserted");
 
-        // Upload to GitHub in background
-        const response = await fetch('/api/images/upload', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            filename: file.name || `pasted-image-${Date.now()}.png`,
-            content: base64.split(',')[1], // Remove data:image/png;base64, prefix
-            contentType: file.type,
-          }),
-        })
+        // Upload to GitHub in background via FormData (matches API expectation)
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("owner", repoOwner);
+        formData.append("repo", repoName);
+
+        const response = await fetch("/api/images/upload", {
+          method: "POST",
+          body: formData,
+        });
 
         if (!response.ok) {
-          const error = await response.json()
-          throw new Error(error.error || 'Failed to upload image')
+          const error = await response.json();
+          throw new Error(error.error || "Failed to upload image");
         }
 
-        const data = await response.json()
-        const { url: hugoUrl } = data
-        console.log('[PasteImage] Upload successful, Hugo URL:', hugoUrl)
+        const data = await response.json();
+        const { url: hugoUrl } = data;
+        console.log("[PasteImage] Upload successful, Hugo URL:", hugoUrl);
 
         // Store mapping for conversion when saving
-        uploadedImagesRef.current.set(base64, hugoUrl)
+        uploadedImagesRef.current.set(base64, hugoUrl);
 
         // Notify parent for conversion on save
         if (onImageUploaded) {
-          onImageUploaded(base64, hugoUrl)
+          onImageUploaded(base64, hugoUrl);
         }
 
-        setIsUploading(false)
-      }
+        setIsUploading(false);
+      };
 
       reader.onerror = () => {
-        console.error('[PasteImage] FileReader error')
-        alert('Failed to read image file')
-        setIsUploading(false)
-      }
+        console.error("[PasteImage] FileReader error");
+        alert("Failed to read image file");
+        setIsUploading(false);
+      };
 
-      reader.readAsDataURL(file)
+      reader.readAsDataURL(file);
     } catch (error) {
-      console.error('[PasteImage] Error:', error)
-      alert(error instanceof Error ? error.message : 'Failed to upload image')
-      setIsUploading(false)
+      console.error("[PasteImage] Error:", error);
+      alert(error instanceof Error ? error.message : "Failed to upload image");
+      setIsUploading(false);
     }
-  }, [])
+  }, []);
 
   const editor = useEditor({
     extensions: [
@@ -169,14 +174,15 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
       Link.configure({
         openOnClick: false,
         HTMLAttributes: {
-          class: 'text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300',
+          class:
+            "text-blue-600 underline hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300",
         },
       }),
       Image.configure({
         inline: false,
         allowBase64: true,
         HTMLAttributes: {
-          class: 'max-w-full h-auto rounded-lg my-4 shadow-md',
+          class: "max-w-full h-auto rounded-lg my-4 shadow-md",
         },
       }),
 
@@ -186,49 +192,60 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
     ],
     editorProps: {
       attributes: {
-        class: 'prose prose-lg dark:prose-invert mx-auto focus:outline-none min-h-[300px] md:min-h-[400px] px-4 md:px-8 py-6 max-w-3xl',
+        class:
+          "prose prose-lg dark:prose-invert mx-auto focus:outline-none min-h-[300px] md:min-h-[400px] px-4 md:px-8 py-6 max-w-3xl",
       },
       handlePaste: (view, event) => {
-        const items = event.clipboardData?.items
-        console.log('[Paste] Clipboard items:', items?.length || 0)
-        if (!items) return false
+        const items = event.clipboardData?.items;
+        console.log("[Paste] Clipboard items:", items?.length || 0);
+        if (!items) return false;
 
         // Check for images first
         for (let i = 0; i < items.length; i++) {
-          const item = items[i]
-          console.log('[Paste] Item type:', item.type)
-          if (item.type.startsWith('image/')) {
-            const file = item.getAsFile()
-            console.log('[Paste] Got image file:', file?.name, file?.size)
+          const item = items[i];
+          console.log("[Paste] Item type:", item.type);
+          if (item.type.startsWith("image/")) {
+            const file = item.getAsFile();
+            console.log("[Paste] Got image file:", file?.name, file?.size);
             if (file) {
-              event.preventDefault()
-              handlePastedImage(file)
-              return true
+              event.preventDefault();
+              handlePastedImage(file);
+              return true;
             }
           }
         }
 
         // Check for text/plain that looks like markdown
-        const plainText = event.clipboardData?.getData('text/plain')
-        const htmlText = event.clipboardData?.getData('text/html')
+        const plainText = event.clipboardData?.getData("text/plain");
+        const htmlText = event.clipboardData?.getData("text/html");
 
         // Only convert if we have plain text, no HTML, and it looks like markdown
         if (plainText && !htmlText && looksLikeMarkdown(plainText)) {
-          console.log('[Paste] Detected markdown content, converting to HTML')
-          console.log('[Paste] Raw markdown (first 300 chars):', plainText.substring(0, 300))
-          event.preventDefault()
+          console.log("[Paste] Detected markdown content, converting to HTML");
+          console.log(
+            "[Paste] Raw markdown (first 300 chars):",
+            plainText.substring(0, 300),
+          );
+          event.preventDefault();
 
           // Strip frontmatter if present before converting
-          let markdownToConvert = plainText
-          const frontmatterMatch = plainText.match(/^---\n([\s\S]*?)\n---\n?/)
+          let markdownToConvert = plainText;
+          const frontmatterMatch = plainText.match(/^---\n([\s\S]*?)\n---\n?/);
           if (frontmatterMatch) {
-            markdownToConvert = plainText.slice(frontmatterMatch[0].length).trim()
-            console.log('[Paste] Stripped frontmatter, remaining:', markdownToConvert.substring(0, 300))
+            markdownToConvert = plainText
+              .slice(frontmatterMatch[0].length)
+              .trim();
+            console.log(
+              "[Paste] Stripped frontmatter, remaining:",
+              markdownToConvert.substring(0, 300),
+            );
           }
 
           // Convert markdown to HTML using marked
-          const html = marked.parse(markdownToConvert, { async: false }) as string
-          console.log('[Paste] After marked.parse():', html.substring(0, 300))
+          const html = marked.parse(markdownToConvert, {
+            async: false,
+          }) as string;
+          console.log("[Paste] After marked.parse():", html.substring(0, 300));
 
           // Use TipTap's insertContent with parseOptions to ensure HTML is parsed correctly
           if (editorRef.current) {
@@ -240,180 +257,199 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
                   preserveWhitespace: false,
                 },
               })
-              .run()
+              .run();
             // Log what TipTap actually stored
             setTimeout(() => {
-              console.log('[Paste] TipTap getHTML() after insert:', editorRef.current?.getHTML()?.substring(0, 300))
-            }, 100)
+              console.log(
+                "[Paste] TipTap getHTML() after insert:",
+                editorRef.current?.getHTML()?.substring(0, 300),
+              );
+            }, 100);
           }
 
-          return true
+          return true;
         }
 
-        return false
+        return false;
       },
     },
     onUpdate: ({ editor }) => {
-      onChange(editor.getHTML())
+      onChange(editor.getHTML());
     },
-  })
+  });
 
   // Keep editorRef in sync with editor for paste handler
   useEffect(() => {
-    editorRef.current = editor
-  }, [editor])
+    editorRef.current = editor;
+  }, [editor]);
 
   const setLink = useCallback(() => {
-    if (!editor) return
+    if (!editor) return;
 
     // Get existing link URL if editing
-    const previousUrl = editor.getAttributes('link').href
-    setLinkUrl(previousUrl || '')
-    setShowLinkModal(true)
-  }, [editor])
+    const previousUrl = editor.getAttributes("link").href;
+    setLinkUrl(previousUrl || "");
+    setShowLinkModal(true);
+  }, [editor]);
 
   const saveLink = useCallback(() => {
-    if (!editor) return
+    if (!editor) return;
 
-    if (linkUrl === '') {
+    if (linkUrl === "") {
       // Remove link if URL is empty
-      editor.chain().focus().extendMarkRange('link').unsetLink().run()
+      editor.chain().focus().extendMarkRange("link").unsetLink().run();
     } else {
       // Add or update link
       editor
         .chain()
         .focus()
-        .extendMarkRange('link')
+        .extendMarkRange("link")
         .setLink({ href: linkUrl })
-        .run()
+        .run();
     }
 
-    setShowLinkModal(false)
-    setLinkUrl('')
-  }, [editor, linkUrl])
+    setShowLinkModal(false);
+    setLinkUrl("");
+  }, [editor, linkUrl]);
 
   const removeLink = useCallback(() => {
-    if (!editor) return
-    editor.chain().focus().unsetLink().run()
-    setShowLinkModal(false)
-    setLinkUrl('')
-  }, [editor])
+    if (!editor) return;
+    editor.chain().focus().unsetLink().run();
+    setShowLinkModal(false);
+    setLinkUrl("");
+  }, [editor]);
 
-  const handleImageUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file || !editor) return
+  const handleImageUpload = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file || !editor) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file')
-      return
-    }
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file");
+        return;
+      }
 
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image must be smaller than 5MB')
-      return
-    }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image must be smaller than 5MB");
+        return;
+      }
 
-    setIsUploading(true)
+      setIsUploading(true);
 
-    try {
-      // Convert to base64 and upload
-      const reader = new FileReader()
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string
+      try {
+        // Convert to base64 and upload
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+          const base64 = e.target?.result as string;
 
-        // Show preview
-        editor.chain().focus().setImage({ src: base64 }).run()
+          // Show preview
+          editor.chain().focus().setImage({ src: base64 }).run();
 
-        // Upload to GitHub
-        try {
-          const formData = new FormData()
-          formData.append('file', file)
-          formData.append('owner', repoOwner)
-          formData.append('repo', repoName)
+          // Upload to GitHub
+          try {
+            const formData = new FormData();
+            formData.append("file", file);
+            formData.append("owner", repoOwner);
+            formData.append("repo", repoName);
 
-          const response = await fetch('/api/images/upload', {
-            method: 'POST',
-            body: formData,
-          })
+            const response = await fetch("/api/images/upload", {
+              method: "POST",
+              body: formData,
+            });
 
-          if (response.ok) {
-            const data = await response.json()
-            onImageUploaded?.(base64, data.url)
-          } else {
-            const error = await response.json()
-            throw new Error(error.error || 'Failed to upload image')
+            if (response.ok) {
+              const data = await response.json();
+              onImageUploaded?.(base64, data.url);
+            } else {
+              const error = await response.json();
+              throw new Error(error.error || "Failed to upload image");
+            }
+          } catch (err) {
+            console.error("Failed to upload image:", err);
+            alert("Failed to upload image to server. Please try again.");
           }
-        } catch (err) {
-          console.error('Failed to upload image:', err)
-          alert('Failed to upload image to server. Please try again.')
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        console.error("Image upload error:", error);
+        alert("Failed to upload image");
+      } finally {
+        setIsUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
         }
       }
-      reader.readAsDataURL(file)
-    } catch (error) {
-      console.error('Image upload error:', error)
-      alert('Failed to upload image')
-    } finally {
-      setIsUploading(false)
-      if (fileInputRef.current) {
-        fileInputRef.current.value = ''
-      }
-    }
-  }, [editor, onImageUploaded])
+    },
+    [editor, onImageUploaded],
+  );
 
   // Update editor content when content prop changes
   useEffect(() => {
     if (editor && content !== editor.getHTML()) {
-      editor.commands.setContent(content)
+      editor.commands.setContent(content);
     }
-  }, [content, editor])
+  }, [content, editor]);
 
   if (!editor) {
-    return null
+    return null;
   }
 
   return (
     <div
-      className={`flex flex-col border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900 ${isFocusMode
-        ? 'fixed inset-0 z-50 h-screen w-screen border-0'
-        : 'rounded-md border min-h-[500px]'
-        }`}
+      className={`flex flex-col border-gray-300 bg-white dark:border-gray-700 dark:bg-gray-900 ${
+        isFocusMode
+          ? "fixed inset-0 z-50 h-screen w-screen border-0"
+          : "rounded-md border min-h-[500px]"
+      }`}
     >
       {/* Sticky Toolbar */}
       <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-gray-200 bg-white/80 px-2 py-2 backdrop-blur-sm dark:border-gray-700 dark:bg-gray-900/80">
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('bold') ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("bold")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Bold"
         >
           <Bold className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('italic') ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("italic")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Italic"
         >
           <Italic className="h-4 w-4" />
         </button>
         <button
-          onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('heading', { level: 2 })
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 2 }).run()
+          }
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("heading", { level: 2 })
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Heading 2"
         >
           <Heading2 className="h-4 w-4" />
         </button>
         <button
-          onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('heading', { level: 3 })
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          onClick={() =>
+            editor.chain().focus().toggleHeading({ level: 3 }).run()
+          }
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("heading", { level: 3 })
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Heading 3"
         >
           <Heading3 className="h-4 w-4" />
@@ -423,40 +459,44 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
 
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('bulletList')
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("bulletList")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Bullet List"
         >
           <List className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('orderedList')
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("orderedList")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Numbered List"
         >
           <ListOrdered className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('blockquote')
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("blockquote")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Quote"
         >
           <Quote className="h-4 w-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('codeBlock')
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("codeBlock")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Code Block"
         >
           <Code className="h-4 w-4" />
@@ -473,10 +513,11 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
 
         <button
           onClick={setLink}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${editor.isActive('link')
-            ? 'bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400'
-            : 'text-gray-600 dark:text-gray-300'
-            }`}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            editor.isActive("link")
+              ? "bg-gray-100 text-blue-600 dark:bg-gray-800 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
           title="Link"
         >
           <LinkIcon className="h-4 w-4" />
@@ -494,11 +535,18 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
 
         <button
           onClick={() => setIsFocusMode(!isFocusMode)}
-          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${isFocusMode ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-300'
-            }`}
-          title={isFocusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
+          className={`rounded p-1.5 hover:bg-gray-100 dark:hover:bg-gray-800 ${
+            isFocusMode
+              ? "text-blue-600 dark:text-blue-400"
+              : "text-gray-600 dark:text-gray-300"
+          }`}
+          title={isFocusMode ? "Exit Focus Mode" : "Enter Focus Mode"}
         >
-          {isFocusMode ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {isFocusMode ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
         </button>
 
         <input
@@ -511,11 +559,11 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
       </div>
 
       {/* Editor Content */}
-      <div className={`flex-1 overflow-y-auto ${isFocusMode ? 'px-4 py-8 md:px-0' : ''}`}>
+      <div
+        className={`flex-1 overflow-y-auto ${isFocusMode ? "px-4 py-8 md:px-0" : ""}`}
+      >
         <EditorContent editor={editor} />
       </div>
-
-
 
       {/* Link Modal */}
       {showLinkModal && (
@@ -523,12 +571,12 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl dark:bg-gray-800">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold dark:text-gray-100">
-                {editor?.getAttributes('link').href ? 'Edit Link' : 'Add Link'}
+                {editor?.getAttributes("link").href ? "Edit Link" : "Add Link"}
               </h3>
               <button
                 onClick={() => {
-                  setShowLinkModal(false)
-                  setLinkUrl('')
+                  setShowLinkModal(false);
+                  setLinkUrl("");
                 }}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
@@ -536,18 +584,20 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
               </button>
             </div>
             <div className="mb-4">
-              <label className="mb-2 block text-sm font-medium dark:text-gray-300">URL</label>
+              <label className="mb-2 block text-sm font-medium dark:text-gray-300">
+                URL
+              </label>
               <input
                 type="url"
                 value={linkUrl}
                 onChange={(e) => setLinkUrl(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault()
-                    saveLink()
-                  } else if (e.key === 'Escape') {
-                    setShowLinkModal(false)
-                    setLinkUrl('')
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    saveLink();
+                  } else if (e.key === "Escape") {
+                    setShowLinkModal(false);
+                    setLinkUrl("");
                   }
                 }}
                 placeholder="https://example.com"
@@ -556,7 +606,7 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
               />
             </div>
             <div className="flex justify-end gap-2">
-              {editor.isActive('link') && (
+              {editor.isActive("link") && (
                 <button
                   onClick={removeLink}
                   className="rounded-md bg-red-50 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30"
@@ -577,5 +627,5 @@ export function Editor({ content, onChange, placeholder = 'Write something...', 
         </div>
       )}
     </div>
-  )
+  );
 }
