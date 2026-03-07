@@ -24,13 +24,19 @@ export async function POST() {
 
     const github = new GitHubClient(session.accessToken);
 
-    // Get current config file - check all valid Hugo config filenames in parallel
+    // Get current config file - check root-level and config/_default/ directory
     const configCandidates = [
       "hugo.toml",
       "hugo.yaml",
       "config.toml",
       "config.yaml",
       "config.json",
+      // Hugo also supports config directory structure
+      "config/_default/hugo.toml",
+      "config/_default/hugo.yaml",
+      "config/_default/config.toml",
+      "config/_default/config.yaml",
+      "config/_default/config.json",
     ] as const;
 
     const results = await Promise.all(
@@ -53,7 +59,7 @@ export async function POST() {
       return NextResponse.json(
         {
           error:
-            "Could not find Hugo configuration file (hugo.toml, hugo.yaml, config.toml, config.yaml, or config.json)",
+            "Could not find Hugo configuration file (checked root and config/_default/ directory)",
         },
         { status: 404 },
       );
