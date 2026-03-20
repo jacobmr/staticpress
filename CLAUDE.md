@@ -15,7 +15,7 @@ npm install
 # Start development server (uses Turbopack)
 npm run dev
 
-# Build for production (uses Turbopack)
+# Build for production
 npm run build
 
 # Start production server
@@ -23,6 +23,22 @@ npm start
 
 # Run linter
 npm run lint
+
+# Run unit tests (Vitest)
+npm test              # Watch mode
+npm run test:run      # Single run
+npm run test:coverage # With coverage report
+
+# Run e2e tests (Playwright)
+npm run test:e2e         # Run all e2e tests
+npm run test:e2e:ui      # Interactive UI mode
+npm run test:e2e:report  # View test report
+
+# Run a single test file
+npx vitest run lib/validation/__tests__/schemas.test.ts
+
+# Run e2e tests for specific file
+npx playwright test e2e/basic.spec.ts
 ```
 
 ## Project Structure
@@ -306,27 +322,24 @@ Maintenance scripts in `/scripts/`:
 - Stripe webhook endpoint: `https://yourapp.vercel.app/api/stripe/webhook`
 - GitHub OAuth callback: `https://yourapp.vercel.app/api/auth/callback/github`
 
-### Testing Considerations
+### Testing
 
-- **No test suite currently implemented**
-- Local testing requires valid GitHub OAuth app
-- Stripe webhooks can be tested with Stripe CLI: `stripe listen --forward-to localhost:3000/api/stripe/webhook`
-- Repository operations require a real GitHub repo (or use Octokit mocks)
+**Unit Tests (Vitest):**
+- Located in `__tests__/` directories alongside source files
+- Uses jsdom environment for React component testing
+- Run with `npm test` (watch) or `npm run test:run` (single run)
+- Coverage reports via `npm run test:coverage`
+
+**E2E Tests (Playwright):**
+- Located in `/e2e/` directory
+- Tests across Chromium, Firefox, and WebKit
+- Auto-starts dev server when running locally
+- Run with `npm run test:e2e` or `npm run test:e2e:ui` for interactive mode
+
+**Manual Testing:**
+- Stripe webhooks: `stripe listen --forward-to localhost:3000/api/stripe/webhook`
+- Repository operations require a real GitHub repo
 - Supabase connection required for user/repository persistence
-
-### Known Issues & Improvements
-
-**Current Issues:**
-- Debug console.log statements in production code (e.g., `app/api/posts/publish/route.ts:53-54`)
-- No test coverage
-- No error monitoring service (Sentry, etc.)
-
-**Potential Improvements:**
-- Add Zod schema validation for API inputs
-- Implement comprehensive test suite (Jest/Vitest)
-- Add error monitoring/tracking
-- Consider migrating console.log to proper logging service
-- Add API rate limiting per user in addition to IP
 
 ### Tech Stack
 
