@@ -1,5 +1,5 @@
 ---
-description: 'Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects'
+description: "Collaborative exploration of domain-specific requirements, regulations, and patterns for complex projects"
 ---
 
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS - while staying in character as the current agent persona you may have loaded:

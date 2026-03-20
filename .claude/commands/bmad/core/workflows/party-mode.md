@@ -1,5 +1,5 @@
 ---
-description: 'Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations'
+description: "Orchestrates group discussions between all installed BMAD agents, enabling natural multi-agent conversations"
 ---
 
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS - while staying in character as the current agent persona you may have loaded:

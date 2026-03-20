@@ -11,22 +11,26 @@ StaticPress is a web-based WYSIWYG editor that makes writing and publishing to s
 ## 🌟 Features
 
 ### Core Writing Experience
+
 - **Premium Editor** - Notion-style writing with Slash commands, Bubble menu, and Focus mode
 - **One-Click Publishing** - Click publish and your post appears on your blog in seconds
 - **Automatic Git Management** - No need to know Git; we handle all commits automatically
 - **Smart File Organization** - Follows Hugo/Krems conventions without you thinking about it
 
 ### Multi-Engine Support
+
 - **Hugo** - Full support for the world's fastest static site generator
 - **Krems** - Our simplified engine for users who want even less complexity
 
 ### Professional Features
+
 - **Image Uploads** - Drag-and-drop images directly into your posts (Personal tier+)
 - **Theme Gallery** - Choose from 6 curated Hugo themes
 - **GitHub Pages Deployment** - One-click deployment with custom domain support
 - **Draft Management** - Save drafts and publish when ready
 
 ### Subscription Tiers
+
 - **Free** - Text-only blogging, edit last 5 posts
 - **Personal ($2.50/mo)** - Unlimited posts, image uploads
 - **SMB ($5/mo)** - Theme gallery, custom domains (coming soon)
@@ -175,16 +179,16 @@ To prevent build-time errors on Vercel, database and Stripe clients must be lazi
 
 ```typescript
 // ❌ WRONG - Will fail at build time
-const supabase = createClient(url, key)
+const supabase = createClient(url, key);
 
 // ✅ CORRECT - Lazy initialization
-let _supabase: SupabaseClient | null = null
+let _supabase: SupabaseClient | null = null;
 async function getSupabase() {
   if (!_supabase) {
-    const { createClient } = await import('@supabase/supabase-js')
-    _supabase = createClient(url, key)
+    const { createClient } = await import("@supabase/supabase-js");
+    _supabase = createClient(url, key);
   }
-  return _supabase
+  return _supabase;
 }
 ```
 
@@ -193,12 +197,14 @@ async function getSupabase() {
 StaticPress supports two static site generators:
 
 #### Hugo (Traditional)
+
 - File structure: `content/posts/YYYY/MM/slug.md`
 - Full frontmatter support (title, date, draft, tags, categories)
 - Theme gallery with 6 options
 - 4-step onboarding process
 
 #### Krems (Simplified)
+
 - File structure: `slug.md` (root directory)
 - Minimal frontmatter (title, date only)
 - Auto-deployment to GitHub Pages
@@ -210,7 +216,7 @@ Themes are managed as Git submodules for Hugo blogs:
 
 ```typescript
 // Adding a theme creates a submodule at themes/[theme-id]
-await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
+await github.addThemeSubmodule(owner, repo, theme.repo, theme.id);
 ```
 
 ### Deployment Flow
@@ -223,26 +229,32 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ## 🔌 API Reference
 
 ### Authentication
+
 - `GET /api/auth/[...nextauth]` - NextAuth.js OAuth flow
 
 ### Posts
+
 - `GET /api/posts` - List all posts (cached 5 minutes)
 - `POST /api/posts/publish` - Create or update a post
 - `DELETE /api/posts/delete` - Delete a post
 
 ### Repositories
+
 - `POST /api/repos/create` - Create blog from template
 - `POST /api/repos/connect` - Connect existing repository
 - `POST /api/repos/theme` - Change blog theme
 - `POST /api/repos/site-url` - Update site URL
 
 ### Deployment
+
 - `POST /api/deploy/github-pages` - Enable GitHub Pages
 
 ### Images
+
 - `POST /api/images/upload` - Upload image to repository
 
 ### Payments
+
 - `POST /api/stripe/create-checkout-session` - Start subscription
 - `POST /api/stripe/create-portal-session` - Manage subscription
 - `POST /api/stripe/webhook` - Process Stripe events
@@ -252,21 +264,25 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ### Core Tables
 
 #### users
+
 - Stores GitHub user information
 - Tracks subscription tier and status
 - Links to Stripe customer/subscription IDs
 
 #### repositories
+
 - User's connected repositories
 - Stores engine type (hugo/krems)
 - Theme selection and site URL
 - Content path configuration
 
 #### usage_tracking
+
 - Tracks post edit counts for free tier limits
 - Resets monthly
 
 #### analytics_events
+
 - Server-side event tracking
 - No PII, just event names and metadata
 
@@ -282,6 +298,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ### Required Environment Variables
 
 All variables from `.env.local` must be added to Vercel:
+
 - Authentication secrets
 - GitHub OAuth credentials
 - Supabase connection details
@@ -317,24 +334,29 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ### Common Issues
 
 #### "Missing Supabase configuration" error
+
 - Ensure environment variables are set correctly
 - Check that Supabase project is active
 
 #### GitHub API rate limits
+
 - Posts are cached for 5 minutes
 - Consider implementing user-specific caching
 
 #### Stripe webhook failures
+
 - Verify webhook signing secret matches
 - Check that webhook endpoint is accessible
 
 #### Build failures on Vercel
+
 - Ensure lazy initialization pattern is used
 - Check for module-level database/Stripe client creation
 
 ### Debug Mode
 
 Enable debug logging by setting:
+
 ```bash
 DEBUG=staticpress:*
 ```

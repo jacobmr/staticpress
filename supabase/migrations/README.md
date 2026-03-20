@@ -33,12 +33,14 @@ supabase db push
 ## Migrations in this Phase
 
 ### 20251020_add_subscription_tiers.sql
+
 - Updates `subscription_tier` column to support 4 tiers: `free`, `personal`, `smb`, `pro`
 - Adds check constraint for valid tier values
 - Adds index for faster tier-based queries
 - Sets default to `free` for new users
 
 ### 20251020_create_analytics_events.sql
+
 - Creates `analytics_events` table for server-side event logging
 - Adds indexes for common query patterns
 - Enables Row Level Security (RLS)
@@ -82,6 +84,7 @@ DROP TABLE IF EXISTS analytics_events CASCADE;
 ## Next Steps
 
 After applying migrations:
+
 1. Verify the database schema matches expectations
 2. Test with a development user account
 3. Proceed with Stripe integration (Week 1, Task 4)

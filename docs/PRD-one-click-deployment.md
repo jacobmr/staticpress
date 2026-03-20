@@ -7,6 +7,7 @@ Simplify deployment platform setup to a single OAuth authorization. After clicki
 ## Problem Statement
 
 Current implementation requires multiple steps:
+
 - Cloudflare requires manual API token and Account ID entry
 - Users must manually create projects after connecting
 - Build configuration requires user input
@@ -71,11 +72,12 @@ Current implementation requires multiple steps:
 
 ```typescript
 // After OAuth callback
-const accounts = await cloudflareApi.listAccounts(token)
-const accountId = accounts[0].id // or prompt if multiple
+const accounts = await cloudflareApi.listAccounts(token);
+const accountId = accounts[0].id; // or prompt if multiple
 ```
 
 **Environment Variables**:
+
 - `CLOUDFLARE_CLIENT_ID`
 - `CLOUDFLARE_CLIENT_SECRET`
 
@@ -100,25 +102,27 @@ interface DeploymentProvider {
     credentials: DeploymentCredentials,
     githubRepo: { owner: string; name: string; defaultBranch: string },
     config: {
-      framework: 'hugo'
-      hugoVersion?: string
-    }
+      framework: "hugo";
+      hugoVersion?: string;
+    },
   ): Promise<{
-    project: DeploymentProject
-    deploymentUrl: string
-    webhookConfigured: boolean
-  }>
+    project: DeploymentProject;
+    deploymentUrl: string;
+    webhookConfigured: boolean;
+  }>;
 }
 ```
 
 ### 3. Platform-Specific Implementation
 
 #### GitHub Pages
+
 - Already OAuth'd via main GitHub auth
 - Call `enableGitHubPages()` with workflow source
 - No additional OAuth needed
 
 #### Vercel
+
 - OAuth scopes: Default (full access)
 - Auto-detect personal account or team
 - Create project with:
@@ -136,6 +140,7 @@ interface DeploymentProvider {
   ```
 
 #### Netlify
+
 - OAuth scopes: Default
 - Create site with:
   ```json
@@ -154,6 +159,7 @@ interface DeploymentProvider {
   ```
 
 #### Cloudflare Pages
+
 - OAuth scopes: `account:read`, `pages:write`
 - List accounts, select first (or prompt)
 - Create project with:
@@ -207,24 +213,24 @@ After successful OAuth, automatically call `autoSetupProject()`:
 
 ```typescript
 // In /api/deployment/oauth/[platform]/callback
-const token = await provider.exchangeCodeForToken(code, redirectUri)
+const token = await provider.exchangeCodeForToken(code, redirectUri);
 
 // Store credentials
-await saveCredentials(userId, platform, token)
+await saveCredentials(userId, platform, token);
 
 // Auto-setup project
-const repoConfig = await getRepoConfig(userId)
+const repoConfig = await getRepoConfig(userId);
 const result = await provider.autoSetupProject(
   { platform, accessToken: token },
-  { owner: repoConfig.owner, name: repoConfig.repo, defaultBranch: 'main' },
-  { framework: 'hugo' }
-)
+  { owner: repoConfig.owner, name: repoConfig.repo, defaultBranch: "main" },
+  { framework: "hugo" },
+);
 
 // Store project
-await saveDeploymentProject(repoConfig.repositoryId, result.project)
+await saveDeploymentProject(repoConfig.repositoryId, result.project);
 
 // Redirect to success page
-redirect(`/deploy?success=true&url=${result.deploymentUrl}`)
+redirect(`/deploy?success=true&url=${result.deploymentUrl}`);
 ```
 
 ### 5. UI Simplification
@@ -273,6 +279,7 @@ If user has multiple teams/accounts, show selector:
 #### Project Already Exists
 
 If project name conflicts:
+
 1. Check if it's linked to same GitHub repo → use existing
 2. Different repo → append random suffix to name
 
@@ -288,6 +295,7 @@ Clear error message with link to re-authorize:
 ## Database Changes
 
 No schema changes needed. Use existing tables:
+
 - `deployment_platforms` - Store OAuth tokens
 - `deployment_projects` - Store auto-created projects
 
@@ -318,21 +326,25 @@ CLOUDFLARE_CLIENT_SECRET=
 ## Implementation Phases
 
 ### Phase 1: Cloudflare OAuth (1-2 hours)
+
 - Update CloudflareProvider to use OAuth
 - Add account auto-detection
 - Update platform-connect-modal for Cloudflare
 
 ### Phase 2: Auto-Setup Method (2-3 hours)
+
 - Add `autoSetupProject()` to provider interface
 - Implement for all 4 providers
 - Add `/api/deployment/setup` endpoint
 
 ### Phase 3: UI Streamlining (1-2 hours)
+
 - Simplify platform-selector component
 - Update OAuth callback to auto-setup
 - Add success/error states
 
 ### Phase 4: Testing (1 hour)
+
 - Unit tests for auto-setup logic
 - E2E tests for OAuth flow
 - Manual testing with each platform
@@ -347,6 +359,7 @@ CLOUDFLARE_CLIENT_SECRET=
 ## Dependencies
 
 User must:
+
 1. Register OAuth apps with each platform
 2. Configure redirect URIs
 3. Set environment variables
@@ -354,16 +367,19 @@ User must:
 ## Appendix: OAuth App Registration
 
 ### Vercel
+
 1. Go to https://vercel.com/account/tokens
 2. Create OAuth App
 3. Redirect URI: `https://www.staticpress.me/api/deployment/oauth/vercel/callback`
 
 ### Netlify
+
 1. Go to https://app.netlify.com/user/applications
 2. Create OAuth App
 3. Redirect URI: `https://www.staticpress.me/api/deployment/oauth/netlify/callback`
 
 ### Cloudflare
+
 1. Go to https://dash.cloudflare.com/profile/api-tokens
 2. Create OAuth App (under API Tokens → OAuth)
 3. Redirect URI: `https://www.staticpress.me/api/deployment/oauth/cloudflare/callback`

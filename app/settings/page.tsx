@@ -1,79 +1,83 @@
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { GitHubClient } from "@/lib/github"
-import { getRepoConfig } from "@/lib/cookies"
-import { revalidatePath } from "next/cache"
-import Link from "next/link"
-import { ThemeSelector } from "./theme-selector"
-import { FaviconUploader } from "./favicon-uploader"
-import { ConfigRepair } from "./config-repair"
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { GitHubClient } from "@/lib/github";
+import { getRepoConfig } from "@/lib/cookies";
+import { revalidatePath } from "next/cache";
+import Link from "next/link";
+import { ThemeSelector } from "./theme-selector";
+import { FaviconUploader } from "./favicon-uploader";
+import { ConfigRepair } from "./config-repair";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user || !session.accessToken) {
-    redirect('/')
+    redirect("/");
   }
 
-  const currentConfig = await getRepoConfig()
-  const github = new GitHubClient(session.accessToken)
-  const repos = await github.getUserRepos()
+  const currentConfig = await getRepoConfig();
+  const github = new GitHubClient(session.accessToken);
+  const repos = await github.getUserRepos();
 
   // Get current theme from hugo.toml
-  let currentTheme: string | undefined
+  let currentTheme: string | undefined;
   if (currentConfig) {
     try {
       const hugoConfig = await github.getFileContent(
         currentConfig.owner,
         currentConfig.repo,
-        'hugo.toml'
-      )
+        "hugo.toml",
+      );
       if (hugoConfig) {
-        const themeMatch = hugoConfig.match(/^theme\s*=\s*["']?([^"'\n]+)["']?$/m)
+        const themeMatch = hugoConfig.match(
+          /^theme\s*=\s*["']?([^"'\n]+)["']?$/m,
+        );
         if (themeMatch) {
-          currentTheme = themeMatch[1].trim()
+          currentTheme = themeMatch[1].trim();
         }
       }
     } catch (error) {
       // Couldn't read theme, that's okay
-      console.log('Could not read current theme:', error)
+      console.log("Could not read current theme:", error);
     }
   }
 
   async function updateRepo(formData: FormData) {
-    "use server"
+    "use server";
 
-    const repoFullName = formData.get('repo') as string
-    const contentPath = (formData.get('contentPath') as string) || 'content/posts'
+    const repoFullName = formData.get("repo") as string;
+    const contentPath =
+      (formData.get("contentPath") as string) || "content/posts";
 
     if (!repoFullName) {
-      return
+      return;
     }
 
-    const [owner, repo] = repoFullName.split('/')
+    const [owner, repo] = repoFullName.split("/");
 
     // Get current session and user
-    const session = await auth()
+    const session = await auth();
     if (!session?.user?.id || !session.user.email) {
-      redirect('/')
+      redirect("/");
     }
 
     // Dynamically import database functions to prevent build-time initialization
-    const { getUserByGithubId, upsertUserRepository } = await import('@/lib/db')
+    const { getUserByGithubId, upsertUserRepository } =
+      await import("@/lib/db");
 
     // Get or create user (in case sign-in callback failed to create)
-    let user = await getUserByGithubId(session.user.id)
+    let user = await getUserByGithubId(session.user.id);
     if (!user) {
       // User doesn't exist yet, create it now
-      const { getOrCreateUser } = await import('@/lib/db')
+      const { getOrCreateUser } = await import("@/lib/db");
       user = await getOrCreateUser({
         id: session.user.id,
         email: session.user.email,
         name: session.user.name,
         image: session.user.image,
-      })
+      });
     }
 
     // Update repository configuration in database
@@ -81,47 +85,44 @@ export default async function SettingsPage() {
       owner,
       repo,
       contentPath,
-    })
+    });
 
-    revalidatePath('/dashboard')
-    revalidatePath('/settings')
-    redirect('/dashboard')
+    revalidatePath("/dashboard");
+    revalidatePath("/settings");
+    redirect("/dashboard");
   }
 
   async function disconnect() {
-    "use server"
+    "use server";
 
     // Get current session and user
-    const session = await auth()
+    const session = await auth();
     if (!session?.user?.id || !session.user.email) {
-      redirect('/')
+      redirect("/");
     }
 
     // Dynamically import database functions to prevent build-time initialization
-    const { getUserByGithubId, getSupabaseClient } = await import('@/lib/db')
+    const { getUserByGithubId, getSupabaseClient } = await import("@/lib/db");
 
     // Get or create user (in case sign-in callback failed to create)
-    let user = await getUserByGithubId(session.user.id)
+    let user = await getUserByGithubId(session.user.id);
     if (!user) {
       // User doesn't exist yet, create it now
-      const { getOrCreateUser } = await import('@/lib/db')
+      const { getOrCreateUser } = await import("@/lib/db");
       user = await getOrCreateUser({
         id: session.user.id,
         email: session.user.email,
         name: session.user.name,
         image: session.user.image,
-      })
+      });
     }
 
     // Delete all repository configurations for this user
-    const supabase = await getSupabaseClient()
-    await supabase
-      .from('repositories')
-      .delete()
-      .eq('user_id', user.id)
+    const supabase = await getSupabaseClient();
+    await supabase.from("repositories").delete().eq("user_id", user.id);
 
-    revalidatePath('/dashboard')
-    redirect('/setup')
+    revalidatePath("/dashboard");
+    redirect("/setup");
   }
 
   return (
@@ -148,14 +149,20 @@ export default async function SettingsPage() {
             {currentConfig ? (
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Repository</label>
+                  <label className="text-sm font-medium text-gray-500">
+                    Repository
+                  </label>
                   <p className="text-lg">
                     {currentConfig.owner}/{currentConfig.repo}
                   </p>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Content Path</label>
-                  <p className="text-lg">{currentConfig.contentPath || 'content/posts'}</p>
+                  <label className="text-sm font-medium text-gray-500">
+                    Content Path
+                  </label>
+                  <p className="text-lg">
+                    {currentConfig.contentPath || "content/posts"}
+                  </p>
                 </div>
               </div>
             ) : (
@@ -164,54 +171,63 @@ export default async function SettingsPage() {
           </div>
 
           {/* Theme Selector */}
-          {currentConfig && (
-            <ThemeSelector currentTheme={currentTheme} />
-          )}
+          {currentConfig && <ThemeSelector currentTheme={currentTheme} />}
 
           {/* Favicon Uploader */}
           {currentConfig && (
-            <FaviconUploader repoOwner={currentConfig.owner} repoName={currentConfig.repo} />
+            <FaviconUploader
+              repoOwner={currentConfig.owner}
+              repoName={currentConfig.repo}
+            />
           )}
 
           {/* Config Repair */}
-          {currentConfig && (
-            <ConfigRepair />
-          )}
+          {currentConfig && <ConfigRepair />}
 
           {/* Change Repository */}
           <div className="rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
             <h2 className="mb-4 text-xl font-semibold">Change Repository</h2>
             <form action={updateRepo} className="space-y-4">
               <div>
-                <label htmlFor="repo" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="repo"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Select Repository
                 </label>
                 <select
                   id="repo"
                   name="repo"
                   required
-                  defaultValue={currentConfig ? `${currentConfig.owner}/${currentConfig.repo}` : ''}
+                  defaultValue={
+                    currentConfig
+                      ? `${currentConfig.owner}/${currentConfig.repo}`
+                      : ""
+                  }
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
                 >
                   <option value="">Choose a repository...</option>
                   {repos.map((repo) => (
                     <option key={repo.id} value={repo.full_name}>
                       {repo.full_name}
-                      {repo.private && ' (Private)'}
+                      {repo.private && " (Private)"}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label htmlFor="contentPath" className="mb-2 block text-sm font-medium">
+                <label
+                  htmlFor="contentPath"
+                  className="mb-2 block text-sm font-medium"
+                >
                   Content Path
                 </label>
                 <input
                   type="text"
                   id="contentPath"
                   name="contentPath"
-                  defaultValue={currentConfig?.contentPath || 'content/posts'}
+                  defaultValue={currentConfig?.contentPath || "content/posts"}
                   placeholder="content/posts"
                   className="w-full rounded-md border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800"
                 />
@@ -228,9 +244,12 @@ export default async function SettingsPage() {
 
           {/* Danger Zone */}
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 dark:border-red-900 dark:bg-red-950">
-            <h2 className="mb-4 text-xl font-semibold text-red-900 dark:text-red-100">Danger Zone</h2>
+            <h2 className="mb-4 text-xl font-semibold text-red-900 dark:text-red-100">
+              Danger Zone
+            </h2>
             <p className="mb-4 text-sm text-red-700 dark:text-red-300">
-              Disconnecting will remove your repository configuration. You&apos;ll need to reconnect to continue using StaticPress.
+              Disconnecting will remove your repository configuration.
+              You&apos;ll need to reconnect to continue using StaticPress.
             </p>
             <form action={disconnect}>
               <button
@@ -244,5 +263,5 @@ export default async function SettingsPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }

@@ -1,140 +1,164 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { GitHubClient } from '@/lib/github'
-import { getRepoConfig } from '@/lib/cookies'
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { GitHubClient } from "@/lib/github";
+import { getRepoConfig } from "@/lib/cookies";
 import {
   generateHugoPath,
   extractFirstImageUrl,
   generateKremsPath,
   generateKremsFrontmatter,
-  parseHugoPost
-} from '@/lib/hugo'
-import { clearCachePattern, userRateLimitCheck, RATE_LIMITS } from '@/lib/cache'
-import { validateRequest, publishPostSchema } from '@/lib/validation'
-import { getThemeProfile } from '@/lib/theme-profiles'
-import { logger } from '@/lib/logger'
-import TurndownService from 'turndown'
+  parseHugoPost,
+} from "@/lib/hugo";
+import {
+  clearCachePattern,
+  userRateLimitCheck,
+  RATE_LIMITS,
+} from "@/lib/cache";
+import { validateRequest, publishPostSchema } from "@/lib/validation";
+import { getThemeProfile } from "@/lib/theme-profiles";
+import { logger } from "@/lib/logger";
+import TurndownService from "turndown";
 
 const turndownService = new TurndownService({
-  headingStyle: 'atx',
-  codeBlockStyle: 'fenced',
-})
-turndownService.keep(['img'])
+  headingStyle: "atx",
+  codeBlockStyle: "fenced",
+});
+turndownService.keep(["img"]);
 
 export async function POST(request: Request) {
   try {
     // IP-based rate limiting
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] || 'anonymous'
-    const { rateLimitCheck } = await import('@/lib/cache')
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0] || "anonymous";
+    const { rateLimitCheck } = await import("@/lib/cache");
     if (!rateLimitCheck(`publish:${ip}`, 10, 60)) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+      return NextResponse.json({ error: "Too many requests" }, { status: 429 });
     }
 
-    const session = await auth()
+    const session = await auth();
 
     if (!session?.user || !session.accessToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // User-based rate limiting
-    const { limit, window } = RATE_LIMITS.publish
-    if (!userRateLimitCheck(session.user.id, 'publish', limit, window)) {
+    const { limit, window } = RATE_LIMITS.publish;
+    if (!userRateLimitCheck(session.user.id, "publish", limit, window)) {
       return NextResponse.json(
-        { error: 'Rate limit exceeded. Please try again later.' },
-        { status: 429 }
-      )
+        { error: "Rate limit exceeded. Please try again later." },
+        { status: 429 },
+      );
     }
 
-    const repoConfig = await getRepoConfig()
+    const repoConfig = await getRepoConfig();
 
     if (!repoConfig) {
-      return NextResponse.json({ error: 'No repository configured' }, { status: 400 })
+      return NextResponse.json(
+        { error: "No repository configured" },
+        { status: 400 },
+      );
     }
 
     // Validate input with Zod
-    const validation = await validateRequest(request, publishPostSchema)
-    if ('error' in validation) return validation.error
+    const validation = await validateRequest(request, publishPostSchema);
+    if ("error" in validation) return validation.error;
 
-    const { title, content, path, draft } = validation.data
+    const { title, content, path, draft } = validation.data;
 
-    const github = new GitHubClient(session.accessToken)
+    const github = new GitHubClient(session.accessToken);
 
     // Extract first image URL from HTML content for featured image
-    const featureImageUrl = extractFirstImageUrl(content)
+    const featureImageUrl = extractFirstImageUrl(content);
 
     // Convert HTML to markdown
-    logger.info('[Publish] HTML content received (first 500 chars):', { content: content.substring(0, 500) })
-    const markdownContent = turndownService.turndown(content)
-    logger.info('[Publish] After Turndown (first 500 chars):', { markdown: markdownContent.substring(0, 500) })
+    logger.info("[Publish] HTML content received (first 500 chars):", {
+      content: content.substring(0, 500),
+    });
+    const markdownContent = turndownService.turndown(content);
+    logger.info("[Publish] After Turndown (first 500 chars):", {
+      markdown: markdownContent.substring(0, 500),
+    });
 
     // Determine engine (default to hugo for existing repos)
-    const engine = repoConfig.engine || 'hugo'
+    const engine = repoConfig.engine || "hugo";
 
     // Generate path for new posts or use existing path
-    let filePath: string
+    let filePath: string;
     if (path) {
-      filePath = path
-    } else if (engine === 'krems') {
-      filePath = generateKremsPath(title)
+      filePath = path;
+    } else if (engine === "krems") {
+      filePath = generateKremsPath(title);
     } else {
-      filePath = generateHugoPath(title)
+      filePath = generateHugoPath(title);
     }
 
     // Get existing file SHA, original date, and existing frontmatter if updating
-    let existingSha: string | undefined
-    let originalDate: string | undefined
-    let existingFrontmatter: Record<string, unknown> | undefined
+    let existingSha: string | undefined;
+    let originalDate: string | undefined;
+    let existingFrontmatter: Record<string, unknown> | undefined;
     if (path) {
-      existingSha = await github.getFileSha(repoConfig.owner, repoConfig.repo, path) ?? undefined
+      existingSha =
+        (await github.getFileSha(repoConfig.owner, repoConfig.repo, path)) ??
+        undefined;
 
       // Fetch existing file to preserve original publication date and custom frontmatter
       try {
-        const existingContent = await github.getFileContent(repoConfig.owner, repoConfig.repo, path)
+        const existingContent = await github.getFileContent(
+          repoConfig.owner,
+          repoConfig.repo,
+          path,
+        );
         if (existingContent) {
-          const parsed = parseHugoPost(existingContent)
+          const parsed = parseHugoPost(existingContent);
           // Preserve existing frontmatter for non-destructive updates
-          existingFrontmatter = parsed.frontmatter
+          existingFrontmatter = parsed.frontmatter;
 
           if (parsed.frontmatter.date) {
             // Ensure ISO format - YAML parser may return Date object or string
-            const dateValue = parsed.frontmatter.date
+            const dateValue = parsed.frontmatter.date;
             if (dateValue instanceof Date) {
-              originalDate = dateValue.toISOString()
-            } else if (typeof dateValue === 'string') {
+              originalDate = dateValue.toISOString();
+            } else if (typeof dateValue === "string") {
               // Validate it's a proper ISO date, not a JS Date.toString() format
-              const isoDate = new Date(dateValue)
-              originalDate = isNaN(isoDate.getTime()) ? undefined : isoDate.toISOString()
+              const isoDate = new Date(dateValue);
+              originalDate = isNaN(isoDate.getTime())
+                ? undefined
+                : isoDate.toISOString();
             }
           }
         }
       } catch {
         // If we can't fetch the original, we'll use today's date
-        logger.warn('Could not fetch original post date, using current date')
+        logger.warn("Could not fetch original post date, using current date");
       }
     }
 
     // Use original date for updates, current date for new posts
-    const postDate = originalDate || new Date().toISOString()
+    const postDate = originalDate || new Date().toISOString();
 
     // Create frontmatter based on engine
-    let frontmatter: string
-    if (engine === 'krems') {
+    let frontmatter: string;
+    if (engine === "krems") {
       // Krems doesn't support draft mode
       const frontmatterData = {
         title,
         date: postDate,
-      }
-      frontmatter = generateKremsFrontmatter(frontmatterData)
+      };
+      frontmatter = generateKremsFrontmatter(frontmatterData);
     } else {
       // Hugo - use theme profile for correct frontmatter
-      const themeProfile = getThemeProfile(repoConfig.theme || 'papermod')
+      const themeProfile = getThemeProfile(repoConfig.theme || "papermod");
 
       // Blowfish requires absolute URLs for featureimage
-      let resolvedFeatureImage = featureImageUrl || undefined
-      if (resolvedFeatureImage?.startsWith('/') && repoConfig.siteUrl && repoConfig.theme === 'blowfish') {
+      let resolvedFeatureImage = featureImageUrl || undefined;
+      if (
+        resolvedFeatureImage?.startsWith("/") &&
+        repoConfig.siteUrl &&
+        repoConfig.theme === "blowfish"
+      ) {
         // Remove trailing slash from siteUrl if present
-        const baseUrl = repoConfig.siteUrl.replace(/\/$/, '')
-        resolvedFeatureImage = `${baseUrl}${resolvedFeatureImage}`
+        const baseUrl = repoConfig.siteUrl.replace(/\/$/, "");
+        resolvedFeatureImage = `${baseUrl}${resolvedFeatureImage}`;
       }
 
       frontmatter = themeProfile.generateFrontmatter({
@@ -144,15 +168,15 @@ export async function POST(request: Request) {
         content: markdownContent,
         featuredImage: resolvedFeatureImage,
         existingFrontmatter,
-      })
+      });
     }
 
-    const fileContent = `${frontmatter}\n\n${markdownContent}`
+    const fileContent = `${frontmatter}\n\n${markdownContent}`;
 
     // Commit to GitHub
     const commitMessage = path
       ? `Update post: ${title}`
-      : `Create post: ${title}`
+      : `Create post: ${title}`;
 
     const result = await github.createOrUpdateFile(
       repoConfig.owner,
@@ -160,41 +184,43 @@ export async function POST(request: Request) {
       filePath,
       fileContent,
       commitMessage,
-      existingSha
-    )
+      existingSha,
+    );
 
     // Clear cache for all tiers of this repo
-    clearCachePattern(`posts:${repoConfig.owner}:${repoConfig.repo}:`)
+    clearCachePattern(`posts:${repoConfig.owner}:${repoConfig.repo}:`);
 
     // Dynamically import database functions to prevent build-time initialization
-    const { getUserByGithubId, logEvent, getSupabaseClient } = await import('@/lib/db')
+    const { getUserByGithubId, logEvent, getSupabaseClient } =
+      await import("@/lib/db");
 
     // Check if this is the user's first publish BEFORE logging the event
-    const user = await getUserByGithubId(session.user.id)
+    const user = await getUserByGithubId(session.user.id);
     if (user) {
-      const supabase = await getSupabaseClient()
+      const supabase = await getSupabaseClient();
       const { data: previousPublishes } = await supabase
-        .from('analytics_events')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('event_name', 'post_published')
-        .limit(1)
+        .from("analytics_events")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("event_name", "post_published")
+        .limit(1);
 
-      const isFirstPublish = !previousPublishes || previousPublishes.length === 0
+      const isFirstPublish =
+        !previousPublishes || previousPublishes.length === 0;
 
       // Log post published event
-      await logEvent('post_published', user.id, {
+      await logEvent("post_published", user.id, {
         title,
         path: filePath,
         draft,
         is_update: !!path,
-      })
+      });
 
       if (isFirstPublish) {
-        await logEvent('first_publish', user.id, {
+        await logEvent("first_publish", user.id, {
           title,
           path: filePath,
-        })
+        });
       }
     }
 
@@ -202,14 +228,17 @@ export async function POST(request: Request) {
       success: true,
       path: filePath,
       sha: result.content?.sha,
-    })
+    });
   } catch (error) {
-    logger.error('Failed to publish post', {
-      error: error instanceof Error ? error.message : 'Unknown error',
-    })
+    logger.error("Failed to publish post", {
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'Failed to publish post' },
-      { status: 500 }
-    )
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to publish post",
+      },
+      { status: 500 },
+    );
   }
 }

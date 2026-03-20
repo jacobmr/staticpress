@@ -21,6 +21,7 @@ StaticPress is a radically simple web-based editor for static site blogs (Hugo a
 **The StaticPress Promise:** "The simplicity of Medium, the ownership of Hugo/Krems, the beauty of Ghost, the cost of free."
 
 **Key Achievements:**
+
 - ✅ Phase 1 (MVP): Complete - Core editing and publishing
 - ✅ Phase 2 (Paywall + Images): Complete - Stripe integration, image uploads
 - ✅ Phase 3 (Themes + Deploy): Mostly Complete - Theme gallery, GitHub Pages deployment
@@ -34,6 +35,7 @@ StaticPress is a radically simple web-based editor for static site blogs (Hugo a
 Static site generators like Hugo offer superior performance, security, and cost benefits over traditional CMSs, but suffer from terrible UX for non-technical users:
 
 ### Current Pain Points
+
 - No simple editing interface (must use VS Code, terminal, or complex tools)
 - Manual folder structure management (year/month/day directories)
 - Manual file naming conventions and frontmatter YAML editing
@@ -43,6 +45,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - High barrier to entry for non-developers
 
 ### User Story
+
 > "As a blogger migrating from WordPress to a static site, I want to write and publish posts with the same simplicity as WordPress, without learning Git, Markdown, Hugo/Krems file structures, or deployment processes."
 
 ---
@@ -50,6 +53,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 ## Product Philosophy
 
 ### What StaticPress IS
+
 - A beautiful writing interface at staticpress.me
 - A place to write and publish blog posts with zero friction
 - A tool that "just works" - posts appear on your blog seconds after clicking Publish
@@ -57,6 +61,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - A unified platform supporting multiple static site generators (Hugo and Krems)
 
 ### What StaticPress IS NOT
+
 - A static site generator configuration tool
 - A Git client
 - A theme development platform
@@ -64,6 +69,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - A replacement for advanced Hugo features
 
 ### Key Principles
+
 1. **Hide ALL complexity** - Users should never see: Git commands, YAML, frontmatter syntax, file paths, repository internals, branches, commits, or technical jargon
 2. **Zero learning curve** - If it needs documentation, it's too complex
 3. **Instant gratification** - Click Publish → Post appears on blog within seconds
@@ -78,6 +84,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 ### Primary Personas
 
 #### 1. Sarah the Writer (Primary)
+
 - **Background:** Freelance writer, non-technical
 - **Age:** 35-55
 - **Goals:** Focus on writing, build audience, own her content
@@ -87,6 +94,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - **Willingness to pay:** $5-15/month
 
 #### 2. David the Developer (Secondary)
+
 - **Background:** Software engineer, side project blogger
 - **Age:** 28-45
 - **Goals:** Fast site, Markdown support, Git-backed
@@ -96,6 +104,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - **Willingness to pay:** $10-20/month
 
 #### 3. Emma the Educator (Tertiary)
+
 - **Background:** Teacher/Professor wanting to share knowledge
 - **Age:** 30-60
 - **Goals:** Simple blog for educational content, own their content
@@ -103,11 +112,13 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - **Willingness to pay:** $5-10/month
 
 #### 4. Agency Managing Client Blogs
+
 - **Background:** Managing 5-50 static sites for clients
 - **Value:** Centralized management, client-friendly interface
 - **Willingness to pay:** $50-200/month
 
 ### Market Size (TAM/SAM/SOM)
+
 - **TAM:** 7M+ WordPress users who might migrate to static
 - **SAM:** 500K developers using Hugo/Jekyll/11ty
 - **SOM (Year 1):** 5,000 users × $5/mo = $25K MRR target
@@ -119,6 +130,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 ### Phase 1: MVP ✅ (COMPLETE)
 
 #### Core Writing & Publishing
+
 - ✅ GitHub OAuth authentication with secure token storage
 - ✅ TipTap WYSIWYG editor with formatting toolbar
 - ✅ Auto-generation of Hugo/Krems frontmatter
@@ -133,13 +145,16 @@ Static site generators like Hugo offer superior performance, security, and cost 
 ### Phase 2: Monetization & Images ✅ (COMPLETE)
 
 #### Stripe Subscription Tiers
+
 **Implemented Tiers:**
+
 - ✅ **Free**: Edit last 5 posts, text-only, 1 repository
 - ✅ **Personal ($2.50/mo or $20/yr)**: All posts, image uploads, 1 repository
 - ✅ **SMB ($5/mo or $50/yr)**: Personal + theme gallery, custom domains (Coming Soon)
 - ✅ **Pro ($10/mo or $100/yr)**: SMB + 5 repositories, priority support (Coming Soon)
 
 #### Image Management
+
 - ✅ Drag-and-drop image upload in editor
 - ✅ File picker for image selection
 - ✅ Automatic upload to `/static/images/YYYY/MM/`
@@ -148,6 +163,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - ✅ Proper Hugo/Krems path generation for published content
 
 #### Payment Infrastructure
+
 - ✅ Stripe checkout sessions for new subscriptions
 - ✅ Customer portal for subscription management
 - ✅ Webhook handling for subscription lifecycle events
@@ -157,6 +173,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 ### Phase 3: Themes & Deployment 🚧 (MOSTLY COMPLETE)
 
 #### Theme Gallery (Hugo Only)
+
 - ✅ 6 curated themes available:
   - PaperMod (fast, clean, SEO-friendly)
   - Ananke (official Hugo starter theme)
@@ -170,6 +187,7 @@ Static site generators like Hugo offer superior performance, security, and cost 
 - ✅ Automatic hugo.toml configuration updates
 
 #### GitHub Pages Deployment
+
 - ✅ One-click GitHub Pages enablement
 - ✅ Custom domain configuration support
 - ✅ Automatic workflow dispatch triggering
@@ -179,7 +197,9 @@ Static site generators like Hugo offer superior performance, security, and cost 
 ### NEW: Krems Engine Support ✅ (COMPLETE)
 
 #### What is Krems?
+
 Krems is a simpler alternative to Hugo designed specifically for StaticPress users:
+
 - **Simpler setup**: No complex configuration files
 - **Faster onboarding**: 2-step process vs 4-step for Hugo
 - **Direct file structure**: Posts in root directory, not nested
@@ -187,6 +207,7 @@ Krems is a simpler alternative to Hugo designed specifically for StaticPress use
 - **No draft support**: Simpler mental model
 
 #### Krems Implementation
+
 - ✅ Engine selection during blog creation
 - ✅ Template repository: `jacobmr/staticpress-krems-template`
 - ✅ Different file paths (root vs content/posts)
@@ -197,6 +218,7 @@ Krems is a simpler alternative to Hugo designed specifically for StaticPress use
 ### Editor UX Improvements ✅ (COMPLETE)
 
 #### Premium Writing Experience
+
 - ✅ **Bubble Menu**: Floating formatting menu (Bold, Italic, Link, H2, H3)
 - ✅ **Slash Commands**: Type `/` to insert blocks (Headings, Lists, Image, etc.)
 - ✅ **Sticky Toolbar**: Tools always accessible while scrolling
@@ -211,6 +233,7 @@ Krems is a simpler alternative to Hugo designed specifically for StaticPress use
 ### Tech Stack
 
 **Frontend:**
+
 - **Framework:** Next.js 15.5.6 (App Router with Turbopack)
 - **Language:** TypeScript
 - **UI Library:** React 18
@@ -219,6 +242,7 @@ Krems is a simpler alternative to Hugo designed specifically for StaticPress use
 - **Markdown:** Turndown (HTML → Markdown conversion)
 
 **Backend:**
+
 - **Platform:** Vercel (serverless functions)
 - **Database:** Supabase (PostgreSQL)
 - **Cache:** node-cache (5-minute TTL for GitHub API responses)
@@ -226,6 +250,7 @@ Krems is a simpler alternative to Hugo designed specifically for StaticPress use
 - **Payments:** Stripe (subscriptions, webhooks)
 
 **Third-Party APIs:**
+
 - **GitHub API:** Repository management, file CRUD, Pages deployment
 - **Octokit:** GitHub API client library
 - **Stripe API:** Payment processing, subscription management
@@ -267,6 +292,7 @@ Krems is a simpler alternative to Hugo designed specifically for StaticPress use
 ### Database Schema (Supabase)
 
 #### users table
+
 ```sql
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -284,6 +310,7 @@ CREATE TABLE users (
 ```
 
 #### repositories table
+
 ```sql
 CREATE TABLE repositories (
   id SERIAL PRIMARY KEY,
@@ -300,6 +327,7 @@ CREATE TABLE repositories (
 ```
 
 #### usage_tracking table
+
 ```sql
 CREATE TABLE usage_tracking (
   id SERIAL PRIMARY KEY,
@@ -310,6 +338,7 @@ CREATE TABLE usage_tracking (
 ```
 
 #### analytics_events table
+
 ```sql
 CREATE TABLE analytics_events (
   id SERIAL PRIMARY KEY,
@@ -323,82 +352,94 @@ CREATE TABLE analytics_events (
 ### Key Implementation Patterns
 
 #### 1. Lazy Initialization Pattern (Critical for Vercel)
+
 ```typescript
 // NEVER create clients at module level
-let _supabase: SupabaseClient | null = null
+let _supabase: SupabaseClient | null = null;
 
 async function getSupabase(): Promise<SupabaseClient> {
-  if (_supabase) return _supabase
+  if (_supabase) return _supabase;
   // Only initialize when needed
-  const { createClient } = await import('@supabase/supabase-js')
-  _supabase = createClient(url, key)
-  return _supabase
+  const { createClient } = await import("@supabase/supabase-js");
+  _supabase = createClient(url, key);
+  return _supabase;
 }
 
 // In server components/API routes
-const { getUserByGithubId } = await import('@/lib/db')
+const { getUserByGithubId } = await import("@/lib/db");
 ```
 
 #### 2. Engine-Specific Logic
+
 ```typescript
 // Different paths for different engines
-const engine = repoConfig.engine || 'hugo'
-const contentPath = engine === 'krems' ? '' : 'content/posts'
+const engine = repoConfig.engine || "hugo";
+const contentPath = engine === "krems" ? "" : "content/posts";
 
 // Different frontmatter
-if (engine === 'krems') {
+if (engine === "krems") {
   // No draft field for Krems
-  frontmatter = { title, date }
+  frontmatter = { title, date };
 } else {
   // Hugo supports drafts
-  frontmatter = { title, date, draft }
+  frontmatter = { title, date, draft };
 }
 ```
 
 #### 3. GitHub Submodule Pattern for Themes
+
 ```typescript
 // Themes added as Git submodules (mode 160000)
-await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
+await github.addThemeSubmodule(owner, repo, theme.repo, theme.id);
 ```
 
 ### API Endpoints
 
 #### Authentication
+
 - `GET /api/auth/signin` - Initiate GitHub OAuth
 - `GET /api/auth/callback` - OAuth callback
 - `POST /api/auth/signout` - Sign out
 
 #### Posts Management
+
 - `GET /api/posts` - List posts from GitHub (cached 5 min)
 - `POST /api/posts/publish` - Create or update post
 - `DELETE /api/posts/delete` - Delete post from repository
 
 #### Repository Management
+
 - `POST /api/repos/create` - Create new blog from template
 - `POST /api/repos/connect` - Connect existing repository
 - `POST /api/repos/theme` - Change blog theme (Hugo only)
 - `POST /api/repos/site-url` - Update site URL
 
 #### Deployment
+
 - `POST /api/deploy/github-pages` - Enable GitHub Pages & custom domain
 
 #### Images
+
 - `POST /api/images/upload` - Upload image to repository
 
 #### Stripe Payments
+
 - `POST /api/stripe/create-checkout-session` - Initialize subscription
 - `POST /api/stripe/create-portal-session` - Customer billing portal
 - `POST /api/stripe/webhook` - Handle subscription lifecycle events
 
 #### Cache Management
+
 - `POST /api/cache/clear` - Clear API response cache
 
 #### Analytics
+
 - `POST /api/analytics/log-event` - Log user events (server-side only)
 
 ### File Structure Conventions
 
 #### Hugo
+
 - Posts: `content/posts/YYYY/MM/slug.md`
 - Images: `static/images/YYYY/MM/`
 - Themes: `themes/[theme-name]` (git submodule)
@@ -406,6 +447,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 - Frontmatter: YAML with title, date, draft, tags, categories
 
 #### Krems
+
 - Posts: `slug.md` (root directory)
 - Images: `images/YYYY/MM/`
 - Config: Minimal, built into template
@@ -459,6 +501,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ### Key User Flows
 
 #### Flow 1: First-Time User Setup (Krems - Simplified)
+
 ```
 1. Land on homepage
 2. Click "Sign in with GitHub"
@@ -470,6 +513,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ```
 
 #### Flow 2: First-Time User Setup (Hugo - Traditional)
+
 ```
 1. Land on homepage
 2. Click "Sign in with GitHub"
@@ -482,6 +526,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ```
 
 #### Flow 3: Creating & Publishing Post
+
 ```
 1. Click "New Post" in dashboard
 2. Enter title
@@ -496,6 +541,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ### Current UI Implementation
 
 #### Dashboard Layout
+
 ```
 ┌──────────────────────────────────────────────┐
 │ StaticPress    [User ▼] [Settings] [Pricing]│
@@ -521,40 +567,42 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 
 **Rationale:** Free drives top-of-funnel; Personal unlocks media + removes friction for serious writers; SMB adds professional features; Pro offers multi-site leverage for agencies/freelancers.
 
-| Tier | Price | Who it's for | Key Features |
-|---|---:|---|---|
-| **Free** | $0 | Curious writers, developers testing | **Text-only** blogging<br>Edit **last 5 posts** only<br>1 repository<br>Default theme<br>GitHub commits |
-| **Personal** | **$2.50/mo**<br>**$20/yr** | Individual bloggers | **All posts** editable<br>**Images** enabled<br>1 repository<br>Categories/tags<br>Preview |
-| **SMB** | **$5/mo**<br>**$50/yr** | Small businesses | Personal features +<br>**Custom domain** (Coming Soon)<br>**Theme gallery** (Hugo)<br>1 repository |
-| **Pro** | **$10/mo**<br>**$100/yr** | Agencies/freelancers | SMB features +<br>**5 repositories**<br>Priority support (Coming Soon) |
+| Tier         |                      Price | Who it's for                        | Key Features                                                                                            |
+| ------------ | -------------------------: | ----------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Free**     |                         $0 | Curious writers, developers testing | **Text-only** blogging<br>Edit **last 5 posts** only<br>1 repository<br>Default theme<br>GitHub commits |
+| **Personal** | **$2.50/mo**<br>**$20/yr** | Individual bloggers                 | **All posts** editable<br>**Images** enabled<br>1 repository<br>Categories/tags<br>Preview              |
+| **SMB**      |    **$5/mo**<br>**$50/yr** | Small businesses                    | Personal features +<br>**Custom domain** (Coming Soon)<br>**Theme gallery** (Hugo)<br>1 repository      |
+| **Pro**      |  **$10/mo**<br>**$100/yr** | Agencies/freelancers                | SMB features +<br>**5 repositories**<br>Priority support (Coming Soon)                                  |
 
 ### Feature Matrix
 
-| Feature | Free | Personal | SMB | Pro |
-|---|:--:|:--:|:--:|:--:|
-| Write & publish | ✅ | ✅ | ✅ | ✅ |
-| Hugo support | ✅ | ✅ | ✅ | ✅ |
-| Krems support | ✅ | ✅ | ✅ | ✅ |
-| GitHub Pages deploy | ✅ | ✅ | ✅ | ✅ |
-| Edit all posts | ❌ (last 5) | ✅ | ✅ | ✅ |
-| Images | ❌ | ✅ | ✅ | ✅ |
-| Categories & Tags | ✅ | ✅ | ✅ | ✅ |
-| Preview | ✅ | ✅ | ✅ | ✅ |
-| Theme gallery | ❌ | ❌ | ✅ | ✅ |
-| Custom domain | ❌ | ❌ | 🔜 | 🔜 |
-| Repositories | 1 | 1 | 1 | 5 |
+| Feature             |    Free     | Personal | SMB | Pro |
+| ------------------- | :---------: | :------: | :-: | :-: |
+| Write & publish     |     ✅      |    ✅    | ✅  | ✅  |
+| Hugo support        |     ✅      |    ✅    | ✅  | ✅  |
+| Krems support       |     ✅      |    ✅    | ✅  | ✅  |
+| GitHub Pages deploy |     ✅      |    ✅    | ✅  | ✅  |
+| Edit all posts      | ❌ (last 5) |    ✅    | ✅  | ✅  |
+| Images              |     ❌      |    ✅    | ✅  | ✅  |
+| Categories & Tags   |     ✅      |    ✅    | ✅  | ✅  |
+| Preview             |     ✅      |    ✅    | ✅  | ✅  |
+| Theme gallery       |     ❌      |    ❌    | ✅  | ✅  |
+| Custom domain       |     ❌      |    ❌    | 🔜  | 🔜  |
+| Repositories        |      1      |    1     |  1  |  5  |
 
 **Legend:** ✅ Available | ❌ Not available | 🔜 Coming Soon
 
 ### Revenue Projections
 
 **6 Month Target:**
+
 - 1,000 registered users
 - 10% conversion to paid (100 users)
 - Average tier: Personal ($2.50)
 - MRR: $250
 
 **12 Month Target:**
+
 - 5,000 registered users
 - 12% conversion to paid (600 users)
 - Tier distribution: 70% Personal, 20% SMB, 10% Pro
@@ -565,9 +613,11 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ## Success Metrics & KPIs
 
 ### North Star Metric
+
 **Time to First Published Post** - Current: <60 seconds ✅
 
 ### Current Performance (Phase 3)
+
 - ✅ Users can publish first post in <60 seconds
 - ✅ Free→Personal conversion: ~8% (target was 6-10%)
 - ✅ Image upload success rate: 98%+
@@ -575,6 +625,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 - ✅ GitHub Pages deployment: 85%+ success rate
 
 ### Key Metrics
+
 - **Activation:** % publishing first post within 24 hours: 75% (Target: >80%)
 - **Retention:** Weekly active users: 55% (Target: >60%)
 - **Reliability:** Successful publish rate: 99.2% (Target: >99.5%)
@@ -582,6 +633,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 - **Performance:** Average publish time: 2.3 seconds ✅
 
 ### Business Metrics (Current)
+
 - Registered users: 150+
 - Active users (30 days): 80+
 - Paid subscribers: 12
@@ -593,29 +645,33 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ## Competitive Differentiation
 
 ### vs. WordPress
+
 - **StaticPress:** Zero maintenance, instant setup, no security concerns
 - **WordPress:** Requires hosting, plugins, constant updates, security patches
 
 ### vs. Medium/Substack
+
 - **StaticPress:** Own your content, own your domain, no platform lock-in
 - **Medium/Substack:** Platform risk, forced monetization, limited customization
 
 ### vs. Raw Hugo/Jekyll
+
 - **StaticPress:** Beautiful UI, zero technical knowledge needed
 - **Raw SSG:** Command line, YAML editing, Git knowledge required
 
 ### vs. Ghost
+
 - **StaticPress:** Truly static (fast + secure), much cheaper
 - **Ghost:** Dynamic CMS, $9-$300/mo, requires hosting
 
 ### vs. Other Git-based CMS
 
-| Product | Type | Pricing | Our Advantage |
-|---------|------|---------|--------------|
-| Forestry.io | Git CMS | Discontinued | We're actively developed |
-| Netlify CMS | Open source | Free but complex | We're simple to use |
-| CloudCannon | Commercial | $45+/mo | We're 90% cheaper |
-| Tina CMS | Git CMS | $29+/mo | We're 90% cheaper |
+| Product     | Type        | Pricing          | Our Advantage            |
+| ----------- | ----------- | ---------------- | ------------------------ |
+| Forestry.io | Git CMS     | Discontinued     | We're actively developed |
+| Netlify CMS | Open source | Free but complex | We're simple to use      |
+| CloudCannon | Commercial  | $45+/mo          | We're 90% cheaper        |
+| Tina CMS    | Git CMS     | $29+/mo          | We're 90% cheaper        |
 
 **Market Gap:** We're the only simple, affordable ($2.50-10/mo) web editor for static sites that truly "just works."
 
@@ -624,17 +680,20 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 ## Development Roadmap
 
 ### Phase 1: MVP ✅ COMPLETE
+
 - Core editing and publishing
 - GitHub integration
 - Basic post management
 
 ### Phase 2: Monetization ✅ COMPLETE
+
 - Stripe integration
 - 4-tier pricing model
 - Image uploads for paid tiers
 - Usage limits for free tier
 
 ### Phase 3: Professional Features 🚧 MOSTLY COMPLETE
+
 - ✅ Theme gallery (6 Hugo themes)
 - ✅ GitHub Pages deployment
 - ✅ Krems engine support
@@ -642,6 +701,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 - 🔜 Multi-repository support (Pro tier)
 
 ### Phase 4: Growth Features (Q1 2026)
+
 - [ ] Image library (browse/reuse uploaded images)
 - [ ] Featured images for social sharing
 - [ ] Basic image editing (crop/resize)
@@ -650,6 +710,7 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 - [ ] SEO metadata management
 
 ### Phase 5: Enterprise Features (Q2 2026)
+
 - [ ] Team collaboration
 - [ ] Content approval workflows
 - [ ] API access
@@ -690,14 +751,14 @@ await github.addThemeSubmodule(owner, repo, theme.repo, theme.id)
 
 ## Risk Mitigation
 
-| Risk | Impact | Mitigation | Status |
-|------|--------|------------|--------|
-| GitHub API rate limits | High | 5-minute caching, batch operations | ✅ Implemented |
-| Token security | Critical | JWT sessions, encrypted storage | ✅ Implemented |
-| Payment failures | High | Stripe webhooks, retry logic | ✅ Implemented |
-| Theme conflicts | Medium | Curated theme list, testing | ✅ Implemented |
-| Deployment failures | Medium | Clear error messages, manual fallback | ✅ Implemented |
-| Scaling issues | Low | Vercel auto-scaling, CDN | 🔜 Monitoring |
+| Risk                   | Impact   | Mitigation                            | Status         |
+| ---------------------- | -------- | ------------------------------------- | -------------- |
+| GitHub API rate limits | High     | 5-minute caching, batch operations    | ✅ Implemented |
+| Token security         | Critical | JWT sessions, encrypted storage       | ✅ Implemented |
+| Payment failures       | High     | Stripe webhooks, retry logic          | ✅ Implemented |
+| Theme conflicts        | Medium   | Curated theme list, testing           | ✅ Implemented |
+| Deployment failures    | Medium   | Clear error messages, manual fallback | ✅ Implemented |
+| Scaling issues         | Low      | Vercel auto-scaling, CDN              | 🔜 Monitoring  |
 
 ---
 
@@ -726,12 +787,14 @@ StaticPress has successfully proven its core value proposition: making static si
 - **Strong technical foundation** ready for scaling
 
 **Current Focus:**
+
 1. Bug fixes and optimization
 2. Completing SMB/Pro tier features (custom domains, multi-repo)
 3. User acquisition and growth
 4. Gathering feedback for Phase 4 features
 
 **The Journey:**
+
 - Phase 1-2: ✅ Proven the concept works
 - Phase 3: ✅ Added professional capabilities
 - Next: 🚀 Growth and market expansion

@@ -1,76 +1,79 @@
-import { auth } from "@/lib/auth"
-import { redirect } from "next/navigation"
-import { getRepoConfig } from "@/lib/cookies"
-import { GitHubClient, HugoPost } from "@/lib/github"
-import { DashboardClient } from "@/components/dashboard-client"
-import { getCached, setCached } from "@/lib/cache"
-import Link from "next/link"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { SignOutButton } from "@/components/auth-buttons"
-import { signOutUser } from "@/lib/auth-actions"
-import { FeedbackButton } from "@/components/feedback-button"
-import { DeploymentStatus } from "@/components/deployment-status"
+import { auth } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { getRepoConfig } from "@/lib/cookies";
+import { GitHubClient, HugoPost } from "@/lib/github";
+import { DashboardClient } from "@/components/dashboard-client";
+import { getCached, setCached } from "@/lib/cache";
+import Link from "next/link";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { SignOutButton } from "@/components/auth-buttons";
+import { signOutUser } from "@/lib/auth-actions";
+import { FeedbackButton } from "@/components/feedback-button";
+import { DeploymentStatus } from "@/components/deployment-status";
 
-export const dynamic = 'force-dynamic'
+export const dynamic = "force-dynamic";
 
 export default async function Dashboard() {
   try {
-    const session = await auth()
+    const session = await auth();
 
     if (!session?.user || !session.accessToken || !session.user.id) {
-      redirect('/')
+      redirect("/");
     }
 
     // Dynamically import database functions to prevent build-time initialization
-    const { getUserByGithubId } = await import('@/lib/db')
+    const { getUserByGithubId } = await import("@/lib/db");
 
     // Get user from database to check tier
-    const user = await getUserByGithubId(session.user.id)
+    const user = await getUserByGithubId(session.user.id);
 
     if (!user) {
-      throw new Error(`User not found in database for GitHub ID: ${session.user.id}`)
+      throw new Error(
+        `User not found in database for GitHub ID: ${session.user.id}`,
+      );
     }
 
     // Check if repository is configured
-    const repoConfig = await getRepoConfig()
+    const repoConfig = await getRepoConfig();
 
     if (!repoConfig) {
-      redirect('/setup')
+      redirect("/setup");
     }
 
     // Determine max post limit based on tier
     // Free tier: 5 posts only, Paid tiers: all posts (limit 50 for performance)
-    const maxPostLimit = user.subscription_tier === 'free' ? 5 : 50
+    const maxPostLimit = user.subscription_tier === "free" ? 5 : 50;
 
     // For initial load, fetch only 5 posts for fast render
-    const initialLimit = Math.min(5, maxPostLimit)
+    const initialLimit = Math.min(5, maxPostLimit);
 
     // Try to get cached posts first (24-hour server cache)
-    const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`
-    let allPosts = getCached<HugoPost[]>(cacheKey)
+    const cacheKey = `posts:${repoConfig.owner}:${repoConfig.repo}:${user.subscription_tier}`;
+    let allPosts = getCached<HugoPost[]>(cacheKey);
 
     if (!allPosts) {
       // Fetch all posts from GitHub (cached on server for 24 hours)
-      const github = new GitHubClient(session.accessToken)
+      const github = new GitHubClient(session.accessToken);
 
       // For Krems, contentPath is empty string (root folder)
       // For Hugo, default to 'content/posts'
-      const contentPath = repoConfig.contentPath !== undefined && repoConfig.contentPath !== null
-        ? repoConfig.contentPath
-        : 'content/posts'
+      const contentPath =
+        repoConfig.contentPath !== undefined && repoConfig.contentPath !== null
+          ? repoConfig.contentPath
+          : "content/posts";
 
       allPosts = await github.getHugoPosts(
         repoConfig.owner,
         repoConfig.repo,
         contentPath,
-        maxPostLimit
-      )
-      setCached(cacheKey, allPosts)
+        maxPostLimit,
+      );
+      setCached(cacheKey, allPosts);
     }
 
     // Return only initial posts for fast render, client will load rest
-    const posts = allPosts.slice(0, initialLimit)
-    const hasMorePosts = allPosts.length > initialLimit
+    const posts = allPosts.slice(0, initialLimit);
+    const hasMorePosts = allPosts.length > initialLimit;
 
     return (
       <div className="flex min-h-screen flex-col">
@@ -98,18 +101,23 @@ export default async function Dashboard() {
               {/* Tier Badge */}
               <Link
                 href="/pricing"
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${user.subscription_tier === 'free'
-                  ? 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'
-                  : user.subscription_tier === 'personal'
-                    ? 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300'
-                    : user.subscription_tier === 'smb'
-                      ? 'bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300'
-                      : 'bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600'
-                  }`}
+                className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  user.subscription_tier === "free"
+                    ? "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300"
+                    : user.subscription_tier === "personal"
+                      ? "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-300"
+                      : user.subscription_tier === "smb"
+                        ? "bg-purple-100 text-purple-700 hover:bg-purple-200 dark:bg-purple-900 dark:text-purple-300"
+                        : "bg-gradient-to-r from-yellow-400 to-orange-500 text-white hover:from-yellow-500 hover:to-orange-600"
+                }`}
               >
-                {user.subscription_tier === 'free' ? 'Free' :
-                  user.subscription_tier === 'personal' ? 'Personal' :
-                    user.subscription_tier === 'smb' ? 'SMB' : 'Pro'}
+                {user.subscription_tier === "free"
+                  ? "Free"
+                  : user.subscription_tier === "personal"
+                    ? "Personal"
+                    : user.subscription_tier === "smb"
+                      ? "SMB"
+                      : "Pro"}
               </Link>
               <DeploymentStatus />
               <ThemeToggle />
@@ -140,13 +148,13 @@ export default async function Dashboard() {
           repoName={repoConfig.repo}
           userTier={user.subscription_tier}
           hasMorePosts={hasMorePosts}
-          engine={repoConfig.engine || 'hugo'}
+          engine={repoConfig.engine || "hugo"}
         />
         <FeedbackButton />
       </div>
-    )
+    );
   } catch (error) {
-    console.error('[Dashboard] Fatal error:', error)
-    throw error
+    console.error("[Dashboard] Fatal error:", error);
+    throw error;
   }
 }

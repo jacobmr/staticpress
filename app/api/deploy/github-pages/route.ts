@@ -1,83 +1,87 @@
-import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
-import { GitHubClient } from '@/lib/github'
-import { getRepoConfig } from '@/lib/cookies'
-import { getUserByGithubId, updateRepositorySiteUrl } from '@/lib/db'
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { GitHubClient } from "@/lib/github";
+import { getRepoConfig } from "@/lib/cookies";
+import { getUserByGithubId, updateRepositorySiteUrl } from "@/lib/db";
 
 export async function POST(request: Request) {
   try {
-    const session = await auth()
+    const session = await auth();
 
     if (!session?.user || !session.accessToken) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const repoConfig = await getRepoConfig()
+    const repoConfig = await getRepoConfig();
     if (!repoConfig) {
-      return NextResponse.json({ error: 'No repository configured' }, { status: 400 })
+      return NextResponse.json(
+        { error: "No repository configured" },
+        { status: 400 },
+      );
     }
 
-    const { customDomain } = await request.json()
-    const { owner, repo } = repoConfig
+    const { customDomain } = await request.json();
+    const { owner, repo } = repoConfig;
 
-    const github = new GitHubClient(session.accessToken)
+    const github = new GitHubClient(session.accessToken);
 
     // Enable GitHub Pages with workflow source
-    console.log(`[Deploy] Enabling GitHub Pages for ${owner}/${repo}`)
-    await github.enableGitHubPages(owner, repo)
+    console.log(`[Deploy] Enabling GitHub Pages for ${owner}/${repo}`);
+    await github.enableGitHubPages(owner, repo);
 
     // Set custom domain if provided
     if (customDomain && customDomain.trim()) {
-      console.log(`[Deploy] Setting custom domain: ${customDomain}`)
-      await github.setCustomDomain(owner, repo, customDomain.trim())
+      console.log(`[Deploy] Setting custom domain: ${customDomain}`);
+      await github.setCustomDomain(owner, repo, customDomain.trim());
     }
 
     // Wait a moment for GitHub to process Pages enablement
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     // Trigger workflow to build and deploy (since initial run likely failed)
-    console.log(`[Deploy] Triggering workflow dispatch for ${owner}/${repo}`)
-    await github.triggerWorkflowDispatch(owner, repo)
+    console.log(`[Deploy] Triggering workflow dispatch for ${owner}/${repo}`);
+    await github.triggerWorkflowDispatch(owner, repo);
 
     // Get the Pages status to return the URL
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    const status = await github.getGitHubPagesStatus(owner, repo)
+    const status = await github.getGitHubPagesStatus(owner, repo);
 
     // Determine the URL
-    let siteUrl: string
+    let siteUrl: string;
     if (customDomain && customDomain.trim()) {
-      siteUrl = `https://${customDomain.trim()}`
+      siteUrl = `https://${customDomain.trim()}`;
     } else {
-      siteUrl = `https://${owner}.github.io/${repo}`
+      siteUrl = `https://${owner}.github.io/${repo}`;
     }
 
     // Save site URL to database
-    const user = await getUserByGithubId(session.user.id as string)
+    const user = await getUserByGithubId(session.user.id as string);
     if (user) {
-      await updateRepositorySiteUrl(user.id, owner, repo, siteUrl)
+      await updateRepositorySiteUrl(user.id, owner, repo, siteUrl);
     }
 
     return NextResponse.json({
       success: true,
       url: siteUrl,
-      status: status?.status || 'building',
+      status: status?.status || "building",
       customDomain: customDomain?.trim() || null,
-    })
+    });
   } catch (error) {
-    console.error('Error enabling GitHub Pages:', error)
+    console.error("Error enabling GitHub Pages:", error);
 
-    let errorMessage = 'Failed to enable GitHub Pages'
+    let errorMessage = "Failed to enable GitHub Pages";
     if (error instanceof Error) {
-      if (error.message.includes('not found')) {
-        errorMessage = 'Repository not found'
-      } else if (error.message.includes('permission')) {
-        errorMessage = 'Permission denied. Make sure your GitHub token has the required scopes.'
+      if (error.message.includes("not found")) {
+        errorMessage = "Repository not found";
+      } else if (error.message.includes("permission")) {
+        errorMessage =
+          "Permission denied. Make sure your GitHub token has the required scopes.";
       } else {
-        errorMessage = error.message
+        errorMessage = error.message;
       }
     }
 
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }

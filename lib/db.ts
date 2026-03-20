@@ -1,165 +1,167 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Lazy-initialize Supabase client to avoid build-time errors
-let _supabase: SupabaseClient | null = null
+let _supabase: SupabaseClient | null = null;
 
 async function getSupabase(): Promise<SupabaseClient> {
   if (_supabase) {
-    return _supabase
+    return _supabase;
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error('Missing Supabase configuration')
+    throw new Error("Missing Supabase configuration");
   }
 
   // Dynamically import Supabase to prevent build-time evaluation
-  const { createClient } = await import('@supabase/supabase-js')
-  _supabase = createClient(supabaseUrl, supabaseKey)
-  return _supabase
+  const { createClient } = await import("@supabase/supabase-js");
+  _supabase = createClient(supabaseUrl, supabaseKey);
+  return _supabase;
 }
 
 // Export async getter instead of direct client
-export { getSupabase as getSupabaseClient }
+export { getSupabase as getSupabaseClient };
 
 export interface User {
-  id: number
-  github_id: string
-  email: string
-  name: string | null
-  avatar_url: string | null
-  subscription_tier: 'free' | 'personal' | 'smb' | 'pro'
-  subscription_status: 'active' | 'canceled' | 'expired' | null
-  stripe_customer_id: string | null
-  stripe_subscription_id: string | null
-  created_at: string
-  updated_at: string
+  id: number;
+  github_id: string;
+  email: string;
+  name: string | null;
+  avatar_url: string | null;
+  subscription_tier: "free" | "personal" | "smb" | "pro";
+  subscription_status: "active" | "canceled" | "expired" | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
-export type BlogEngine = 'hugo' | 'krems'
+export type BlogEngine = "hugo" | "krems";
 
 export interface Repository {
-  id: number
-  user_id: number
-  owner: string
-  repo: string
-  content_path: string
-  engine: BlogEngine
-  theme: string | null
-  site_url: string | null
-  created_at: string
-  updated_at: string
+  id: number;
+  user_id: number;
+  owner: string;
+  repo: string;
+  content_path: string;
+  engine: BlogEngine;
+  theme: string | null;
+  site_url: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface UsageTracking {
-  id: number
-  user_id: number
-  posts_edited_count: number
-  last_reset_date: string
+  id: number;
+  user_id: number;
+  posts_edited_count: number;
+  last_reset_date: string;
 }
 
 export interface AnalyticsEvent {
-  id: number
-  event_name: string
-  user_id: number | null
-  metadata: Record<string, unknown>
-  created_at: string
+  id: number;
+  event_name: string;
+  user_id: number | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
 }
 
 export type EventName =
-  | 'oauth_completed'
-  | 'repo_bound'
-  | 'repo_created'
-  | 'first_publish'
-  | 'upgrade_modal_shown'
-  | 'upgrade_started'
-  | 'upgrade_completed'
-  | 'payment_succeeded'
-  | 'payment_failed'
-  | 'image_upload'
-  | 'post_published'
-  | 'post_deleted'
-  | 'theme_changed'
-  | 'platform_connected'
-  | 'platform_disconnected'
-  | 'platform_oauth_completed'
-  | 'deployment_triggered'
-  | 'deployment_project_created'
-  | 'deployment_project_deleted'
-  | 'custom_domain_added'
-  | 'custom_domain_removed'
+  | "oauth_completed"
+  | "repo_bound"
+  | "repo_created"
+  | "first_publish"
+  | "upgrade_modal_shown"
+  | "upgrade_started"
+  | "upgrade_completed"
+  | "payment_succeeded"
+  | "payment_failed"
+  | "image_upload"
+  | "post_published"
+  | "post_deleted"
+  | "theme_changed"
+  | "platform_connected"
+  | "platform_disconnected"
+  | "platform_oauth_completed"
+  | "deployment_triggered"
+  | "deployment_project_created"
+  | "deployment_project_deleted"
+  | "custom_domain_added"
+  | "custom_domain_removed";
 
 /**
  * Get or create user by GitHub ID
  */
 export async function getOrCreateUser(githubUser: {
-  id: string
-  email: string
-  name?: string | null
-  image?: string | null
+  id: string;
+  email: string;
+  name?: string | null;
+  image?: string | null;
 }): Promise<User> {
-  const supabase = await getSupabase()
+  const supabase = await getSupabase();
 
   // Try to find existing user
   const { data: existingUser, error: fetchError } = await supabase
-    .from('users')
-    .select('*')
-    .eq('github_id', githubUser.id)
-    .single()
+    .from("users")
+    .select("*")
+    .eq("github_id", githubUser.id)
+    .single();
 
   if (existingUser && !fetchError) {
     // Update user info in case it changed
     const { data: updated, error: updateError } = await supabase
-      .from('users')
+      .from("users")
       .update({
         email: githubUser.email,
         name: githubUser.name || null,
         avatar_url: githubUser.image || null,
         updated_at: new Date().toISOString(),
       })
-      .eq('github_id', githubUser.id)
+      .eq("github_id", githubUser.id)
       .select()
-      .single()
+      .single();
 
-    if (updateError) throw updateError
-    return updated as User
+    if (updateError) throw updateError;
+    return updated as User;
   }
 
   // Create new user
   const { data: newUser, error: createError } = await supabase
-    .from('users')
+    .from("users")
     .insert({
       github_id: githubUser.id,
       email: githubUser.email,
       name: githubUser.name || null,
       avatar_url: githubUser.image || null,
-      subscription_tier: 'free',
+      subscription_tier: "free",
     })
     .select()
-    .single()
+    .single();
 
-  if (createError) throw createError
-  return newUser as User
+  if (createError) throw createError;
+  return newUser as User;
 }
 
 /**
  * Get user's repository configuration
  */
-export async function getUserRepository(userId: number): Promise<Repository | null> {
-  const supabase = await getSupabase()
+export async function getUserRepository(
+  userId: number,
+): Promise<Repository | null> {
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from('repositories')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
+    .from("repositories")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
     .limit(1)
-    .single()
+    .single();
 
-  if (error && error.code !== 'PGRST116') throw error // PGRST116 = no rows returned
-  return data as Repository | null
+  if (error && error.code !== "PGRST116") throw error; // PGRST116 = no rows returned
+  return data as Repository | null;
 }
 
 /**
@@ -168,112 +170,114 @@ export async function getUserRepository(userId: number): Promise<Repository | nu
 export async function upsertUserRepository(
   userId: number,
   repoConfig: {
-    owner: string
-    repo: string
-    contentPath: string
-    engine?: BlogEngine
-    theme?: string
-    siteUrl?: string
-  }
+    owner: string;
+    repo: string;
+    contentPath: string;
+    engine?: BlogEngine;
+    theme?: string;
+    siteUrl?: string;
+  },
 ): Promise<Repository> {
-  const supabase = await getSupabase()
+  const supabase = await getSupabase();
 
   // Check if repository already exists
   const { data: existing, error: fetchError } = await supabase
-    .from('repositories')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('owner', repoConfig.owner)
-    .eq('repo', repoConfig.repo)
-    .single()
+    .from("repositories")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("owner", repoConfig.owner)
+    .eq("repo", repoConfig.repo)
+    .single();
 
   if (existing && !fetchError) {
     // Update existing
     const { data: updated, error: updateError } = await supabase
-      .from('repositories')
+      .from("repositories")
       .update({
         content_path: repoConfig.contentPath,
-        engine: repoConfig.engine || existing.engine || 'hugo',
+        engine: repoConfig.engine || existing.engine || "hugo",
         theme: repoConfig.theme || null,
         site_url: repoConfig.siteUrl || existing.site_url || null,
         updated_at: new Date().toISOString(),
       })
-      .eq('id', existing.id)
+      .eq("id", existing.id)
       .select()
-      .single()
+      .single();
 
-    if (updateError) throw updateError
-    return updated as Repository
+    if (updateError) throw updateError;
+    return updated as Repository;
   }
 
   // Create new
   const { data: newRepo, error: createError } = await supabase
-    .from('repositories')
+    .from("repositories")
     .insert({
       user_id: userId,
       owner: repoConfig.owner,
       repo: repoConfig.repo,
       content_path: repoConfig.contentPath,
-      engine: repoConfig.engine || 'hugo',
+      engine: repoConfig.engine || "hugo",
       theme: repoConfig.theme || null,
       site_url: repoConfig.siteUrl || null,
     })
     .select()
-    .single()
+    .single();
 
-  if (createError) throw createError
-  return newRepo as Repository
+  if (createError) throw createError;
+  return newRepo as Repository;
 }
 
 /**
  * Get or create usage tracking for user
  */
-export async function getOrCreateUsageTracking(userId: number): Promise<UsageTracking> {
-  const supabase = await getSupabase()
+export async function getOrCreateUsageTracking(
+  userId: number,
+): Promise<UsageTracking> {
+  const supabase = await getSupabase();
 
   const { data: existing, error: fetchError } = await supabase
-    .from('usage_tracking')
-    .select('*')
-    .eq('user_id', userId)
-    .single()
+    .from("usage_tracking")
+    .select("*")
+    .eq("user_id", userId)
+    .single();
 
   if (existing && !fetchError) {
-    return existing as UsageTracking
+    return existing as UsageTracking;
   }
 
   const { data: newTracking, error: createError } = await supabase
-    .from('usage_tracking')
+    .from("usage_tracking")
     .insert({
       user_id: userId,
       posts_edited_count: 0,
       last_reset_date: new Date().toISOString(),
     })
     .select()
-    .single()
+    .single();
 
-  if (createError) throw createError
-  return newTracking as UsageTracking
+  if (createError) throw createError;
+  return newTracking as UsageTracking;
 }
 
 /**
  * Increment post edit count for user
  */
 export async function incrementPostEditCount(userId: number): Promise<void> {
-  const supabase = await getSupabase()
+  const supabase = await getSupabase();
 
-  const { error } = await supabase.rpc('increment_post_count', {
+  const { error } = await supabase.rpc("increment_post_count", {
     user_id_param: userId,
-  })
+  });
 
   if (error) {
     // Fallback if RPC function doesn't exist
-    const tracking = await getOrCreateUsageTracking(userId)
+    const tracking = await getOrCreateUsageTracking(userId);
     await supabase
-      .from('usage_tracking')
+      .from("usage_tracking")
       .update({
         posts_edited_count: tracking.posts_edited_count + 1,
       })
-      .eq('user_id', userId)
+      .eq("user_id", userId);
   }
 }
 
@@ -281,39 +285,39 @@ export async function incrementPostEditCount(userId: number): Promise<void> {
  * Check if user can edit posts (free tier has 5 post limit)
  */
 export async function canUserEditPosts(userId: number): Promise<boolean> {
-  const supabase = await getSupabase()
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from('users')
-    .select('subscription_tier')
-    .eq('id', userId)
-    .single()
+    .from("users")
+    .select("subscription_tier")
+    .eq("id", userId)
+    .single();
 
-  if (error || !data) return false
+  if (error || !data) return false;
 
   // All paid tiers (personal, smb, pro) can edit unlimited posts
-  if (data.subscription_tier !== 'free') {
-    return true
+  if (data.subscription_tier !== "free") {
+    return true;
   }
 
   // Free users are limited to 5 most recent posts
   // This will be enforced in the UI/API layer
-  return true
+  return true;
 }
 
 /**
  * Check if user has access to a specific tier feature
  */
 export function hasFeatureAccess(
-  userTier: User['subscription_tier'],
-  feature: 'images' | 'all_posts' | 'custom_domain' | 'themes' | 'multi_repo'
+  userTier: User["subscription_tier"],
+  feature: "images" | "all_posts" | "custom_domain" | "themes" | "multi_repo",
 ): boolean {
   const tierLevel = {
     free: 0,
     personal: 1,
     smb: 2,
     pro: 3,
-  }
+  };
 
   const featureRequirements = {
     images: 1, // personal+
@@ -321,41 +325,43 @@ export function hasFeatureAccess(
     custom_domain: 2, // smb+
     themes: 2, // smb+
     multi_repo: 3, // pro only
-  }
+  };
 
-  return tierLevel[userTier] >= featureRequirements[feature]
+  return tierLevel[userTier] >= featureRequirements[feature];
 }
 
 /**
  * Get user by ID
  */
 export async function getUserById(userId: number): Promise<User | null> {
-  const supabase = await getSupabase()
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('id', userId)
-    .single()
+    .from("users")
+    .select("*")
+    .eq("id", userId)
+    .single();
 
-  if (error) return null
-  return data as User
+  if (error) return null;
+  return data as User;
 }
 
 /**
  * Get user by GitHub ID
  */
-export async function getUserByGithubId(githubId: string): Promise<User | null> {
-  const supabase = await getSupabase()
+export async function getUserByGithubId(
+  githubId: string,
+): Promise<User | null> {
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from('users')
-    .select('*')
-    .eq('github_id', githubId)
-    .single()
+    .from("users")
+    .select("*")
+    .eq("github_id", githubId)
+    .single();
 
-  if (error) return null
-  return data as User
+  if (error) return null;
+  return data as User;
 }
 
 /**
@@ -364,36 +370,38 @@ export async function getUserByGithubId(githubId: string): Promise<User | null> 
 export async function logEvent(
   eventName: EventName,
   userId: number | null,
-  metadata: Record<string, unknown> = {}
+  metadata: Record<string, unknown> = {},
 ): Promise<void> {
   try {
-    const supabase = await getSupabase()
+    const supabase = await getSupabase();
 
-    await supabase.from('analytics_events').insert({
+    await supabase.from("analytics_events").insert({
       event_name: eventName,
       user_id: userId,
       metadata,
-    })
+    });
   } catch (error) {
     // Don't throw - event logging should never break the app
-    console.error('Failed to log event:', eventName, error)
+    console.error("Failed to log event:", eventName, error);
   }
 }
 
 /**
  * Get user's subscription tier
  */
-export async function getUserTier(userId: number): Promise<User['subscription_tier'] | null> {
-  const supabase = await getSupabase()
+export async function getUserTier(
+  userId: number,
+): Promise<User["subscription_tier"] | null> {
+  const supabase = await getSupabase();
 
   const { data, error } = await supabase
-    .from('users')
-    .select('subscription_tier')
-    .eq('id', userId)
-    .single()
+    .from("users")
+    .select("subscription_tier")
+    .eq("id", userId)
+    .single();
 
-  if (error || !data) return null
-  return data.subscription_tier
+  if (error || !data) return null;
+  return data.subscription_tier;
 }
 
 /**
@@ -403,19 +411,19 @@ export async function updateRepositorySiteUrl(
   userId: number,
   owner: string,
   repo: string,
-  siteUrl: string
+  siteUrl: string,
 ): Promise<void> {
-  const supabase = await getSupabase()
+  const supabase = await getSupabase();
 
   const { error } = await supabase
-    .from('repositories')
+    .from("repositories")
     .update({
       site_url: siteUrl,
       updated_at: new Date().toISOString(),
     })
-    .eq('user_id', userId)
-    .eq('owner', owner)
-    .eq('repo', repo)
+    .eq("user_id", userId)
+    .eq("owner", owner)
+    .eq("repo", repo);
 
-  if (error) throw error
+  if (error) throw error;
 }

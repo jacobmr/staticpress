@@ -1,89 +1,97 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { HugoPost } from '@/lib/github'
-import { User } from '@/lib/db'
+import { useState } from "react";
+import { HugoPost } from "@/lib/github";
+import { User } from "@/lib/db";
 
 interface FileBrowserProps {
-  posts: HugoPost[]
-  selectedPost: HugoPost | null
-  onSelectPost: (post: HugoPost) => void
-  onNewPost: () => void
-  onDeletePost: (post: HugoPost) => void
-  userTier: User['subscription_tier']
+  posts: HugoPost[];
+  selectedPost: HugoPost | null;
+  onSelectPost: (post: HugoPost) => void;
+  onNewPost: () => void;
+  onDeletePost: (post: HugoPost) => void;
+  userTier: User["subscription_tier"];
 }
 
 // Extract first image URL from content (supports both Markdown and HTML)
 function extractFirstImage(content: string): string | null {
   // Try Markdown image syntax first: ![alt](url) or ![alt](url "title")
-  const markdownImgRegex = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/
-  const mdMatch = content.match(markdownImgRegex)
+  const markdownImgRegex = /!\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)/;
+  const mdMatch = content.match(markdownImgRegex);
   if (mdMatch) {
-    const imageUrl = mdMatch[1]
-    return normalizeImageUrl(imageUrl)
+    const imageUrl = mdMatch[1];
+    return normalizeImageUrl(imageUrl);
   }
 
   // Fall back to HTML <img> tags
-  const htmlImgRegex = /<img[^>]+src=["']([^"']+)["']/i
-  const htmlMatch = content.match(htmlImgRegex)
+  const htmlImgRegex = /<img[^>]+src=["']([^"']+)["']/i;
+  const htmlMatch = content.match(htmlImgRegex);
   if (htmlMatch) {
-    const imageUrl = htmlMatch[1]
-    return normalizeImageUrl(imageUrl)
+    const imageUrl = htmlMatch[1];
+    return normalizeImageUrl(imageUrl);
   }
 
-  return null
+  return null;
 }
 
 // Normalize image URLs (convert relative to absolute, fix domain)
 function normalizeImageUrl(imageUrl: string): string {
   // Convert relative URLs to absolute URLs (use docnotes.com not .net)
-  if (imageUrl.startsWith('/')) {
-    imageUrl = `https://docnotes.com${imageUrl}`
+  if (imageUrl.startsWith("/")) {
+    imageUrl = `https://docnotes.com${imageUrl}`;
   }
   // Convert docnotes.net to docnotes.com (redirect in place)
-  if (imageUrl.includes('docnotes.net')) {
-    imageUrl = imageUrl.replace('docnotes.net', 'docnotes.com')
+  if (imageUrl.includes("docnotes.net")) {
+    imageUrl = imageUrl.replace("docnotes.net", "docnotes.com");
   }
-  return imageUrl
+  return imageUrl;
 }
 
-export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDeletePost, userTier }: FileBrowserProps) {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
-  const [deleteModalPost, setDeleteModalPost] = useState<HugoPost | null>(null)
+export function FileBrowser({
+  posts,
+  selectedPost,
+  onSelectPost,
+  onNewPost,
+  onDeletePost,
+  userTier,
+}: FileBrowserProps) {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteModalPost, setDeleteModalPost] = useState<HugoPost | null>(null);
 
-  const filteredPosts = posts.filter(post =>
-    post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    post.path.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredPosts = posts.filter(
+    (post) =>
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.path.toLowerCase().includes(searchQuery.toLowerCase()),
+  );
 
   const handleMenuToggle = (postPath: string, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setOpenMenuId(openMenuId === postPath ? null : postPath)
-  }
+    e.stopPropagation();
+    setOpenMenuId(openMenuId === postPath ? null : postPath);
+  };
 
   const handleEdit = (post: HugoPost, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setOpenMenuId(null)
-    onSelectPost(post)
-  }
+    e.stopPropagation();
+    setOpenMenuId(null);
+    onSelectPost(post);
+  };
 
   const handleDeleteClick = (post: HugoPost, e: React.MouseEvent) => {
-    e.stopPropagation()
-    setOpenMenuId(null)
-    setDeleteModalPost(post)
-  }
+    e.stopPropagation();
+    setOpenMenuId(null);
+    setDeleteModalPost(post);
+  };
 
   const confirmDelete = () => {
     if (deleteModalPost) {
-      onDeletePost(deleteModalPost)
-      setDeleteModalPost(null)
+      onDeletePost(deleteModalPost);
+      setDeleteModalPost(null);
     }
-  }
+  };
 
   const cancelDelete = () => {
-    setDeleteModalPost(null)
-  }
+    setDeleteModalPost(null);
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -106,13 +114,14 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
         />
         <div className="mt-2 text-xs text-gray-500">
           Showing {filteredPosts.length} of {posts.length} posts
-          {userTier === 'free' && (
+          {userTier === "free" && (
             <span className="text-orange-600 dark:text-orange-400 font-medium">
-              {' '}(Free: 5 most recent)
+              {" "}
+              (Free: 5 most recent)
             </span>
           )}
         </div>
-        {userTier === 'free' && posts.length === 5 && (
+        {userTier === "free" && posts.length === 5 && (
           <a
             href="/pricing"
             className="mt-2 block w-full rounded-md bg-blue-600 px-3 py-2 text-center text-xs font-medium text-white hover:bg-blue-700"
@@ -125,7 +134,9 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
       <div className="flex-1 overflow-y-auto">
         {filteredPosts.length === 0 ? (
           <div className="p-4 text-center text-sm text-gray-500">
-            {posts.length === 0 ? 'No posts found. Create your first post!' : 'No posts match your search.'}
+            {posts.length === 0
+              ? "No posts found. Create your first post!"
+              : "No posts match your search."}
           </div>
         ) : (
           <div className="divide-y divide-gray-200 dark:divide-gray-800">
@@ -134,13 +145,13 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                 key={post.path}
                 className={`relative flex items-start gap-3 px-4 py-3 transition-colors ${
                   selectedPost?.path === post.path
-                    ? 'bg-blue-50 dark:bg-blue-950'
-                    : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                    ? "bg-blue-50 dark:bg-blue-950"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 }`}
               >
                 {/* Thumbnail - only if post has an image */}
                 {(() => {
-                  const imageUrl = extractFirstImage(post.content)
+                  const imageUrl = extractFirstImage(post.content);
                   if (imageUrl) {
                     return (
                       <div className="flex-shrink-0 w-16 h-16 rounded overflow-hidden bg-gray-100 dark:bg-gray-800">
@@ -149,13 +160,13 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                           alt={post.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.style.display = "none";
                           }}
                         />
                       </div>
-                    )
+                    );
                   }
-                  return null
+                  return null;
                 })()}
 
                 <button
@@ -180,7 +191,11 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
                     className="p-1 rounded hover:bg-gray-200 dark:hover:bg-gray-700"
                     aria-label="More options"
                   >
-                    <svg className="w-5 h-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                    <svg
+                      className="w-5 h-5 text-gray-500"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
                       <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
                     </svg>
                   </button>
@@ -219,7 +234,9 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
               Delete Post?
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Are you sure you want to delete <strong>{deleteModalPost.title}</strong>? This action cannot be undone.
+              Are you sure you want to delete{" "}
+              <strong>{deleteModalPost.title}</strong>? This action cannot be
+              undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
@@ -238,7 +255,6 @@ export function FileBrowser({ posts, selectedPost, onSelectPost, onNewPost, onDe
           </div>
         </div>
       )}
-
     </div>
-  )
+  );
 }

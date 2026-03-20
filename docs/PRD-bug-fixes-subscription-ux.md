@@ -16,6 +16,7 @@ Three critical UX bugs are preventing proper subscription functionality and user
 ## Current Behavior (Broken)
 
 ### Issue #1: Dashboard Tier Display
+
 - **Location**: `/dashboard` (top-right corner)
 - **Current**: Shows "Free" even after successful subscription
 - **Root Cause**: TBD - Need to verify if:
@@ -24,12 +25,14 @@ Three critical UX bugs are preventing proper subscription functionality and user
   - Caching issue with Next.js 15?
 
 ### Issue #2: Pricing CTA Labels
+
 - **Location**: `/pricing` page, pricing cards
 - **Current**: All paid tiers show "Start Free Trial" button
 - **Problem**: We don't offer free trials, this is misleading
 - **Expected**: Should say "Upgrade to Personal", "Upgrade to SMB", etc.
 
 ### Issue #3: No Login Option
+
 - **Location**: Landing page `/` when logged out
 - **Current**: Only shows "Get Started Free" button (which triggers OAuth)
 - **Problem**: Existing users who logged out cannot explicitly "Sign In"
@@ -38,11 +41,13 @@ Three critical UX bugs are preventing proper subscription functionality and user
 ## Expected Behavior (Fixed)
 
 ### Issue #1: Dashboard Tier Display
+
 - Dashboard should display correct subscription tier from database
 - Should update immediately after subscription changes
 - Format: "Personal" | "SMB" | "Pro" | "Free"
 
 ### Issue #2: Pricing CTA Labels
+
 - **Free tier**: "Get Started" (gray, disabled style)
 - **Personal tier**:
   - If current tier: "Current Plan" (disabled)
@@ -51,6 +56,7 @@ Three critical UX bugs are preventing proper subscription functionality and user
 - **Pro tier**: "Coming Soon" (gray, disabled) + subtitle "Available in Q2 2025"
 
 ### Issue #3: Login Options
+
 - Landing page should show:
   - Primary CTA: "Get Started Free" (for new users)
   - Secondary CTA: "Sign In" (for returning users)
@@ -61,10 +67,12 @@ Three critical UX bugs are preventing proper subscription functionality and user
 ### Fix #1: Dashboard Tier Display
 
 **Files to modify:**
+
 - `app/dashboard/page.tsx` (server component)
 - Potentially session refresh logic in NextAuth config
 
 **Investigation steps:**
+
 1. Verify session contains correct user ID
 2. Check if `getUserByGithubId()` is being called
 3. Confirm database has correct tier (we know it does from manual fix)
@@ -72,6 +80,7 @@ Three critical UX bugs are preventing proper subscription functionality and user
 5. Add `export const dynamic = 'force-dynamic'` if needed
 
 **Implementation:**
+
 ```typescript
 // app/dashboard/page.tsx
 export const dynamic = 'force-dynamic' // Force server-side rendering
@@ -89,9 +98,11 @@ export default async function DashboardPage() {
 ### Fix #2: Pricing CTA Labels
 
 **Files to modify:**
+
 - `components/pricing-client.tsx` (lines 302-311)
 
 **Current code:**
+
 ```typescript
 <button onClick={() => handleUpgrade(tier.id, billingInterval)}>
   {isLoading ? 'Loading...' : tier.cta}
@@ -99,6 +110,7 @@ export default async function DashboardPage() {
 ```
 
 **Fixed code:**
+
 ```typescript
 {canUpgrade && !isDowngrade ? (
   <button onClick={() => handleUpgrade(tier.id, billingInterval)}>
@@ -115,15 +127,18 @@ export default async function DashboardPage() {
 ```
 
 **Remove from tier config:**
+
 - Delete `cta` property from tier definitions (lines 91, 108, 123, 138)
 - CTAs will be generated dynamically based on tier name
 
 ### Fix #3: Login Options
 
 **Files to modify:**
+
 - `app/page.tsx` (landing page)
 
 **Current code:**
+
 ```typescript
 <Link href="/api/auth/signin/github">
   Get Started Free
@@ -131,6 +146,7 @@ export default async function DashboardPage() {
 ```
 
 **Fixed code:**
+
 ```typescript
 <div className="flex gap-4">
   <Link href="/api/auth/signin/github"
@@ -145,18 +161,21 @@ export default async function DashboardPage() {
 ```
 
 **Styling:**
+
 - Primary: Dark background, white text (existing style)
 - Secondary: White background, dark border, dark text (new style)
 
 ## Testing Checklist
 
 ### Issue #1: Dashboard Tier Display
+
 - [ ] Fresh login shows correct tier
 - [ ] After subscription upgrade, tier updates without re-login
 - [ ] Hard refresh shows correct tier
 - [ ] Multiple browser tabs show consistent tier
 
 ### Issue #2: Pricing CTA Labels
+
 - [ ] Free tier shows "Get Started" (gray, disabled)
 - [ ] Personal tier shows "Upgrade to Personal" (not "Start Free Trial")
 - [ ] SMB/Pro show "Coming Soon" with Q2 2025 subtitle
@@ -164,6 +183,7 @@ export default async function DashboardPage() {
 - [ ] "Manage Subscription" button appears on current tier card
 
 ### Issue #3: Login Options
+
 - [ ] Landing page shows both "Get Started Free" and "Sign In" buttons
 - [ ] Both buttons trigger GitHub OAuth correctly
 - [ ] Logged-in users don't see these buttons (see dashboard link instead)

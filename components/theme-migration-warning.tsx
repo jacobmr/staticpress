@@ -1,40 +1,43 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { AlertTriangle, X } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { AlertTriangle, X } from "lucide-react";
 
 interface ThemeMigrationWarningProps {
-  currentTheme: string
-  onDismiss?: () => void
+  currentTheme: string;
+  onDismiss?: () => void;
 }
 
-export function ThemeMigrationWarning({ currentTheme, onDismiss }: ThemeMigrationWarningProps) {
-  const [dismissed, setDismissed] = useState(false)
+export function ThemeMigrationWarning({
+  currentTheme,
+  onDismiss,
+}: ThemeMigrationWarningProps) {
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
     // Check if user has dismissed this warning before
-    const dismissedThemes = localStorage.getItem('dismissed-theme-warnings')
+    const dismissedThemes = localStorage.getItem("dismissed-theme-warnings");
     if (dismissedThemes) {
-      const themes = JSON.parse(dismissedThemes)
+      const themes = JSON.parse(dismissedThemes);
       if (themes.includes(currentTheme)) {
-        setDismissed(true)
+        setDismissed(true);
       }
     }
-  }, [currentTheme])
+  }, [currentTheme]);
 
   const handleDismiss = () => {
     // Store dismissal in localStorage
-    const dismissedThemes = localStorage.getItem('dismissed-theme-warnings')
-    const themes = dismissedThemes ? JSON.parse(dismissedThemes) : []
+    const dismissedThemes = localStorage.getItem("dismissed-theme-warnings");
+    const themes = dismissedThemes ? JSON.parse(dismissedThemes) : [];
     if (!themes.includes(currentTheme)) {
-      themes.push(currentTheme)
-      localStorage.setItem('dismissed-theme-warnings', JSON.stringify(themes))
+      themes.push(currentTheme);
+      localStorage.setItem("dismissed-theme-warnings", JSON.stringify(themes));
     }
-    setDismissed(true)
-    onDismiss?.()
-  }
+    setDismissed(true);
+    onDismiss?.();
+  };
 
-  if (dismissed) return null
+  if (dismissed) return null;
 
   return (
     <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
@@ -45,14 +48,19 @@ export function ThemeMigrationWarning({ currentTheme, onDismiss }: ThemeMigratio
             Theme No Longer Fully Supported
           </h3>
           <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-            Your current theme (<strong>{currentTheme}</strong>) is no longer fully supported.
-            Featured images and some settings may not work correctly.
+            Your current theme (<strong>{currentTheme}</strong>) is no longer
+            fully supported. Featured images and some settings may not work
+            correctly.
           </p>
           <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-2">
-            We recommend switching to <strong>PaperMod</strong> or <strong>Ananke</strong> in{' '}
-            <a href="/settings" className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100">
+            We recommend switching to <strong>PaperMod</strong> or{" "}
+            <strong>Ananke</strong> in{" "}
+            <a
+              href="/settings"
+              className="underline font-medium hover:text-yellow-900 dark:hover:text-yellow-100"
+            >
               Settings
-            </a>{' '}
+            </a>{" "}
             for the best experience.
           </p>
         </div>
@@ -65,5 +73,5 @@ export function ThemeMigrationWarning({ currentTheme, onDismiss }: ThemeMigratio
         </button>
       </div>
     </div>
-  )
+  );
 }

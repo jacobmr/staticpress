@@ -36,12 +36,14 @@ StaticPress currently has excellent GitHub Pages integration but only provides m
 ## Problem Statement
 
 ### Current State
+
 - **GitHub Pages**: Full automation via API ✅
 - **Vercel**: Manual setup with external links ❌
 - **Netlify**: Manual setup with external links ❌
 - **Cloudflare Pages**: Manual setup with external links ❌
 
 ### User Pain Points
+
 1. Must leave StaticPress to deploy to non-GitHub platforms
 2. No deployment status for Vercel/Netlify/Cloudflare deployments
 3. Cannot auto-fix build issues on other platforms
@@ -51,6 +53,7 @@ StaticPress currently has excellent GitHub Pages integration but only provides m
 7. Cannot switch platforms without losing configuration
 
 ### Business Impact
+
 - Users choose GitHub Pages by default (path of least resistance)
 - Higher churn from users who prefer Vercel/Netlify
 - Support burden from manual deployment issues
@@ -61,6 +64,7 @@ StaticPress currently has excellent GitHub Pages integration but only provides m
 ## Goals & Success Metrics
 
 ### Goals
+
 1. One-click deployment to any supported platform
 2. Unified status monitoring across all platforms
 3. Platform-specific auto-fix capabilities
@@ -69,13 +73,13 @@ StaticPress currently has excellent GitHub Pages integration but only provides m
 
 ### Success Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Platforms with full API integration | 1/4 | 4/4 |
-| Average time to first deployment | ~10 min | < 2 min |
-| Deployment success rate | Unknown | > 95% |
-| Users on non-GitHub platforms | ~5% | > 30% |
-| Support tickets for deployment issues | High | 50% reduction |
+| Metric                                | Current | Target        |
+| ------------------------------------- | ------- | ------------- |
+| Platforms with full API integration   | 1/4     | 4/4           |
+| Average time to first deployment      | ~10 min | < 2 min       |
+| Deployment success rate               | Unknown | > 95%         |
+| Users on non-GitHub platforms         | ~5%     | > 30%         |
+| Support tickets for deployment issues | High    | 50% reduction |
 
 ---
 
@@ -123,52 +127,56 @@ StaticPress currently has excellent GitHub Pages integration but only provides m
 ```typescript
 // lib/deployment/types.ts
 
-export type DeploymentPlatform = 'github-pages' | 'vercel' | 'netlify' | 'cloudflare'
+export type DeploymentPlatform =
+  | "github-pages"
+  | "vercel"
+  | "netlify"
+  | "cloudflare";
 
 export interface DeploymentProvider {
-  platform: DeploymentPlatform
+  platform: DeploymentPlatform;
 
   // Authentication
-  getAuthUrl(): string
-  handleCallback(code: string): Promise<PlatformCredentials>
+  getAuthUrl(): string;
+  handleCallback(code: string): Promise<PlatformCredentials>;
 
   // Project Management
-  createProject(config: ProjectConfig): Promise<ProjectResult>
-  deleteProject(projectId: string): Promise<void>
+  createProject(config: ProjectConfig): Promise<ProjectResult>;
+  deleteProject(projectId: string): Promise<void>;
 
   // Deployment
-  triggerDeploy(): Promise<DeploymentResult>
-  getDeploymentStatus(deployId: string): Promise<DeploymentStatus>
-  getDeploymentLogs(deployId: string): Promise<string>
-  cancelDeployment(deployId: string): Promise<void>
+  triggerDeploy(): Promise<DeploymentResult>;
+  getDeploymentStatus(deployId: string): Promise<DeploymentStatus>;
+  getDeploymentLogs(deployId: string): Promise<string>;
+  cancelDeployment(deployId: string): Promise<void>;
 
   // Domains
-  addCustomDomain(domain: string): Promise<DomainResult>
-  verifyDomain(domain: string): Promise<DomainVerification>
-  removeCustomDomain(domain: string): Promise<void>
+  addCustomDomain(domain: string): Promise<DomainResult>;
+  verifyDomain(domain: string): Promise<DomainVerification>;
+  removeCustomDomain(domain: string): Promise<void>;
 
   // Configuration
-  setEnvironmentVariables(vars: EnvVar[]): Promise<void>
-  setBuildSettings(settings: BuildSettings): Promise<void>
+  setEnvironmentVariables(vars: EnvVar[]): Promise<void>;
+  setBuildSettings(settings: BuildSettings): Promise<void>;
 }
 
 export interface ProjectConfig {
-  name: string
-  repoOwner: string
-  repoName: string
-  branch: string
-  buildCommand: string
-  outputDirectory: string
-  framework: 'hugo' | 'other'
+  name: string;
+  repoOwner: string;
+  repoName: string;
+  branch: string;
+  buildCommand: string;
+  outputDirectory: string;
+  framework: "hugo" | "other";
 }
 
 export interface DeploymentStatus {
-  id: string
-  state: 'queued' | 'building' | 'ready' | 'error' | 'canceled'
-  url?: string
-  createdAt: string
-  readyAt?: string
-  errorMessage?: string
+  id: string;
+  state: "queued" | "building" | "ready" | "error" | "canceled";
+  url?: string;
+  createdAt: string;
+  readyAt?: string;
+  errorMessage?: string;
 }
 ```
 
@@ -214,6 +222,7 @@ export interface DeploymentStatus {
 ### Story 1.1: Create Deployment Provider Interface
 
 **Files to create:**
+
 - `lib/deployment/types.ts` - Type definitions
 - `lib/deployment/provider.ts` - Base provider interface
 - `lib/deployment/index.ts` - Factory and exports
@@ -223,21 +232,21 @@ export interface DeploymentStatus {
 ```typescript
 // lib/deployment/provider.ts
 
-import { DeploymentPlatform, DeploymentProvider, ProjectConfig } from './types'
+import { DeploymentPlatform, DeploymentProvider, ProjectConfig } from "./types";
 
 export abstract class BaseDeploymentProvider implements DeploymentProvider {
-  abstract platform: DeploymentPlatform
+  abstract platform: DeploymentPlatform;
 
-  protected userId: number
-  protected credentials: PlatformCredentials | null = null
+  protected userId: number;
+  protected credentials: PlatformCredentials | null = null;
 
   constructor(userId: number) {
-    this.userId = userId
+    this.userId = userId;
   }
 
-  abstract getAuthUrl(): string
-  abstract handleCallback(code: string): Promise<PlatformCredentials>
-  abstract createProject(config: ProjectConfig): Promise<ProjectResult>
+  abstract getAuthUrl(): string;
+  abstract handleCallback(code: string): Promise<PlatformCredentials>;
+  abstract createProject(config: ProjectConfig): Promise<ProjectResult>;
   // ... other abstract methods
 
   // Shared utilities
@@ -249,7 +258,7 @@ export abstract class BaseDeploymentProvider implements DeploymentProvider {
     // Load and decrypt from database
   }
 
-  protected normalizeStatus(platformStatus: string): DeploymentStatus['state'] {
+  protected normalizeStatus(platformStatus: string): DeploymentStatus["state"] {
     // Map platform-specific statuses to our standard states
   }
 }
@@ -260,36 +269,37 @@ export abstract class BaseDeploymentProvider implements DeploymentProvider {
 ```typescript
 // lib/deployment/index.ts
 
-import { DeploymentPlatform, DeploymentProvider } from './types'
-import { GitHubPagesProvider } from './providers/github-pages'
-import { VercelProvider } from './providers/vercel'
-import { NetlifyProvider } from './providers/netlify'
-import { CloudflareProvider } from './providers/cloudflare'
+import { DeploymentPlatform, DeploymentProvider } from "./types";
+import { GitHubPagesProvider } from "./providers/github-pages";
+import { VercelProvider } from "./providers/vercel";
+import { NetlifyProvider } from "./providers/netlify";
+import { CloudflareProvider } from "./providers/cloudflare";
 
 export function getDeploymentProvider(
   platform: DeploymentPlatform,
-  userId: number
+  userId: number,
 ): DeploymentProvider {
   switch (platform) {
-    case 'github-pages':
-      return new GitHubPagesProvider(userId)
-    case 'vercel':
-      return new VercelProvider(userId)
-    case 'netlify':
-      return new NetlifyProvider(userId)
-    case 'cloudflare':
-      return new CloudflareProvider(userId)
+    case "github-pages":
+      return new GitHubPagesProvider(userId);
+    case "vercel":
+      return new VercelProvider(userId);
+    case "netlify":
+      return new NetlifyProvider(userId);
+    case "cloudflare":
+      return new CloudflareProvider(userId);
     default:
-      throw new Error(`Unknown platform: ${platform}`)
+      throw new Error(`Unknown platform: ${platform}`);
   }
 }
 
-export * from './types'
+export * from "./types";
 ```
 
 ### Story 1.3: Refactor GitHub Pages to Provider Pattern
 
 **Files to modify:**
+
 - `lib/deployment/providers/github-pages.ts` - New provider implementation
 - Migrate existing code from `lib/github.ts`
 
@@ -302,6 +312,7 @@ export * from './types'
 **Vercel API:** https://vercel.com/docs/rest-api
 
 **OAuth Flow:**
+
 1. User clicks "Connect Vercel"
 2. Redirect to Vercel OAuth
 3. User authorizes StaticPress
@@ -311,12 +322,14 @@ export * from './types'
 ### Story 2.1: Vercel OAuth Setup
 
 **Environment Variables:**
+
 ```
 VERCEL_CLIENT_ID=
 VERCEL_CLIENT_SECRET=
 ```
 
 **API Routes:**
+
 - `GET /api/auth/vercel` - Initiate OAuth
 - `GET /api/auth/vercel/callback` - Handle callback
 
@@ -326,40 +339,43 @@ VERCEL_CLIENT_SECRET=
 // lib/deployment/providers/vercel.ts
 
 export class VercelProvider extends BaseDeploymentProvider {
-  platform: DeploymentPlatform = 'vercel'
+  platform: DeploymentPlatform = "vercel";
 
-  private apiBase = 'https://api.vercel.com'
+  private apiBase = "https://api.vercel.com";
 
   getAuthUrl(): string {
     const params = new URLSearchParams({
       client_id: process.env.VERCEL_CLIENT_ID!,
       redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/vercel/callback`,
-      scope: 'user:read projects:write deployments:read',
-    })
-    return `https://vercel.com/oauth/authorize?${params}`
+      scope: "user:read projects:write deployments:read",
+    });
+    return `https://vercel.com/oauth/authorize?${params}`;
   }
 
   async handleCallback(code: string): Promise<PlatformCredentials> {
-    const response = await fetch('https://api.vercel.com/v2/oauth/access_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: process.env.VERCEL_CLIENT_ID!,
-        client_secret: process.env.VERCEL_CLIENT_SECRET!,
-        code,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/vercel/callback`,
-      }),
-    })
+    const response = await fetch(
+      "https://api.vercel.com/v2/oauth/access_token",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          client_id: process.env.VERCEL_CLIENT_ID!,
+          client_secret: process.env.VERCEL_CLIENT_SECRET!,
+          code,
+          redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/vercel/callback`,
+        }),
+      },
+    );
 
-    const data = await response.json()
+    const data = await response.json();
     const creds = {
       accessToken: data.access_token,
       teamId: data.team_id,
       expiresAt: null, // Vercel tokens don't expire
-    }
+    };
 
-    await this.saveCredentials(creds)
-    return creds
+    await this.saveCredentials(creds);
+    return creds;
   }
 }
 ```
@@ -503,6 +519,7 @@ async addCustomDomain(domain: string): Promise<DomainResult> {
 ### Story 3.1: Netlify OAuth Setup
 
 **Environment Variables:**
+
 ```
 NETLIFY_CLIENT_ID=
 NETLIFY_CLIENT_SECRET=
@@ -514,62 +531,59 @@ NETLIFY_CLIENT_SECRET=
 // lib/deployment/providers/netlify.ts
 
 export class NetlifyProvider extends BaseDeploymentProvider {
-  platform: DeploymentPlatform = 'netlify'
+  platform: DeploymentPlatform = "netlify";
 
-  private apiBase = 'https://api.netlify.com/api/v1'
+  private apiBase = "https://api.netlify.com/api/v1";
 
   getAuthUrl(): string {
     const params = new URLSearchParams({
       client_id: process.env.NETLIFY_CLIENT_ID!,
-      response_type: 'code',
+      response_type: "code",
       redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/netlify/callback`,
-      scope: 'user:read sites:write deploys:read',
-    })
-    return `https://app.netlify.com/authorize?${params}`
+      scope: "user:read sites:write deploys:read",
+    });
+    return `https://app.netlify.com/authorize?${params}`;
   }
 
   async createProject(config: ProjectConfig): Promise<ProjectResult> {
-    const creds = await this.loadCredentials()
+    const creds = await this.loadCredentials();
 
     // Create site linked to GitHub repo
     const response = await fetch(`${this.apiBase}/sites`, {
-      method: 'POST',
+      method: "POST",
       headers: {
         Authorization: `Bearer ${creds.accessToken}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         name: config.name,
         repo: {
-          provider: 'github',
+          provider: "github",
           repo: `${config.repoOwner}/${config.repoName}`,
           branch: config.branch,
-          cmd: config.buildCommand || 'hugo --minify',
-          dir: config.outputDirectory || 'public',
+          cmd: config.buildCommand || "hugo --minify",
+          dir: config.outputDirectory || "public",
         },
       }),
-    })
+    });
 
-    const site = await response.json()
+    const site = await response.json();
 
     return {
       projectId: site.id,
       projectName: site.name,
       url: site.ssl_url || site.url,
-    }
+    };
   }
 
   async getDeploymentStatus(deployId: string): Promise<DeploymentStatus> {
-    const creds = await this.loadCredentials()
+    const creds = await this.loadCredentials();
 
-    const response = await fetch(
-      `${this.apiBase}/deploys/${deployId}`,
-      {
-        headers: { Authorization: `Bearer ${creds.accessToken}` },
-      }
-    )
+    const response = await fetch(`${this.apiBase}/deploys/${deployId}`, {
+      headers: { Authorization: `Bearer ${creds.accessToken}` },
+    });
 
-    const deploy = await response.json()
+    const deploy = await response.json();
 
     return {
       id: deploy.id,
@@ -578,23 +592,23 @@ export class NetlifyProvider extends BaseDeploymentProvider {
       createdAt: deploy.created_at,
       readyAt: deploy.published_at,
       errorMessage: deploy.error_message,
-    }
+    };
   }
 
-  private mapNetlifyState(state: string): DeploymentStatus['state'] {
-    const mapping: Record<string, DeploymentStatus['state']> = {
-      'new': 'queued',
-      'pending_review': 'queued',
-      'building': 'building',
-      'uploading': 'building',
-      'uploaded': 'building',
-      'preparing': 'building',
-      'prepared': 'building',
-      'processing': 'building',
-      'ready': 'ready',
-      'error': 'error',
-    }
-    return mapping[state] || 'queued'
+  private mapNetlifyState(state: string): DeploymentStatus["state"] {
+    const mapping: Record<string, DeploymentStatus["state"]> = {
+      new: "queued",
+      pending_review: "queued",
+      building: "building",
+      uploading: "building",
+      uploaded: "building",
+      preparing: "building",
+      prepared: "building",
+      processing: "building",
+      ready: "ready",
+      error: "error",
+    };
+    return mapping[state] || "queued";
   }
 }
 ```
@@ -615,29 +629,29 @@ export class NetlifyProvider extends BaseDeploymentProvider {
 // lib/deployment/providers/cloudflare.ts
 
 export class CloudflareProvider extends BaseDeploymentProvider {
-  platform: DeploymentPlatform = 'cloudflare'
+  platform: DeploymentPlatform = "cloudflare";
 
-  private apiBase = 'https://api.cloudflare.com/client/v4'
+  private apiBase = "https://api.cloudflare.com/client/v4";
 
   // Cloudflare uses API tokens instead of OAuth
   // User provides token with Pages permissions
 
   async createProject(config: ProjectConfig): Promise<ProjectResult> {
-    const creds = await this.loadCredentials()
+    const creds = await this.loadCredentials();
 
     const response = await fetch(
       `${this.apiBase}/accounts/${creds.accountId}/pages/projects`,
       {
-        method: 'POST',
+        method: "POST",
         headers: {
           Authorization: `Bearer ${creds.apiToken}`,
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name: config.name,
           production_branch: config.branch,
           source: {
-            type: 'github',
+            type: "github",
             config: {
               owner: config.repoOwner,
               repo_name: config.repoName,
@@ -645,20 +659,20 @@ export class CloudflareProvider extends BaseDeploymentProvider {
             },
           },
           build_config: {
-            build_command: config.buildCommand || 'hugo --minify',
-            destination_dir: config.outputDirectory || 'public',
+            build_command: config.buildCommand || "hugo --minify",
+            destination_dir: config.outputDirectory || "public",
           },
         }),
-      }
-    )
+      },
+    );
 
-    const project = await response.json()
+    const project = await response.json();
 
     return {
       projectId: project.result.name,
       projectName: project.result.name,
       url: `https://${project.result.subdomain}.pages.dev`,
-    }
+    };
   }
 }
 ```
@@ -788,6 +802,7 @@ export function DeploymentPanel({ platform, projectId, siteUrl }: DeploymentPane
 **File:** `components/platform-selector.tsx`
 
 Features:
+
 - Cards for each platform with pros/cons
 - Visual indicator for current selection
 - Connection status per platform
@@ -802,6 +817,7 @@ Features:
 **File:** `components/domain-manager.tsx`
 
 Features:
+
 - Add custom domain input
 - DNS verification status
 - Required DNS records display
@@ -814,27 +830,27 @@ Features:
 // lib/deployment/domain-verification.ts
 
 export interface DNSRecord {
-  type: 'A' | 'AAAA' | 'CNAME' | 'TXT'
-  name: string
-  value: string
+  type: "A" | "AAAA" | "CNAME" | "TXT";
+  name: string;
+  value: string;
 }
 
 export async function verifyDomain(
   platform: DeploymentPlatform,
-  domain: string
+  domain: string,
 ): Promise<{
-  verified: boolean
-  records: DNSRecord[]
-  errors: string[]
+  verified: boolean;
+  records: DNSRecord[];
+  errors: string[];
 }> {
-  const provider = getDeploymentProvider(platform, userId)
-  const verification = await provider.verifyDomain(domain)
+  const provider = getDeploymentProvider(platform, userId);
+  const verification = await provider.verifyDomain(domain);
 
   return {
     verified: verification.verified,
     records: verification.requiredRecords,
     errors: verification.errors || [],
-  }
+  };
 }
 ```
 
@@ -915,21 +931,22 @@ ADD COLUMN deployment_platform VARCHAR(50) DEFAULT 'github-pages';
 
 ### New API Routes
 
-| Route | Method | Description |
-|-------|--------|-------------|
-| `/api/auth/[platform]` | GET | Initiate OAuth for platform |
-| `/api/auth/[platform]/callback` | GET | OAuth callback |
-| `/api/deployment/connect` | POST | Create project on platform |
-| `/api/deployment/trigger` | POST | Trigger new deployment |
-| `/api/deployment/status` | GET | Get current deployment status |
-| `/api/deployment/logs` | GET | Get build logs |
-| `/api/deployment/history` | GET | Get deployment history |
-| `/api/domains` | GET/POST/DELETE | Manage custom domains |
-| `/api/domains/verify` | POST | Verify domain DNS |
+| Route                           | Method          | Description                   |
+| ------------------------------- | --------------- | ----------------------------- |
+| `/api/auth/[platform]`          | GET             | Initiate OAuth for platform   |
+| `/api/auth/[platform]/callback` | GET             | OAuth callback                |
+| `/api/deployment/connect`       | POST            | Create project on platform    |
+| `/api/deployment/trigger`       | POST            | Trigger new deployment        |
+| `/api/deployment/status`        | GET             | Get current deployment status |
+| `/api/deployment/logs`          | GET             | Get build logs                |
+| `/api/deployment/history`       | GET             | Get deployment history        |
+| `/api/domains`                  | GET/POST/DELETE | Manage custom domains         |
+| `/api/domains/verify`           | POST            | Verify domain DNS             |
 
 ### Request/Response Examples
 
 **POST /api/deployment/connect**
+
 ```json
 // Request
 {
@@ -947,6 +964,7 @@ ADD COLUMN deployment_platform VARCHAR(50) DEFAULT 'github-pages';
 ```
 
 **GET /api/deployment/status**
+
 ```json
 // Response
 {
@@ -966,16 +984,19 @@ ADD COLUMN deployment_platform VARCHAR(50) DEFAULT 'github-pages';
 ## Security Considerations
 
 ### Token Storage
+
 - Encrypt platform tokens with AES-256-GCM
 - Use environment variable for encryption key
 - Never log tokens
 
 ### OAuth Security
+
 - Validate state parameter
 - Use PKCE where supported
 - Short-lived authorization codes
 
 ### API Security
+
 - All routes require authentication
 - Rate limit OAuth endpoints
 - Validate webhook signatures
@@ -985,21 +1006,25 @@ ADD COLUMN deployment_platform VARCHAR(50) DEFAULT 'github-pages';
 ## Testing Strategy
 
 ### Unit Tests
+
 - Provider abstraction layer
 - Token encryption/decryption
 - Status mapping functions
 
 ### Integration Tests
+
 - OAuth flow mocking
 - API response handling
 - Error scenarios
 
 ### E2E Tests
+
 - Full deployment flow per platform
 - Custom domain setup
 - Platform switching
 
 ### Test Files to Create
+
 ```
 lib/deployment/__tests__/provider.test.ts
 lib/deployment/__tests__/vercel.test.ts
@@ -1015,34 +1040,40 @@ e2e/deployment-domains.spec.ts
 ## Implementation Timeline
 
 ### Phase 1: Foundation (Week 1)
+
 - Provider abstraction layer
 - Refactor GitHub Pages to provider pattern
 - Database schema changes
 
 ### Phase 2: Vercel Integration (Week 2)
+
 - OAuth setup
 - Project creation
 - Status monitoring
 - Build logs
 
 ### Phase 3: Netlify Integration (Week 3)
+
 - OAuth setup
 - Project creation
 - Status monitoring
 - Build logs
 
 ### Phase 4: Cloudflare Integration (Week 4)
+
 - API token flow
 - Project creation
 - Status monitoring
 
 ### Phase 5: UI & Polish (Week 5)
+
 - Unified deployment panel
 - Platform selector
 - Settings integration
 - Custom domain UI
 
 ### Phase 6: Testing & Documentation (Week 6)
+
 - Comprehensive test suite
 - User documentation
 - API documentation
@@ -1074,16 +1105,19 @@ PLATFORM_TOKEN_ENCRYPTION_KEY=
 ## Appendix: Platform API References
 
 ### Vercel
+
 - API Docs: https://vercel.com/docs/rest-api
 - OAuth: https://vercel.com/docs/rest-api#authentication/oauth2
 - Scopes needed: `user:read`, `projects:write`, `deployments:read`
 
 ### Netlify
+
 - API Docs: https://docs.netlify.com/api/get-started/
 - OAuth: https://docs.netlify.com/api/get-started/#authentication
 - Scopes needed: `user:read`, `sites:write`, `deploys:read`
 
 ### Cloudflare
+
 - API Docs: https://developers.cloudflare.com/api/
 - Pages API: https://developers.cloudflare.com/pages/platform/api/
 - Token permissions: Account > Cloudflare Pages > Edit
@@ -1093,12 +1127,14 @@ PLATFORM_TOKEN_ENCRYPTION_KEY=
 ## Success Criteria
 
 ### MVP (Minimum Viable Product)
+
 - [ ] Vercel OAuth and project creation
 - [ ] Netlify OAuth and project creation
 - [ ] Status monitoring for all platforms
 - [ ] Basic deployment panel in dashboard
 
 ### Full Release
+
 - [ ] All 4 platforms fully integrated
 - [ ] Custom domain support for all platforms
 - [ ] Deployment history

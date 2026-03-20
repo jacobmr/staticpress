@@ -15,11 +15,13 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 ### 1. Database Schema Updates
 
 **Files Created:**
+
 - `supabase/migrations/20251020_add_subscription_tiers.sql`
 - `supabase/migrations/20251020_create_analytics_events.sql`
 - `supabase/migrations/README.md`
 
 **Changes:**
+
 - ✅ Updated `subscription_tier` to support 4 tiers: `free`, `personal`, `smb`, `pro`
 - ✅ Created `analytics_events` table for server-side event tracking
 - ✅ Added RLS policies for security
@@ -27,6 +29,7 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 - ✅ TypeScript interfaces updated in `lib/db.ts`
 
 **New Helper Functions:**
+
 - `hasFeatureAccess()` - Tier-based feature gating
 - `getUserTier()` - Get user's subscription tier
 - `logEvent()` - Server-side event logging
@@ -37,6 +40,7 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 ### 2. Stripe Integration (Complete)
 
 **Files Created:**
+
 - `lib/stripe.ts` - Server-side Stripe client
 - `lib/stripe-client.ts` - Client-side Stripe loader
 - `app/api/stripe/create-checkout-session/route.ts`
@@ -45,6 +49,7 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 - `docs/STRIPE_SETUP.md` - Complete setup guide
 
 **Features Implemented:**
+
 - ✅ Stripe SDK installed (`stripe` + `@stripe/stripe-js`)
 - ✅ Checkout session creation for all 3 paid tiers
 - ✅ Customer portal for subscription management
@@ -58,6 +63,7 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 - ✅ Metadata tracking for user associations
 
 **Pricing Configuration:**
+
 - Personal: $2.50/mo or $20/yr
 - SMB: $5/mo or $50/yr
 - Pro: $10/mo or $100/yr
@@ -67,11 +73,13 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 ### 3. Free Tier 5-Post Limit (Complete)
 
 **Files Modified:**
+
 - `app/dashboard/page.tsx` - Tier-aware post loading
 - `components/file-browser.tsx` - Limit display and upgrade prompts
 - `components/dashboard-client.tsx` - Tier prop passing
 
 **Implementation:**
+
 - ✅ Free users limited to 5 most recent posts
 - ✅ Paid users can access 50 posts (performance limit)
 - ✅ Cache keys include tier for proper filtering
@@ -83,9 +91,11 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 ### 4. Tier Badge & UI (Complete)
 
 **Files Modified:**
+
 - `app/dashboard/page.tsx` - Header tier badge
 
 **Features:**
+
 - ✅ Color-coded tier badges:
   - Free: Gray
   - Personal: Blue
@@ -99,11 +109,13 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 ### 5. Upgrade Flow (Complete)
 
 **Files Created:**
+
 - `components/upgrade-modal.tsx` - Beautiful upgrade modal
 - `components/pricing-client.tsx` - Interactive pricing cards
 - `app/pricing/page.tsx` - Public pricing page
 
 **Features:**
+
 - ✅ Context-aware upgrade prompts (post_limit, images, etc.)
 - ✅ Modal with all 3 paid tiers
 - ✅ Monthly/yearly toggle with savings indicator
@@ -114,6 +126,7 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 - ✅ Responsive design (mobile-friendly)
 
 **User Experience:**
+
 - One-click upgrade to any tier
 - Clear feature comparison
 - No friction in upgrade path
@@ -124,15 +137,18 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 ### 6. Event Logging (Complete)
 
 **Files Created:**
+
 - `app/api/analytics/log-event/route.ts` - Client-side event API
 
 **Files Modified:**
+
 - `lib/auth.ts` - Log `oauth_completed`
 - `app/setup/page.tsx` - Log `repo_bound`
 - `app/api/posts/publish/route.ts` - Log `post_published` and `first_publish`
 - `app/api/posts/delete/route.ts` - Log `post_deleted`
 
 **Events Tracked:**
+
 1. **oauth_completed** - User signs in with GitHub
 2. **repo_bound** - User connects repository
 3. **first_publish** - User publishes their first post (special event)
@@ -142,6 +158,7 @@ Phase 2 implementation is **COMPLETE for Week 1** - all paywall infrastructure a
 7. **upgrade_completed** - Subscription activated (webhook)
 
 **Funnel Analysis:**
+
 ```
 oauth_completed → repo_bound → first_publish → upgrade_modal_shown → upgrade_completed
 ```
@@ -198,11 +215,13 @@ STRIPE_PRO_YEARLY_PRICE_ID=price_...
 ## 📊 Success Metrics (Phase 2 - Week 1)
 
 **Target Metrics:**
+
 - Free→Personal conversion: ≥6-10% within 30 days
 - TTFP (Time to First Publish): <60 seconds
 - Upgrade flow completion: >90% (no technical errors)
 
 **Tracking:**
+
 - All events logged to `analytics_events` table
 - Funnel analysis queries ready
 - Time-based conversion tracking enabled
@@ -214,6 +233,7 @@ STRIPE_PRO_YEARLY_PRICE_ID=price_...
 The following are **planned for Week 2** but not yet built:
 
 ### Images Feature (Personal+ Tier)
+
 - [ ] Image upload button in editor
 - [ ] Drag-and-drop support
 - [ ] GitHub API upload to `/static/images/YYYY/MM/`
@@ -221,11 +241,13 @@ The following are **planned for Week 2** but not yet built:
 - [ ] Image insertion into posts
 
 ### Categories & Tags (All Tiers)
+
 - [ ] Input fields with autocomplete
 - [ ] Frontmatter integration
 - [ ] Tag-style pills display
 
 ### Preview (All Tiers)
+
 - [ ] Markdown → HTML rendering
 - [ ] Preview modal/panel
 - [ ] Theme styling in preview
@@ -235,17 +257,20 @@ The following are **planned for Week 2** but not yet built:
 ## 🔧 Technical Debt / Future Improvements
 
 ### Performance
+
 - Consider implementing actual post count tracking vs. full post fetch
 - Add pagination for users with >50 posts (Pro tier)
 - Optimize cache invalidation strategy
 
 ### UX Enhancements
+
 - Add "Upgrade to unlock" tooltips on locked features
 - Show countdown of posts remaining on free tier
 - Add upgrade success celebration screen
 - Implement upgrade reminder emails (future)
 
 ### Analytics
+
 - Build analytics dashboard for team
 - Add conversion funnel visualization
 - Track A/B test variants (future)
@@ -297,6 +322,7 @@ The following are **planned for Week 2** but not yet built:
 **Week 1 of Phase 2 is COMPLETE!**
 
 All paywall infrastructure is in place:
+
 - ✅ Database schema ready (needs migration)
 - ✅ Stripe integration complete (needs configuration)
 - ✅ 5-post limit enforced for free tier
@@ -306,6 +332,7 @@ All paywall infrastructure is in place:
 - ✅ Tier badges showing
 
 **Next Steps:**
+
 1. Apply database migrations
 2. Configure Stripe products and webhooks
 3. Test upgrade flow end-to-end

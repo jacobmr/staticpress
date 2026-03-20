@@ -1,48 +1,48 @@
-import { auth } from './auth'
-import type { BlogEngine } from './db'
+import { auth } from "./auth";
+import type { BlogEngine } from "./db";
 
 export interface RepoConfig {
-  owner: string
-  repo: string
-  contentPath?: string // e.g., "content/posts"
-  engine?: BlogEngine // 'hugo' or 'krems'
-  siteUrl?: string | null // Published site URL
-  theme?: string // Hugo theme name
+  owner: string;
+  repo: string;
+  contentPath?: string; // e.g., "content/posts"
+  engine?: BlogEngine; // 'hugo' or 'krems'
+  siteUrl?: string | null; // Published site URL
+  theme?: string; // Hugo theme name
 }
 
 /**
  * Get repository configuration for the currently authenticated user
  */
 export async function getRepoConfig(): Promise<RepoConfig | null> {
-  const session = await auth()
+  const session = await auth();
 
   if (!session?.user?.id) {
-    return null
+    return null;
   }
 
   // Dynamically import database functions to prevent build-time initialization
-  const { getUserRepository, getUserByGithubId } = await import('./db')
+  const { getUserRepository, getUserByGithubId } = await import("./db");
 
   // Get user from database
-  const user = await getUserByGithubId(session.user.id)
+  const user = await getUserByGithubId(session.user.id);
   if (!user) {
-    return null
+    return null;
   }
 
   // Get repository configuration
-  const repository = await getUserRepository(user.id)
+  const repository = await getUserRepository(user.id);
   if (!repository) {
-    return null
+    return null;
   }
 
   return {
     owner: repository.owner,
     repo: repository.repo,
     contentPath: repository.content_path,
-    engine: repository.engine || 'hugo', // Default to hugo for existing repos
+    engine: repository.engine || "hugo", // Default to hugo for existing repos
     siteUrl: repository.site_url,
     theme: repository.theme ?? undefined,
-  }
+  };
 }
 
 /**
@@ -53,7 +53,9 @@ export async function getRepoConfig(): Promise<RepoConfig | null> {
 export async function setRepoConfig(config: RepoConfig) {
   // This function is now deprecated - repository configuration should be set
   // via upsertUserRepository in lib/db.ts using the server action in setup page
-  console.warn('setRepoConfig is deprecated - use upsertUserRepository from lib/db.ts instead')
+  console.warn(
+    "setRepoConfig is deprecated - use upsertUserRepository from lib/db.ts instead",
+  );
 }
 
 /**
@@ -63,5 +65,7 @@ export async function setRepoConfig(config: RepoConfig) {
  */
 export async function clearRepoConfig() {
   // This function is now deprecated - repository configuration persists in database
-  console.warn('clearRepoConfig is deprecated - repository data persists in database')
+  console.warn(
+    "clearRepoConfig is deprecated - repository data persists in database",
+  );
 }

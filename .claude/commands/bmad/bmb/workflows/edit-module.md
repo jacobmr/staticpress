@@ -1,5 +1,5 @@
 ---
-description: 'Edit existing BMAD modules (structure, agents, workflows, documentation) while following all best practices'
+description: "Edit existing BMAD modules (structure, agents, workflows, documentation) while following all best practices"
 ---
 
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS - while staying in character as the current agent persona you may have loaded:

@@ -15,7 +15,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "StaticPress - Hugo Blog Editor",
-  description: "Simple, elegant web-based editor for Hugo blogs with GitHub integration",
+  description:
+    "Simple, elegant web-based editor for Hugo blogs with GitHub integration",
 };
 
 export default function RootLayout({

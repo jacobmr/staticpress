@@ -43,6 +43,7 @@ Switched from creating files programmatically to using GitHub's **Template Repos
 ### Template Repository Contents
 
 `jacobmr/staticpress-hugo-template`:
+
 - `hugo.toml` - Hugo config
 - `content/posts/welcome.md` - Welcome post
 - `content/posts/.gitkeep` - Keep directory
@@ -55,15 +56,18 @@ Switched from creating files programmatically to using GitHub's **Template Repos
 ## Current Status
 
 ### Completed
+
 - [x] Setup page with dual options (Connect/Create)
 - [x] Repository creation via template
 - [x] API endpoints for create/connect
 - [x] Version display in footer and header
 
 ### Awaiting Test
+
 - [ ] Test Create New Blog flow in production
 
 ### Next Phases
+
 - [ ] Phase 2: Onboarding wizard with progress checklist
 - [ ] Phase 3: Help documentation pages
 - [ ] Phase 4: Deployment setup guide (Cloudflare/Vercel)
@@ -84,11 +88,13 @@ Switched from creating files programmatically to using GitHub's **Template Repos
 ## TBD List
 
 ### Medium Priority
+
 - [ ] Make image base URL configurable (hardcoded to docnotes.com)
 - [ ] Remove debug console.logs ([Paste], [PasteImage])
 - [ ] First post prompt for empty dashboards
 
 ### Technical Debt
+
 - [ ] TypeScript strict mode
 - [ ] Test coverage
 - [ ] Error boundaries
@@ -100,6 +106,7 @@ Switched from creating files programmatically to using GitHub's **Template Repos
 ## Environment
 
 Required env vars in `.env.local`:
+
 - AUTH_SECRET, NEXTAUTH_URL
 - AUTH_GITHUB_ID, AUTH_GITHUB_SECRET
 - NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY

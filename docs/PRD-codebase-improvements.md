@@ -45,6 +45,7 @@ StaticPress has several critical issues affecting user experience:
 ## Goals & Non-Goals
 
 ### Goals
+
 - Fix all broken functionality (featured images, theme configs)
 - Simplify theme management to reduce maintenance burden
 - Add security hardening through input validation
@@ -52,6 +53,7 @@ StaticPress has several critical issues affecting user experience:
 - Improve observability with proper logging and monitoring
 
 ### Non-Goals
+
 - Adding new features beyond fixes
 - Supporting additional Hugo themes (simplifying to fewer)
 - Migrating to a different database or auth system
@@ -61,13 +63,13 @@ StaticPress has several critical issues affecting user experience:
 
 ## Success Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Featured images working | 0% | 100% |
-| API endpoints with validation | 0% | 100% |
-| Test coverage | 0% | 60%+ |
-| Production console.logs | 15+ | 0 |
-| Themes fully supported | 0/6 | 2/2 |
+| Metric                        | Current | Target |
+| ----------------------------- | ------- | ------ |
+| Featured images working       | 0%      | 100%   |
+| API endpoints with validation | 0%      | 100%   |
+| Test coverage                 | 0%      | 60%+   |
+| Production console.logs       | 15+     | 0      |
+| Themes fully supported        | 0/6     | 2/2    |
 
 ---
 
@@ -76,6 +78,7 @@ StaticPress has several critical issues affecting user experience:
 ### Background
 
 The current theme system attempts to support 6 different Hugo themes but fails to account for their different requirements. Each theme uses different:
+
 - Frontmatter fields for featured images
 - Config parameter structures
 - Author information formats
@@ -85,6 +88,7 @@ The current theme system attempts to support 6 different Hugo themes but fails t
 **Recommended themes:** PaperMod and Ananke
 
 **Rationale:**
+
 - Most popular and well-maintained
 - Good documentation
 - Different aesthetics (modern vs classic)
@@ -100,55 +104,57 @@ Create `lib/theme-profiles.ts`:
 
 ```typescript
 export interface ThemeProfile {
-  id: string
-  name: string
-  repo: string
+  id: string;
+  name: string;
+  repo: string;
 
   // Frontmatter configuration
   frontmatter: {
-    featuredImageField: string | null  // e.g., 'featured_image', 'cover.image'
-    featuredImageIsNested: boolean     // true for PaperMod's cover.image
-    authorField: string | null         // e.g., 'author', 'authors'
-    summaryField: string | null        // e.g., 'summary', 'description'
-    additionalFields?: Record<string, unknown>
-  }
+    featuredImageField: string | null; // e.g., 'featured_image', 'cover.image'
+    featuredImageIsNested: boolean; // true for PaperMod's cover.image
+    authorField: string | null; // e.g., 'author', 'authors'
+    summaryField: string | null; // e.g., 'summary', 'description'
+    additionalFields?: Record<string, unknown>;
+  };
 
   // Config requirements
   config: {
-    paramsTemplate: string  // TOML template for [params] section
-    requiredSections: string[]  // e.g., ['markup.goldmark.renderer']
-  }
+    paramsTemplate: string; // TOML template for [params] section
+    requiredSections: string[]; // e.g., ['markup.goldmark.renderer']
+  };
 
   // Functions
-  generateFrontmatter: (data: PostData) => string
-  validateConfig: (config: string) => ValidationResult
-  getDefaultConfig: () => string
+  generateFrontmatter: (data: PostData) => string;
+  validateConfig: (config: string) => ValidationResult;
+  getDefaultConfig: () => string;
 }
 
 export interface PostData {
-  title: string
-  date: string
-  draft: boolean
-  content: string
-  featuredImage?: string
-  tags?: string[]
-  categories?: string[]
+  title: string;
+  date: string;
+  draft: boolean;
+  content: string;
+  featuredImage?: string;
+  tags?: string[];
+  categories?: string[];
 }
 
 export interface ValidationResult {
-  valid: boolean
-  errors: string[]
-  warnings: string[]
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
 }
 ```
 
 **Files to create:**
+
 - `lib/theme-profiles.ts` - Core interface and types
 - `lib/theme-profiles/papermod.ts` - PaperMod implementation
 - `lib/theme-profiles/ananke.ts` - Ananke implementation
 - `lib/theme-profiles/index.ts` - Exports and registry
 
 **Acceptance Criteria:**
+
 - [ ] ThemeProfile interface defined with full type safety
 - [ ] PaperMod profile correctly generates frontmatter with `cover.image`
 - [ ] Ananke profile correctly generates frontmatter with `featured_image`
@@ -164,6 +170,7 @@ export interface ValidationResult {
 **Technical Details:**
 
 PaperMod frontmatter structure:
+
 ```yaml
 ---
 title: "Post Title"
@@ -179,6 +186,7 @@ categories: ["category1"]
 ```
 
 PaperMod config requirements:
+
 ```toml
 [params]
   defaultTheme = "auto"
@@ -197,18 +205,18 @@ PaperMod config requirements:
 **Implementation in `lib/theme-profiles/papermod.ts`:**
 
 ```typescript
-import { ThemeProfile, PostData } from '../theme-profiles'
+import { ThemeProfile, PostData } from "../theme-profiles";
 
 export const papermodProfile: ThemeProfile = {
-  id: 'papermod',
-  name: 'PaperMod',
-  repo: 'https://github.com/adityatelange/hugo-PaperMod.git',
+  id: "papermod",
+  name: "PaperMod",
+  repo: "https://github.com/adityatelange/hugo-PaperMod.git",
 
   frontmatter: {
-    featuredImageField: 'cover.image',
+    featuredImageField: "cover.image",
     featuredImageIsNested: true,
-    authorField: 'author',
-    summaryField: 'summary',
+    authorField: "author",
+    summaryField: "summary",
   },
 
   config: {
@@ -224,48 +232,50 @@ export const papermodProfile: ThemeProfile = {
   hidden = false
   hiddenInList = false
   hiddenInSingle = false`,
-    requiredSections: ['markup.goldmark.renderer'],
+    requiredSections: ["markup.goldmark.renderer"],
   },
 
   generateFrontmatter: (data: PostData): string => {
-    const lines = ['---']
-    lines.push(`title: "${escapeYaml(data.title)}"`)
-    lines.push(`date: ${data.date}`)
-    lines.push(`draft: ${data.draft}`)
+    const lines = ["---"];
+    lines.push(`title: "${escapeYaml(data.title)}"`);
+    lines.push(`date: ${data.date}`);
+    lines.push(`draft: ${data.draft}`);
 
     if (data.featuredImage) {
-      lines.push('cover:')
-      lines.push(`  image: "${data.featuredImage}"`)
-      lines.push(`  alt: "${escapeYaml(data.title)}"`)
-      lines.push('  hidden: false')
+      lines.push("cover:");
+      lines.push(`  image: "${data.featuredImage}"`);
+      lines.push(`  alt: "${escapeYaml(data.title)}"`);
+      lines.push("  hidden: false");
     }
 
     if (data.tags?.length) {
-      lines.push('tags:')
-      data.tags.forEach(tag => lines.push(`  - "${escapeYaml(tag)}"`))
+      lines.push("tags:");
+      data.tags.forEach((tag) => lines.push(`  - "${escapeYaml(tag)}"`));
     }
 
     if (data.categories?.length) {
-      lines.push('categories:')
-      data.categories.forEach(cat => lines.push(`  - "${escapeYaml(cat)}"`))
+      lines.push("categories:");
+      data.categories.forEach((cat) => lines.push(`  - "${escapeYaml(cat)}"`));
     }
 
-    lines.push('---')
-    return lines.join('\n')
+    lines.push("---");
+    return lines.join("\n");
   },
 
   validateConfig: (config: string) => {
-    const errors: string[] = []
-    const warnings: string[] = []
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-    if (!config.includes('[params]')) {
-      errors.push('Missing [params] section')
+    if (!config.includes("[params]")) {
+      errors.push("Missing [params] section");
     }
-    if (!config.includes('unsafe = true')) {
-      warnings.push('Goldmark unsafe rendering not enabled - images may not display')
+    if (!config.includes("unsafe = true")) {
+      warnings.push(
+        "Goldmark unsafe rendering not enabled - images may not display",
+      );
     }
 
-    return { valid: errors.length === 0, errors, warnings }
+    return { valid: errors.length === 0, errors, warnings };
   },
 
   getDefaultConfig: () => `baseURL = "https://example.org/"
@@ -290,15 +300,16 @@ theme = "PaperMod"
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
-`
-}
+`,
+};
 
 function escapeYaml(str: string): string {
-  return str.replace(/"/g, '\\"')
+  return str.replace(/"/g, '\\"');
 }
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Frontmatter generates correctly with nested `cover.image`
 - [ ] Config validation catches missing required sections
 - [ ] Default config includes all PaperMod requirements
@@ -313,6 +324,7 @@ function escapeYaml(str: string): string {
 **Technical Details:**
 
 Ananke frontmatter structure:
+
 ```yaml
 ---
 title: "Post Title"
@@ -324,6 +336,7 @@ tags: ["tag1", "tag2"]
 ```
 
 Ananke config requirements:
+
 ```toml
 [params]
   author = "Author Name"
@@ -337,18 +350,18 @@ Ananke config requirements:
 **Implementation in `lib/theme-profiles/ananke.ts`:**
 
 ```typescript
-import { ThemeProfile, PostData } from '../theme-profiles'
+import { ThemeProfile, PostData } from "../theme-profiles";
 
 export const anankeProfile: ThemeProfile = {
-  id: 'ananke',
-  name: 'Ananke',
-  repo: 'https://github.com/theNewDynamic/gohugo-theme-ananke.git',
+  id: "ananke",
+  name: "Ananke",
+  repo: "https://github.com/theNewDynamic/gohugo-theme-ananke.git",
 
   frontmatter: {
-    featuredImageField: 'featured_image',
+    featuredImageField: "featured_image",
     featuredImageIsNested: false,
-    authorField: null,  // Ananke uses global author
-    summaryField: 'description',
+    authorField: null, // Ananke uses global author
+    summaryField: "description",
   },
 
   config: {
@@ -356,44 +369,46 @@ export const anankeProfile: ThemeProfile = {
   author = "StaticPress User"
   show_reading_time = false
   mainSections = ["posts"]`,
-    requiredSections: ['markup.goldmark.renderer'],
+    requiredSections: ["markup.goldmark.renderer"],
   },
 
   generateFrontmatter: (data: PostData): string => {
-    const lines = ['---']
-    lines.push(`title: "${escapeYaml(data.title)}"`)
-    lines.push(`date: ${data.date}`)
-    lines.push(`draft: ${data.draft}`)
+    const lines = ["---"];
+    lines.push(`title: "${escapeYaml(data.title)}"`);
+    lines.push(`date: ${data.date}`);
+    lines.push(`draft: ${data.draft}`);
 
     if (data.featuredImage) {
-      lines.push(`featured_image: "${data.featuredImage}"`)
+      lines.push(`featured_image: "${data.featuredImage}"`);
     }
 
     if (data.tags?.length) {
-      lines.push('tags:')
-      data.tags.forEach(tag => lines.push(`  - "${escapeYaml(tag)}"`))
+      lines.push("tags:");
+      data.tags.forEach((tag) => lines.push(`  - "${escapeYaml(tag)}"`));
     }
 
-    lines.push('---')
-    return lines.join('\n')
+    lines.push("---");
+    return lines.join("\n");
   },
 
   validateConfig: (config: string) => {
-    const errors: string[] = []
-    const warnings: string[] = []
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-    if (!config.includes('[params]')) {
-      errors.push('Missing [params] section')
+    if (!config.includes("[params]")) {
+      errors.push("Missing [params] section");
     }
     // Ananke-specific: warn if nested author exists
-    if (config.includes('[params.author]')) {
-      errors.push('Ananke requires simple author string, not nested [params.author]')
+    if (config.includes("[params.author]")) {
+      errors.push(
+        "Ananke requires simple author string, not nested [params.author]",
+      );
     }
-    if (!config.includes('unsafe = true')) {
-      warnings.push('Goldmark unsafe rendering not enabled')
+    if (!config.includes("unsafe = true")) {
+      warnings.push("Goldmark unsafe rendering not enabled");
     }
 
-    return { valid: errors.length === 0, errors, warnings }
+    return { valid: errors.length === 0, errors, warnings };
   },
 
   getDefaultConfig: () => `baseURL = "https://example.org/"
@@ -410,11 +425,12 @@ theme = "ananke"
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
-`
-}
+`,
+};
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Frontmatter generates with flat `featured_image` field
 - [ ] Config validation catches nested author error
 - [ ] Default config matches Ananke requirements
@@ -427,6 +443,7 @@ theme = "ananke"
 **Description:** Modify the publish API to generate theme-specific frontmatter using the profile system.
 
 **Files to modify:**
+
 - `app/api/posts/publish/route.ts`
 
 **Technical Changes:**
@@ -437,15 +454,15 @@ const frontmatterData = {
   title,
   date: new Date().toISOString(),
   draft,
-  ...(featureImageUrl && { featureimage: featureImageUrl }),  // WRONG FIELD
-}
-frontmatter = generateFrontmatter(frontmatterData)
+  ...(featureImageUrl && { featureimage: featureImageUrl }), // WRONG FIELD
+};
+frontmatter = generateFrontmatter(frontmatterData);
 
 // After (using theme profiles)
-import { getThemeProfile } from '@/lib/theme-profiles'
+import { getThemeProfile } from "@/lib/theme-profiles";
 
 // Inside POST handler:
-const themeProfile = getThemeProfile(repoConfig.theme || 'papermod')
+const themeProfile = getThemeProfile(repoConfig.theme || "papermod");
 
 const postData: PostData = {
   title,
@@ -453,12 +470,13 @@ const postData: PostData = {
   draft,
   content: markdownContent,
   featuredImage: featureImageUrl || undefined,
-}
+};
 
-frontmatter = themeProfile.generateFrontmatter(postData)
+frontmatter = themeProfile.generateFrontmatter(postData);
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Publish API uses theme profile for frontmatter generation
 - [ ] Correct frontmatter field used based on theme
 - [ ] Existing posts continue to work (backward compatibility)
@@ -472,31 +490,33 @@ frontmatter = themeProfile.generateFrontmatter(postData)
 **Description:** Replace hardcoded theme-specific logic with profile-based configuration.
 
 **Files to modify:**
+
 - `app/api/settings/fix-config/route.ts`
 
 **Technical Changes:**
 
 ```typescript
-import { getThemeProfile } from '@/lib/theme-profiles'
+import { getThemeProfile } from "@/lib/theme-profiles";
 
 // Replace hardcoded theme detection with:
-const themeMatch = hugoConfigContent.match(/theme\s*=\s*["']([^"']+)["']/)
-const themeId = themeMatch?.[1] || 'papermod'
-const themeProfile = getThemeProfile(themeId)
+const themeMatch = hugoConfigContent.match(/theme\s*=\s*["']([^"']+)["']/);
+const themeId = themeMatch?.[1] || "papermod";
+const themeProfile = getThemeProfile(themeId);
 
 // Use profile validation
-const validation = themeProfile.validateConfig(hugoConfigContent)
+const validation = themeProfile.validateConfig(hugoConfigContent);
 if (!validation.valid) {
   // Apply fixes based on profile requirements
 }
 
 // Use profile's params template when adding missing params
-if (!hugoConfigContent.includes('[params]')) {
-  hugoConfigContent += '\n' + themeProfile.config.paramsTemplate
+if (!hugoConfigContent.includes("[params]")) {
+  hugoConfigContent += "\n" + themeProfile.config.paramsTemplate;
 }
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Config fix uses theme profile validation
 - [ ] Correct params template applied per theme
 - [ ] Removes hardcoded isPoisonTheme/isAnankeTheme checks
@@ -509,6 +529,7 @@ if (!hugoConfigContent.includes('[params]')) {
 **Description:** Limit theme selection to PaperMod and Ananke only.
 
 **Files to modify:**
+
 - `lib/themes.ts` - Remove unsupported themes
 - `app/settings/page.tsx` - Update theme selector if present
 - `app/setup/page.tsx` - Update theme selector if present
@@ -518,30 +539,34 @@ if (!hugoConfigContent.includes('[params]')) {
 ```typescript
 export const HUGO_THEMES: HugoTheme[] = [
   {
-    id: 'papermod',
-    name: 'PaperMod',
-    description: 'Modern, fast, and feature-rich. Ideal for blogs and portfolios.',
-    repo: 'https://github.com/adityatelange/hugo-PaperMod.git',
-    preview: '/images/themes/papermod-preview.png',
+    id: "papermod",
+    name: "PaperMod",
+    description:
+      "Modern, fast, and feature-rich. Ideal for blogs and portfolios.",
+    repo: "https://github.com/adityatelange/hugo-PaperMod.git",
+    preview: "/images/themes/papermod-preview.png",
   },
   {
-    id: 'ananke',
-    name: 'Ananke',
-    description: 'Clean and simple. Official Hugo starter theme with great defaults.',
-    repo: 'https://github.com/theNewDynamic/gohugo-theme-ananke.git',
-    preview: '/images/themes/ananke-preview.png',
+    id: "ananke",
+    name: "Ananke",
+    description:
+      "Clean and simple. Official Hugo starter theme with great defaults.",
+    repo: "https://github.com/theNewDynamic/gohugo-theme-ananke.git",
+    preview: "/images/themes/ananke-preview.png",
   },
-]
+];
 
-export const DEFAULT_THEME_ID = 'papermod'
+export const DEFAULT_THEME_ID = "papermod";
 ```
 
 **Migration for existing users:**
+
 - Users with Terminal, Coder, Poison, or Risotto themes should be notified
 - Provide option to switch to supported theme
 - Do NOT auto-migrate (could break their site)
 
 **Acceptance Criteria:**
+
 - [ ] Only PaperMod and Ananke shown in theme selector
 - [ ] DEFAULT_THEME_ID updated to 'papermod'
 - [ ] Existing users with unsupported themes see warning
@@ -554,9 +579,11 @@ export const DEFAULT_THEME_ID = 'papermod'
 **Description:** Show warning to users with unsupported themes and guide them to migrate.
 
 **Files to create:**
+
 - `components/theme-migration-warning.tsx`
 
 **Files to modify:**
+
 - `app/dashboard/page.tsx` - Show warning if theme unsupported
 - `app/settings/page.tsx` - Show migration guidance
 
@@ -602,6 +629,7 @@ export function ThemeMigrationWarning({ currentTheme, onDismiss }: ThemeMigratio
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Warning shown on dashboard for unsupported themes
 - [ ] Warning dismissable (stored in localStorage)
 - [ ] Settings page shows migration guidance
@@ -618,48 +646,52 @@ export function ThemeMigrationWarning({ currentTheme, onDismiss }: ThemeMigratio
 **Technical Details:**
 
 Current parser issues:
+
 - Cannot parse nested objects like `cover.image: "/path"`
 - Breaks on multi-line strings with `|` or `>`
 - Ignores YAML comments
 - Doesn't handle arrays of objects
 
 **Dependencies to add:**
+
 ```bash
 npm install js-yaml
 npm install -D @types/js-yaml
 ```
 
 **Files to modify:**
+
 - `lib/hugo.ts` - Replace `parseHugoPost` function
 
 **New implementation:**
 
 ```typescript
-import yaml from 'js-yaml'
+import yaml from "js-yaml";
 
 export function parseHugoPost(fileContent: string): {
-  frontmatter: Record<string, unknown>
-  content: string
+  frontmatter: Record<string, unknown>;
+  content: string;
 } {
   // Match YAML frontmatter between --- delimiters
-  const yamlMatch = fileContent.match(/^---\n([\s\S]*?)\n---/)
+  const yamlMatch = fileContent.match(/^---\n([\s\S]*?)\n---/);
 
   if (!yamlMatch) {
-    return { frontmatter: {}, content: fileContent }
+    return { frontmatter: {}, content: fileContent };
   }
 
   try {
-    const frontmatter = yaml.load(yamlMatch[1]) as Record<string, unknown>
-    const content = fileContent.slice(yamlMatch[0].length).trim()
-    return { frontmatter: frontmatter || {}, content }
+    const frontmatter = yaml.load(yamlMatch[1]) as Record<string, unknown>;
+    const content = fileContent.slice(yamlMatch[0].length).trim();
+    return { frontmatter: frontmatter || {}, content };
   } catch (error) {
-    console.error('Failed to parse YAML frontmatter:', error)
-    return { frontmatter: {}, content: fileContent }
+    console.error("Failed to parse YAML frontmatter:", error);
+    return { frontmatter: {}, content: fileContent };
   }
 }
 ```
 
 **Acceptance Criteria:**
+
 - [ ] js-yaml package installed
 - [ ] parseHugoPost uses js-yaml
 - [ ] Correctly parses nested objects (cover.image)
@@ -676,22 +708,25 @@ export function parseHugoPost(fileContent: string): {
 **Description:** Remove all debug logging that exposes sensitive content in production.
 
 **Files to modify:**
+
 - `app/api/posts/publish/route.ts` - Lines 53, 102
 
 **Changes:**
 
 ```typescript
 // REMOVE these lines:
-console.log('Generated Markdown:', markdownContent)  // Line 53
-console.log('Final file content to save:', fileContent)  // Line 102
+console.log("Generated Markdown:", markdownContent); // Line 53
+console.log("Final file content to save:", fileContent); // Line 102
 ```
 
 **Additional cleanup - search and remove:**
+
 - Any `console.log` that outputs user content
 - Any `console.log` that outputs tokens or credentials
 - Keep `console.error` for actual errors (but sanitize content)
 
 **Acceptance Criteria:**
+
 - [ ] No console.log with user content in production code
 - [ ] Grep for console.log returns only appropriate logging
 - [ ] API routes don't log request bodies
@@ -703,6 +738,7 @@ console.log('Final file content to save:', fileContent)  // Line 102
 **Description:** Add validation for Stripe webhook metadata to prevent crashes on malformed data.
 
 **Files to modify:**
+
 - `app/api/stripe/webhook/route.ts`
 
 **Technical Changes:**
@@ -710,27 +746,30 @@ console.log('Final file content to save:', fileContent)  // Line 102
 ```typescript
 // Add validation helper
 function validateWebhookMetadata(metadata: Record<string, string> | null): {
-  userId: number | null
-  tier: string | null
+  userId: number | null;
+  tier: string | null;
 } {
-  if (!metadata) return { userId: null, tier: null }
+  if (!metadata) return { userId: null, tier: null };
 
-  const userId = metadata.user_id ? parseInt(metadata.user_id, 10) : null
+  const userId = metadata.user_id ? parseInt(metadata.user_id, 10) : null;
   if (userId !== null && isNaN(userId)) {
-    console.error('Invalid user_id in webhook metadata:', metadata.user_id)
-    return { userId: null, tier: metadata.tier || null }
+    console.error("Invalid user_id in webhook metadata:", metadata.user_id);
+    return { userId: null, tier: metadata.tier || null };
   }
 
-  return { userId, tier: metadata.tier || null }
+  return { userId, tier: metadata.tier || null };
 }
 
 // Use in handlers:
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  const { userId, tier } = validateWebhookMetadata(session.metadata)
+  const { userId, tier } = validateWebhookMetadata(session.metadata);
 
   if (!userId || !tier) {
-    console.error('Missing or invalid metadata in checkout session:', session.id)
-    return  // Don't throw - webhook should return 200
+    console.error(
+      "Missing or invalid metadata in checkout session:",
+      session.id,
+    );
+    return; // Don't throw - webhook should return 200
   }
 
   // ... rest of handler
@@ -738,6 +777,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] All webhook handlers validate metadata before use
 - [ ] Invalid userId doesn't crash with parseInt
 - [ ] Missing metadata logged but doesn't throw
@@ -750,6 +790,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 **Description:** Update cache key format to prevent collisions when repo names contain special characters.
 
 **Files to modify:**
+
 - `lib/cache.ts`
 - All files that construct cache keys
 
@@ -758,18 +799,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 ```typescript
 // Create a safe cache key generator
 export function createCacheKey(type: string, ...parts: string[]): string {
-  const safeParts = parts.map(part =>
-    encodeURIComponent(part).replace(/[.]/g, '%2E')
-  )
-  return `${type}:${safeParts.join(':')}`
+  const safeParts = parts.map((part) =>
+    encodeURIComponent(part).replace(/[.]/g, "%2E"),
+  );
+  return `${type}:${safeParts.join(":")}`;
 }
 
 // Usage:
-const cacheKey = createCacheKey('posts', owner, repo, tier)
+const cacheKey = createCacheKey("posts", owner, repo, tier);
 // Result: "posts:owner%3Aname:repo%3Aname:free"
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Cache keys are URL-encoded
 - [ ] Special characters in repo names don't cause collisions
 - [ ] Existing cache entries invalidated on deploy
@@ -784,90 +826,102 @@ const cacheKey = createCacheKey('posts', owner, repo, tier)
 **Description:** Install Zod and create schemas for all API inputs.
 
 **Dependencies:**
+
 ```bash
 npm install zod
 ```
 
 **Files to create:**
+
 - `lib/validation/schemas.ts` - All API input schemas
 - `lib/validation/index.ts` - Exports and helpers
 
 **Core schemas:**
 
 ```typescript
-import { z } from 'zod'
+import { z } from "zod";
 
 // Post publish schema
 export const publishPostSchema = z.object({
   title: z.string().min(1).max(200),
-  content: z.string().min(1).max(100000),  // ~100KB limit
+  content: z.string().min(1).max(100000), // ~100KB limit
   path: z.string().optional(),
   draft: z.boolean().default(false),
-})
+});
 
 // Repository connect schema
 export const connectRepoSchema = z.object({
-  owner: z.string().min(1).max(100).regex(/^[a-zA-Z0-9-]+$/),
-  repo: z.string().min(1).max(100).regex(/^[a-zA-Z0-9-_.]+$/),
-  contentPath: z.string().max(500).default('content/posts'),
-  engine: z.enum(['hugo', 'krems']).default('hugo'),
+  owner: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-zA-Z0-9-]+$/),
+  repo: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-zA-Z0-9-_.]+$/),
+  contentPath: z.string().max(500).default("content/posts"),
+  engine: z.enum(["hugo", "krems"]).default("hugo"),
   theme: z.string().optional(),
-})
+});
 
 // Image upload schema
 export const uploadImageSchema = z.object({
-  filename: z.string().min(1).max(255).regex(/^[a-zA-Z0-9-_.]+$/),
-  content: z.string().min(1),  // Base64
+  filename: z
+    .string()
+    .min(1)
+    .max(255)
+    .regex(/^[a-zA-Z0-9-_.]+$/),
+  content: z.string().min(1), // Base64
   contentType: z.string().regex(/^image\/(jpeg|png|gif|webp)$/),
-})
+});
 
 // Feedback schema
 export const feedbackSchema = z.object({
-  type: z.enum(['bug', 'feature', 'general']),
+  type: z.enum(["bug", "feature", "general"]),
   message: z.string().min(10).max(5000),
-})
+});
 
 // Analytics event schema
 export const analyticsEventSchema = z.object({
   event: z.string().min(1).max(100),
   metadata: z.record(z.unknown()).optional(),
-})
+});
 ```
 
 **Validation helper:**
 
 ```typescript
-import { NextResponse } from 'next/server'
-import { ZodSchema, ZodError } from 'zod'
+import { NextResponse } from "next/server";
+import { ZodSchema, ZodError } from "zod";
 
 export async function validateRequest<T>(
   request: Request,
-  schema: ZodSchema<T>
+  schema: ZodSchema<T>,
 ): Promise<{ data: T } | { error: NextResponse }> {
   try {
-    const body = await request.json()
-    const data = schema.parse(body)
-    return { data }
+    const body = await request.json();
+    const data = schema.parse(body);
+    return { data };
   } catch (error) {
     if (error instanceof ZodError) {
       return {
         error: NextResponse.json(
-          { error: 'Validation failed', details: error.errors },
-          { status: 400 }
-        )
-      }
+          { error: "Validation failed", details: error.errors },
+          { status: 400 },
+        ),
+      };
     }
     return {
-      error: NextResponse.json(
-        { error: 'Invalid JSON body' },
-        { status: 400 }
-      )
-    }
+      error: NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }),
+    };
   }
 }
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Zod installed
 - [ ] Schemas defined for all API inputs
 - [ ] validateRequest helper works with all schemas
@@ -880,6 +934,7 @@ export async function validateRequest<T>(
 **Description:** Update all API routes to use Zod validation.
 
 **Files to modify:**
+
 - `app/api/posts/publish/route.ts`
 - `app/api/posts/delete/route.ts`
 - `app/api/repos/connect/route.ts`
@@ -895,27 +950,31 @@ export async function validateRequest<T>(
 ```typescript
 // Before
 export async function POST(request: Request) {
-  const { title, content, path, draft = false } = await request.json()
+  const { title, content, path, draft = false } = await request.json();
 
   if (!title || !content) {
-    return NextResponse.json({ error: 'Title and content are required' }, { status: 400 })
+    return NextResponse.json(
+      { error: "Title and content are required" },
+      { status: 400 },
+    );
   }
   // ...
 }
 
 // After
-import { validateRequest, publishPostSchema } from '@/lib/validation'
+import { validateRequest, publishPostSchema } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  const validation = await validateRequest(request, publishPostSchema)
-  if ('error' in validation) return validation.error
+  const validation = await validateRequest(request, publishPostSchema);
+  if ("error" in validation) return validation.error;
 
-  const { title, content, path, draft } = validation.data
+  const { title, content, path, draft } = validation.data;
   // ...
 }
 ```
 
 **Acceptance Criteria:**
+
 - [ ] All POST/PUT/PATCH routes use Zod validation
 - [ ] Validation errors return 400 with details
 - [ ] No manual validation code (if/else checks)
@@ -928,6 +987,7 @@ export async function POST(request: Request) {
 **Description:** Current rate limiting is IP-based only. Add per-user rate limiting for authenticated routes.
 
 **Files to modify:**
+
 - `lib/cache.ts` - Add user rate limit function
 - API routes that should have user limits
 
@@ -939,38 +999,40 @@ export function userRateLimitCheck(
   userId: number,
   action: string,
   limit: number,
-  windowSeconds: number
+  windowSeconds: number,
 ): boolean {
-  const key = `ratelimit:user:${userId}:${action}`
-  return rateLimitCheck(key, limit, windowSeconds)
+  const key = `ratelimit:user:${userId}:${action}`;
+  return rateLimitCheck(key, limit, windowSeconds);
 }
 
 // Rate limit configuration
 export const RATE_LIMITS = {
-  publish: { limit: 30, window: 3600 },      // 30 posts/hour
-  imageUpload: { limit: 50, window: 3600 },  // 50 images/hour
-  themeChange: { limit: 10, window: 3600 },  // 10 changes/hour
-  configFix: { limit: 20, window: 3600 },    // 20 fixes/hour
-}
+  publish: { limit: 30, window: 3600 }, // 30 posts/hour
+  imageUpload: { limit: 50, window: 3600 }, // 50 images/hour
+  themeChange: { limit: 10, window: 3600 }, // 10 changes/hour
+  configFix: { limit: 20, window: 3600 }, // 20 fixes/hour
+};
 ```
 
 **Usage in API routes:**
 
 ```typescript
-import { userRateLimitCheck, RATE_LIMITS } from '@/lib/cache'
+import { userRateLimitCheck, RATE_LIMITS } from "@/lib/cache";
 
 export async function POST(request: Request) {
-  const session = await auth()
+  const session = await auth();
   if (!session?.user?.id) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { limit, window } = RATE_LIMITS.publish
-  if (!userRateLimitCheck(parseInt(session.user.id), 'publish', limit, window)) {
+  const { limit, window } = RATE_LIMITS.publish;
+  if (
+    !userRateLimitCheck(parseInt(session.user.id), "publish", limit, window)
+  ) {
     return NextResponse.json(
-      { error: 'Rate limit exceeded. Please try again later.' },
-      { status: 429 }
-    )
+      { error: "Rate limit exceeded. Please try again later." },
+      { status: 429 },
+    );
   }
 
   // ... rest of handler
@@ -978,6 +1040,7 @@ export async function POST(request: Request) {
 ```
 
 **Acceptance Criteria:**
+
 - [ ] userRateLimitCheck function implemented
 - [ ] Publish route has user rate limit
 - [ ] Image upload has user rate limit
@@ -994,37 +1057,38 @@ export async function POST(request: Request) {
 **Description:** Replace console.log/error with a proper logging service that can be configured for different environments.
 
 **Files to create:**
+
 - `lib/logger.ts`
 
 **Implementation:**
 
 ```typescript
-type LogLevel = 'debug' | 'info' | 'warn' | 'error'
+type LogLevel = "debug" | "info" | "warn" | "error";
 
 interface LogContext {
-  userId?: number
-  action?: string
-  [key: string]: unknown
+  userId?: number;
+  action?: string;
+  [key: string]: unknown;
 }
 
 class Logger {
-  private isDev = process.env.NODE_ENV === 'development'
+  private isDev = process.env.NODE_ENV === "development";
 
   private log(level: LogLevel, message: string, context?: LogContext) {
-    const timestamp = new Date().toISOString()
+    const timestamp = new Date().toISOString();
     const logEntry = {
       timestamp,
       level,
       message,
       ...context,
-    }
+    };
 
     // In production, this could send to external service
     // For now, structured JSON logging
-    if (level === 'error') {
-      console.error(JSON.stringify(logEntry))
-    } else if (this.isDev || level === 'warn') {
-      console.log(JSON.stringify(logEntry))
+    if (level === "error") {
+      console.error(JSON.stringify(logEntry));
+    } else if (this.isDev || level === "warn") {
+      console.log(JSON.stringify(logEntry));
     }
 
     // TODO: Add Sentry integration here
@@ -1034,26 +1098,27 @@ class Logger {
   }
 
   debug(message: string, context?: LogContext) {
-    this.log('debug', message, context)
+    this.log("debug", message, context);
   }
 
   info(message: string, context?: LogContext) {
-    this.log('info', message, context)
+    this.log("info", message, context);
   }
 
   warn(message: string, context?: LogContext) {
-    this.log('warn', message, context)
+    this.log("warn", message, context);
   }
 
   error(message: string, context?: LogContext) {
-    this.log('error', message, context)
+    this.log("error", message, context);
   }
 }
 
-export const logger = new Logger()
+export const logger = new Logger();
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Logger service created with all levels
 - [ ] Structured JSON output in production
 - [ ] Context support for userId, action, etc.
@@ -1067,6 +1132,7 @@ export const logger = new Logger()
 **Description:** Update all files to use the new logger service.
 
 **Files to modify:**
+
 - All files in `app/api/` that use console.log/error
 - All files in `lib/` that use console.log/error
 - All files in `components/` that use console.log/error (client-side logging)
@@ -1075,19 +1141,20 @@ export const logger = new Logger()
 
 ```typescript
 // Before
-console.error('Error publishing post:', error)
+console.error("Error publishing post:", error);
 
 // After
-import { logger } from '@/lib/logger'
+import { logger } from "@/lib/logger";
 
-logger.error('Failed to publish post', {
+logger.error("Failed to publish post", {
   userId: user.id,
-  action: 'publish',
-  error: error instanceof Error ? error.message : 'Unknown error',
-})
+  action: "publish",
+  error: error instanceof Error ? error.message : "Unknown error",
+});
 ```
 
 **Acceptance Criteria:**
+
 - [ ] No console.log in production code (except logger internals)
 - [ ] console.error replaced with logger.error
 - [ ] All log calls include relevant context
@@ -1100,11 +1167,13 @@ logger.error('Failed to publish post', {
 **Description:** Set up Sentry for error monitoring (implementation optional, but prepare the integration).
 
 **Files to create:**
+
 - `lib/sentry.ts` - Sentry initialization
 - `sentry.client.config.ts` - Client config
 - `sentry.server.config.ts` - Server config
 
 **Dependencies (when ready to enable):**
+
 ```bash
 npm install @sentry/nextjs
 ```
@@ -1112,7 +1181,7 @@ npm install @sentry/nextjs
 **Basic setup in `lib/sentry.ts`:**
 
 ```typescript
-import * as Sentry from '@sentry/nextjs'
+import * as Sentry from "@sentry/nextjs";
 
 export function initSentry() {
   if (process.env.NEXT_PUBLIC_SENTRY_DSN) {
@@ -1125,18 +1194,19 @@ export function initSentry() {
       beforeSend(event) {
         // Scrub sensitive data
         if (event.request?.data) {
-          delete event.request.data
+          delete event.request.data;
         }
-        return event
+        return event;
       },
-    })
+    });
   }
 }
 
-export { Sentry }
+export { Sentry };
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Sentry config files created
 - [ ] Integration with logger service
 - [ ] PII scrubbing configured
@@ -1152,61 +1222,63 @@ export { Sentry }
 **Description:** Install and configure Vitest for unit and integration testing.
 
 **Dependencies:**
+
 ```bash
 npm install -D vitest @vitejs/plugin-react jsdom @testing-library/react @testing-library/jest-dom
 ```
 
 **Files to create:**
+
 - `vitest.config.ts`
 - `vitest.setup.ts`
 
 **vitest.config.ts:**
 
 ```typescript
-import { defineConfig } from 'vitest/config'
-import react from '@vitejs/plugin-react'
-import path from 'path'
+import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
 export default defineConfig({
   plugins: [react()],
   test: {
-    environment: 'jsdom',
-    setupFiles: ['./vitest.setup.ts'],
-    include: ['**/*.test.{ts,tsx}'],
+    environment: "jsdom",
+    setupFiles: ["./vitest.setup.ts"],
+    include: ["**/*.test.{ts,tsx}"],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'html'],
-      exclude: ['node_modules/', '.next/', 'coverage/'],
+      provider: "v8",
+      reporter: ["text", "html"],
+      exclude: ["node_modules/", ".next/", "coverage/"],
     },
   },
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './'),
+      "@": path.resolve(__dirname, "./"),
     },
   },
-})
+});
 ```
 
 **vitest.setup.ts:**
 
 ```typescript
-import '@testing-library/jest-dom'
-import { vi } from 'vitest'
+import "@testing-library/jest-dom";
+import { vi } from "vitest";
 
 // Mock Next.js router
-vi.mock('next/navigation', () => ({
+vi.mock("next/navigation", () => ({
   useRouter: () => ({
     push: vi.fn(),
     replace: vi.fn(),
     prefetch: vi.fn(),
   }),
   useSearchParams: () => new URLSearchParams(),
-  usePathname: () => '/',
-}))
+  usePathname: () => "/",
+}));
 
 // Mock environment variables
-process.env.NEXT_PUBLIC_SUPABASE_URL = 'http://localhost:54321'
-process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key'
+process.env.NEXT_PUBLIC_SUPABASE_URL = "http://localhost:54321";
+process.env.SUPABASE_SERVICE_ROLE_KEY = "test-key";
 ```
 
 **Add to package.json:**
@@ -1222,6 +1294,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key'
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Vitest installed and configured
 - [ ] Path aliases work (@/)
 - [ ] React components can be tested
@@ -1235,6 +1308,7 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key'
 **Description:** Create comprehensive tests for the theme profile system.
 
 **Files to create:**
+
 - `lib/theme-profiles/__tests__/papermod.test.ts`
 - `lib/theme-profiles/__tests__/ananke.test.ts`
 - `lib/theme-profiles/__tests__/index.test.ts`
@@ -1242,58 +1316,58 @@ process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key'
 **Example test file:**
 
 ```typescript
-import { describe, it, expect } from 'vitest'
-import { papermodProfile } from '../papermod'
+import { describe, it, expect } from "vitest";
+import { papermodProfile } from "../papermod";
 
-describe('PaperMod Theme Profile', () => {
-  describe('generateFrontmatter', () => {
-    it('generates correct frontmatter with featured image', () => {
+describe("PaperMod Theme Profile", () => {
+  describe("generateFrontmatter", () => {
+    it("generates correct frontmatter with featured image", () => {
       const data = {
-        title: 'Test Post',
-        date: '2024-01-15T10:00:00Z',
+        title: "Test Post",
+        date: "2024-01-15T10:00:00Z",
         draft: false,
-        content: 'Test content',
-        featuredImage: '/images/test.jpg',
-      }
+        content: "Test content",
+        featuredImage: "/images/test.jpg",
+      };
 
-      const result = papermodProfile.generateFrontmatter(data)
+      const result = papermodProfile.generateFrontmatter(data);
 
-      expect(result).toContain('title: "Test Post"')
-      expect(result).toContain('cover:')
-      expect(result).toContain('  image: "/images/test.jpg"')
-      expect(result).toContain('draft: false')
-    })
+      expect(result).toContain('title: "Test Post"');
+      expect(result).toContain("cover:");
+      expect(result).toContain('  image: "/images/test.jpg"');
+      expect(result).toContain("draft: false");
+    });
 
-    it('escapes quotes in title', () => {
+    it("escapes quotes in title", () => {
       const data = {
         title: 'Test "Quoted" Post',
-        date: '2024-01-15T10:00:00Z',
+        date: "2024-01-15T10:00:00Z",
         draft: false,
-        content: 'Test content',
-      }
+        content: "Test content",
+      };
 
-      const result = papermodProfile.generateFrontmatter(data)
+      const result = papermodProfile.generateFrontmatter(data);
 
-      expect(result).toContain('title: "Test \\"Quoted\\" Post"')
-    })
+      expect(result).toContain('title: "Test \\"Quoted\\" Post"');
+    });
 
-    it('generates frontmatter without featured image', () => {
+    it("generates frontmatter without featured image", () => {
       const data = {
-        title: 'Test Post',
-        date: '2024-01-15T10:00:00Z',
+        title: "Test Post",
+        date: "2024-01-15T10:00:00Z",
         draft: true,
-        content: 'Test content',
-      }
+        content: "Test content",
+      };
 
-      const result = papermodProfile.generateFrontmatter(data)
+      const result = papermodProfile.generateFrontmatter(data);
 
-      expect(result).not.toContain('cover:')
-      expect(result).toContain('draft: true')
-    })
-  })
+      expect(result).not.toContain("cover:");
+      expect(result).toContain("draft: true");
+    });
+  });
 
-  describe('validateConfig', () => {
-    it('returns valid for correct config', () => {
+  describe("validateConfig", () => {
+    it("returns valid for correct config", () => {
       const config = `
 [params]
   defaultTheme = "auto"
@@ -1302,27 +1376,28 @@ describe('PaperMod Theme Profile', () => {
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
-`
-      const result = papermodProfile.validateConfig(config)
+`;
+      const result = papermodProfile.validateConfig(config);
 
-      expect(result.valid).toBe(true)
-      expect(result.errors).toHaveLength(0)
-    })
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
 
-    it('returns error for missing params', () => {
+    it("returns error for missing params", () => {
       const config = `
 baseURL = "https://example.org/"
-`
-      const result = papermodProfile.validateConfig(config)
+`;
+      const result = papermodProfile.validateConfig(config);
 
-      expect(result.valid).toBe(false)
-      expect(result.errors).toContain('Missing [params] section')
-    })
-  })
-})
+      expect(result.valid).toBe(false);
+      expect(result.errors).toContain("Missing [params] section");
+    });
+  });
+});
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Tests for PaperMod frontmatter generation
 - [ ] Tests for Ananke frontmatter generation
 - [ ] Tests for config validation
@@ -1336,79 +1411,81 @@ baseURL = "https://example.org/"
 **Description:** Test all Zod schemas to ensure they validate correctly.
 
 **Files to create:**
+
 - `lib/validation/__tests__/schemas.test.ts`
 
 **Example tests:**
 
 ```typescript
-import { describe, it, expect } from 'vitest'
-import { publishPostSchema, connectRepoSchema } from '../schemas'
+import { describe, it, expect } from "vitest";
+import { publishPostSchema, connectRepoSchema } from "../schemas";
 
-describe('publishPostSchema', () => {
-  it('accepts valid post data', () => {
+describe("publishPostSchema", () => {
+  it("accepts valid post data", () => {
     const data = {
-      title: 'Test Post',
-      content: '<p>Hello world</p>',
+      title: "Test Post",
+      content: "<p>Hello world</p>",
       draft: false,
-    }
+    };
 
-    const result = publishPostSchema.safeParse(data)
+    const result = publishPostSchema.safeParse(data);
 
-    expect(result.success).toBe(true)
-  })
+    expect(result.success).toBe(true);
+  });
 
-  it('rejects empty title', () => {
+  it("rejects empty title", () => {
     const data = {
-      title: '',
-      content: '<p>Hello world</p>',
-    }
+      title: "",
+      content: "<p>Hello world</p>",
+    };
 
-    const result = publishPostSchema.safeParse(data)
+    const result = publishPostSchema.safeParse(data);
 
-    expect(result.success).toBe(false)
-  })
+    expect(result.success).toBe(false);
+  });
 
-  it('rejects content over limit', () => {
+  it("rejects content over limit", () => {
     const data = {
-      title: 'Test',
-      content: 'x'.repeat(100001),
-    }
+      title: "Test",
+      content: "x".repeat(100001),
+    };
 
-    const result = publishPostSchema.safeParse(data)
+    const result = publishPostSchema.safeParse(data);
 
-    expect(result.success).toBe(false)
-  })
+    expect(result.success).toBe(false);
+  });
 
-  it('defaults draft to false', () => {
+  it("defaults draft to false", () => {
     const data = {
-      title: 'Test',
-      content: 'Content',
-    }
+      title: "Test",
+      content: "Content",
+    };
 
-    const result = publishPostSchema.safeParse(data)
+    const result = publishPostSchema.safeParse(data);
 
-    expect(result.success).toBe(true)
+    expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.draft).toBe(false)
+      expect(result.data.draft).toBe(false);
     }
-  })
-})
+  });
+});
 
-describe('connectRepoSchema', () => {
-  it('rejects invalid repo name characters', () => {
+describe("connectRepoSchema", () => {
+  it("rejects invalid repo name characters", () => {
     const data = {
-      owner: 'valid-owner',
-      repo: 'invalid repo name!',
-    }
+      owner: "valid-owner",
+      repo: "invalid repo name!",
+    };
 
-    const result = connectRepoSchema.safeParse(data)
+    const result = connectRepoSchema.safeParse(data);
 
-    expect(result.success).toBe(false)
-  })
-})
+    expect(result.success).toBe(false);
+  });
+});
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Tests for all schema valid cases
 - [ ] Tests for all schema invalid cases
 - [ ] Tests for default values
@@ -1421,6 +1498,7 @@ describe('connectRepoSchema', () => {
 **Description:** Create integration tests for the most critical API routes.
 
 **Files to create:**
+
 - `app/api/posts/publish/__tests__/route.test.ts`
 - `app/api/repos/connect/__tests__/route.test.ts`
 
@@ -1429,65 +1507,68 @@ describe('connectRepoSchema', () => {
 **Example structure:**
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { POST } from '../route'
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { POST } from "../route";
 
 // Mock dependencies
-vi.mock('@/lib/auth', () => ({
+vi.mock("@/lib/auth", () => ({
   auth: vi.fn(),
-}))
+}));
 
-vi.mock('@/lib/cookies', () => ({
+vi.mock("@/lib/cookies", () => ({
   getRepoConfig: vi.fn(),
-}))
+}));
 
-vi.mock('@/lib/github', () => ({
+vi.mock("@/lib/github", () => ({
   GitHubClient: vi.fn().mockImplementation(() => ({
-    createOrUpdateFile: vi.fn().mockResolvedValue({ content: { sha: 'abc123' } }),
+    createOrUpdateFile: vi
+      .fn()
+      .mockResolvedValue({ content: { sha: "abc123" } }),
     getFileContent: vi.fn().mockResolvedValue(null),
     getRepoContents: vi.fn().mockResolvedValue([]),
   })),
-}))
+}));
 
-describe('POST /api/posts/publish', () => {
+describe("POST /api/posts/publish", () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
-  it('returns 401 when not authenticated', async () => {
-    const { auth } = await import('@/lib/auth')
-    vi.mocked(auth).mockResolvedValue(null)
+  it("returns 401 when not authenticated", async () => {
+    const { auth } = await import("@/lib/auth");
+    vi.mocked(auth).mockResolvedValue(null);
 
-    const request = new Request('http://localhost/api/posts/publish', {
-      method: 'POST',
-      body: JSON.stringify({ title: 'Test', content: 'Content' }),
-    })
+    const request = new Request("http://localhost/api/posts/publish", {
+      method: "POST",
+      body: JSON.stringify({ title: "Test", content: "Content" }),
+    });
 
-    const response = await POST(request)
+    const response = await POST(request);
 
-    expect(response.status).toBe(401)
-  })
+    expect(response.status).toBe(401);
+  });
 
-  it('returns 400 for invalid input', async () => {
-    const { auth } = await import('@/lib/auth')
+  it("returns 400 for invalid input", async () => {
+    const { auth } = await import("@/lib/auth");
     vi.mocked(auth).mockResolvedValue({
-      user: { id: '123' },
-      accessToken: 'token',
-    })
+      user: { id: "123" },
+      accessToken: "token",
+    });
 
-    const request = new Request('http://localhost/api/posts/publish', {
-      method: 'POST',
-      body: JSON.stringify({ title: '', content: '' }),  // Invalid
-    })
+    const request = new Request("http://localhost/api/posts/publish", {
+      method: "POST",
+      body: JSON.stringify({ title: "", content: "" }), // Invalid
+    });
 
-    const response = await POST(request)
+    const response = await POST(request);
 
-    expect(response.status).toBe(400)
-  })
-})
+    expect(response.status).toBe(400);
+  });
+});
 ```
 
 **Acceptance Criteria:**
+
 - [ ] Tests for publish route authentication
 - [ ] Tests for publish route validation
 - [ ] Tests for connect route
@@ -1504,30 +1585,31 @@ The theme profile system uses a registry pattern for extensibility:
 
 ```typescript
 // lib/theme-profiles/index.ts
-import { papermodProfile } from './papermod'
-import { anankeProfile } from './ananke'
+import { papermodProfile } from "./papermod";
+import { anankeProfile } from "./ananke";
 
 const profileRegistry = new Map<string, ThemeProfile>([
-  ['papermod', papermodProfile],
-  ['ananke', anankeProfile],
-])
+  ["papermod", papermodProfile],
+  ["ananke", anankeProfile],
+]);
 
 export function getThemeProfile(id: string): ThemeProfile {
-  const profile = profileRegistry.get(id)
+  const profile = profileRegistry.get(id);
   if (!profile) {
     // Fall back to PaperMod for unknown themes
-    console.warn(`Unknown theme: ${id}, falling back to PaperMod`)
-    return papermodProfile
+    console.warn(`Unknown theme: ${id}, falling back to PaperMod`);
+    return papermodProfile;
   }
-  return profile
+  return profile;
 }
 
 export function getSupportedThemes(): string[] {
-  return Array.from(profileRegistry.keys())
+  return Array.from(profileRegistry.keys());
 }
 ```
 
 **Benefits:**
+
 - Easy to add new themes later
 - Type-safe profile lookup
 - Centralized fallback behavior
@@ -1541,6 +1623,7 @@ Request → Zod Validation → Business Logic → Response
 ```
 
 The validation layer:
+
 - Runs before any business logic
 - Returns early with structured errors
 - Provides TypeScript type inference
@@ -1571,18 +1654,19 @@ This prevents collisions and makes debugging easier.
 
 ### 5. Error Handling Strategy
 
-| Layer | Strategy |
-|-------|----------|
-| API Routes | Return appropriate HTTP status, log error |
-| Database | Throw on critical, return null on not-found |
+| Layer      | Strategy                                    |
+| ---------- | ------------------------------------------- |
+| API Routes | Return appropriate HTTP status, log error   |
+| Database   | Throw on critical, return null on not-found |
 | GitHub API | Throw on critical, return null on not-found |
-| Webhooks | Always return 200, log error internally |
+| Webhooks   | Always return 200, log error internally     |
 
 ---
 
 ## Implementation Order & Dependencies
 
 ### Phase 1: Foundation (Week 1)
+
 **No dependencies, can parallelize**
 
 1. Story 5.1: Set Up Testing Framework
@@ -1591,6 +1675,7 @@ This prevents collisions and makes debugging easier.
 4. Story 2.1: Replace Custom YAML Parser
 
 ### Phase 2: Theme System (Week 2)
+
 **Depends on: Testing Framework**
 
 1. Story 1.1: Create Theme Profile System
@@ -1599,6 +1684,7 @@ This prevents collisions and makes debugging easier.
 4. Story 5.2: Add Unit Tests for Theme Profiles
 
 ### Phase 3: Integration (Week 3)
+
 **Depends on: Theme Profiles, Zod**
 
 1. Story 1.4: Update Publish API to Use Theme Profiles
@@ -1607,6 +1693,7 @@ This prevents collisions and makes debugging easier.
 4. Story 1.6: Update Theme Selection UI
 
 ### Phase 4: Polish & Security (Week 4)
+
 **Depends on: Integration complete**
 
 1. Story 1.7: Add Theme Migration Warning
@@ -1617,6 +1704,7 @@ This prevents collisions and makes debugging easier.
 6. Story 3.3: Add Per-User Rate Limiting
 
 ### Phase 5: Testing & Monitoring (Week 5)
+
 **Depends on: All code changes complete**
 
 1. Story 5.3: Add Unit Tests for Validation Schemas
@@ -1628,36 +1716,44 @@ This prevents collisions and makes debugging easier.
 ## Risks & Mitigations
 
 ### Risk 1: Breaking Existing User Sites
+
 **Probability:** Medium | **Impact:** High
 
 **Mitigation:**
+
 - Theme migration is opt-in, not automatic
 - Show warning for unsupported themes
 - Maintain backward compatibility for existing frontmatter
 - Provide rollback instructions in documentation
 
 ### Risk 2: js-yaml Parsing Differences
+
 **Probability:** Low | **Impact:** Medium
 
 **Mitigation:**
+
 - Comprehensive test suite for YAML parsing
 - Test with real-world Hugo posts
 - Keep old parser code (commented) for reference
 - Gradual rollout with monitoring
 
 ### Risk 3: Rate Limiting Too Aggressive
+
 **Probability:** Medium | **Impact:** Low
 
 **Mitigation:**
+
 - Start with generous limits
 - Monitor 429 responses
 - Add admin override capability
 - Make limits configurable
 
 ### Risk 4: Test Suite Slows Development
+
 **Probability:** Low | **Impact:** Low
 
 **Mitigation:**
+
 - Fast test runner (Vitest)
 - Parallel test execution
 - Only require tests for new code
@@ -1668,6 +1764,7 @@ This prevents collisions and makes debugging easier.
 ## Appendix A: File Inventory
 
 ### New Files to Create
+
 - `lib/theme-profiles.ts`
 - `lib/theme-profiles/papermod.ts`
 - `lib/theme-profiles/ananke.ts`
@@ -1685,6 +1782,7 @@ This prevents collisions and makes debugging easier.
 - `app/api/posts/publish/__tests__/route.test.ts`
 
 ### Files to Modify
+
 - `lib/themes.ts`
 - `lib/hugo.ts`
 - `lib/cache.ts`
@@ -1703,6 +1801,7 @@ This prevents collisions and makes debugging easier.
 - `package.json`
 
 ### Dependencies to Add
+
 - `zod`
 - `js-yaml` + `@types/js-yaml`
 - `vitest`
@@ -1717,6 +1816,7 @@ This prevents collisions and makes debugging easier.
 ## Appendix B: Environment Variables
 
 ### New Variables
+
 ```
 # Optional - Sentry error monitoring
 NEXT_PUBLIC_SENTRY_DSN=
@@ -1731,6 +1831,7 @@ RATE_LIMIT_WINDOW=3600
 ## Appendix C: Acceptance Testing Checklist
 
 ### Theme System
+
 - [ ] Create new post with PaperMod theme → featured image displays
 - [ ] Create new post with Ananke theme → featured image displays
 - [ ] Switch from unsupported theme → warning displayed
@@ -1738,17 +1839,20 @@ RATE_LIMIT_WINDOW=3600
 - [ ] Config fix on Ananke → correct params added
 
 ### Validation
+
 - [ ] Publish post with empty title → 400 error with details
 - [ ] Publish post with 200KB content → 400 error
 - [ ] Connect repo with invalid characters → 400 error
 - [ ] All error messages are user-friendly
 
 ### Security
+
 - [ ] Exceed publish rate limit → 429 error
 - [ ] Webhook with invalid metadata → logged, returns 200
 - [ ] No sensitive data in production logs
 
 ### Testing
+
 - [ ] `npm test` runs all tests
 - [ ] `npm run test:coverage` shows >60% coverage
 - [ ] Tests pass in CI environment

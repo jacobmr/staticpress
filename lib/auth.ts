@@ -1,14 +1,15 @@
-import NextAuth from "next-auth"
-import GitHub from "next-auth/providers/github"
+import NextAuth from "next-auth";
+import GitHub from "next-auth/providers/github";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     GitHub({
       clientId: process.env.AUTH_GITHUB_ID || process.env.GITHUB_ID!,
-      clientSecret: process.env.AUTH_GITHUB_SECRET || process.env.GITHUB_SECRET!,
+      clientSecret:
+        process.env.AUTH_GITHUB_SECRET || process.env.GITHUB_SECRET!,
       authorization: {
         params: {
-          scope: 'read:user user:email repo',
+          scope: "read:user user:email repo",
         },
       },
     }),
@@ -17,7 +18,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async signIn({ user, account }) {
       try {
         // Dynamically import database functions to prevent build-time initialization
-        const { getOrCreateUser, logEvent } = await import('./db')
+        const { getOrCreateUser, logEvent } = await import("./db");
 
         // Create or update user in database using GitHub numeric ID
         if (account?.providerAccountId && user.email) {
@@ -26,49 +27,49 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             email: user.email,
             name: user.name,
             image: user.image,
-          })
+          });
 
           // Log OAuth completion event
-          await logEvent('oauth_completed', dbUser.id, {
-            provider: 'github',
+          await logEvent("oauth_completed", dbUser.id, {
+            provider: "github",
             user_email: user.email,
-          })
+          });
         }
-        return true
+        return true;
       } catch (error) {
-        console.error('Error creating user in database:', error)
-        return true // Still allow sign in even if database fails
+        console.error("Error creating user in database:", error);
+        return true; // Still allow sign in even if database fails
       }
     },
     async jwt({ token, account }) {
       // On sign in, set the access token and GitHub ID
       if (account) {
-        token.accessToken = account.access_token
-        token.githubId = account.providerAccountId // Store GitHub numeric ID
+        token.accessToken = account.access_token;
+        token.githubId = account.providerAccountId; // Store GitHub numeric ID
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (!token) {
-        return session
+        return session;
       }
 
       // Set access token
-      session.accessToken = token.accessToken as string
+      session.accessToken = token.accessToken as string;
 
       // If we have a token but no githubId, this is an old session from before we fixed auth
       // Set user.id to empty string which will fail the dashboard check
-      const githubId = token.githubId as string | undefined
+      const githubId = token.githubId as string | undefined;
       if (githubId) {
-        session.user.id = githubId
+        session.user.id = githubId;
       } else {
-        session.user.id = ''  // Empty string will fail dashboard check
+        session.user.id = ""; // Empty string will fail dashboard check
       }
 
-      return session
+      return session;
     },
   },
   pages: {
-    signIn: '/',
+    signIn: "/",
   },
-})
+});

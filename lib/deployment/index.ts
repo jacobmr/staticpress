@@ -25,7 +25,7 @@ export type {
   DeploymentPlatformRecord,
   DeploymentProjectRecord,
   DeploymentHistoryRecord,
-} from './types'
+} from "./types";
 
 // Registry functions
 export {
@@ -35,4 +35,4 @@ export {
   validatePlatformCredentials,
   getPlatformInfo,
   getAllPlatformInfo,
-} from './registry'
+} from "./registry";

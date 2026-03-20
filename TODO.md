@@ -6,12 +6,14 @@
 ## Week 1: Paywall Infrastructure ✅ COMPLETE
 
 ### Database Schema & Tier Management ✅
+
 - [x] Create analytics_events table in Supabase with RLS policies
 - [x] Update subscription_tier to support all 4 tiers (free/personal/smb/pro)
 - [x] Add helper functions: hasFeatureAccess(), getUserTier(), logEvent()
 - [x] Migration files created in supabase/migrations/
 
 ### Stripe Integration ✅
+
 - [x] Install Stripe SDK: `npm install stripe @stripe/stripe-js`
 - [x] Create `/app/api/stripe/create-checkout-session/route.ts` (all 3 tiers, monthly/yearly)
 - [x] Create `/app/api/stripe/create-portal-session/route.ts` (billing management)
@@ -22,6 +24,7 @@
 - [ ] **ACTION REQUIRED:** Set up webhook endpoint in Stripe Dashboard
 
 ### Free Tier Limits - "Edit Last 5 Posts Only" ✅
+
 - [x] Update dashboard to detect user tier and limit posts
 - [x] Free tier: 5 posts, Paid tiers: 50 posts
 - [x] Cache keys include tier for proper filtering
@@ -30,6 +33,7 @@
 - [x] "Upgrade to Edit All Posts" button for free users
 
 ### Upgrade Prompts & Flows ✅
+
 - [x] Create `UpgradeModal` component with all 3 paid tiers
 - [x] Context-aware messaging (post_limit, images, etc.)
 - [x] Monthly/yearly toggle with 17% savings
@@ -39,6 +43,7 @@
 - [x] "Manage Subscription" for existing customers
 
 ### Server-Side Event Logging ✅
+
 - [x] Create `analytics_events` table in Supabase (migration ready)
 - [x] Create `/api/analytics/log-event` endpoint for client events
 - [x] Log `oauth_completed` (on GitHub sign-in)
@@ -55,6 +60,7 @@
 ## Week 2: Personal Tier Features
 
 ### Images Feature (Personal Tier Only)
+
 - [ ] Update TipTap editor configuration
   - [ ] Add Image extension: `npm install @tiptap/extension-image`
   - [ ] Add image toolbar button (only shown for Personal+ tiers)
@@ -69,6 +75,7 @@
 - [ ] Handle image deletion when post is saved (cleanup unused images)
 
 ### Categories & Tags (Free for All Tiers)
+
 - [ ] Add Categories UI component
   - [ ] Comma-separated input field
   - [ ] Tag-style pills display
@@ -79,6 +86,7 @@
 - [ ] Update post editor layout to include Categories/Tags section
 
 ### Preview Feature (Free for All Tiers)
+
 - [ ] Create "Preview" button in editor toolbar
 - [ ] Build preview modal/panel
   - [ ] Render markdown to HTML (using same parser as Hugo if possible)
@@ -87,6 +95,7 @@
 - [ ] Handle images in preview (show uploaded images from static path)
 
 ### Documentation & Onboarding
+
 - [x] **Interactive "Getting Started" Walkthrough** (Empty State implemented)
 - [x] **Feedback Widget** (In-app feedback form)
 - [ ] **Documentation Site** (Help Center)
@@ -100,6 +109,7 @@
 - [ ] Add in-app tooltips/guided tour (optional)
 
 ### Soft Beta Launch (25-50 Users)
+
 - [ ] Prepare beta signup form (optional waitlist or direct invite)
 - [ ] Recruit from Hugo/Dev communities:
   - [ ] Hugo Discourse forum post
@@ -118,12 +128,14 @@
 ## Future Phases (Documented - Not Immediate)
 
 ### Phase 3: SMB Tier (Weeks 3-4)
+
 - [ ] Custom domain guided setup (Cloudflare DNS automation first)
 - [ ] Theme gallery (5-8 curated Hugo themes as template repos)
 - [ ] One-click "Switch theme" functionality
 - [ ] Public beta posts: Hugo forum, Dev.to, Show HN
 
 ### Phase 4: Pro Tier (Weeks 5-6)
+
 - [ ] Multi-repo support (up to 5 blogs per account)
 - [ ] Repo switcher UI
 - [ ] Vercel domain automation
@@ -131,12 +143,14 @@
 - [ ] Referral program MVP
 
 ### Phase 5: GA Launch (Weeks 7-8)
+
 - [ ] Product Hunt launch
 - [ ] "From zero to blog in 60s" walkthrough video
 - [ ] Partner outreach (Cloudflare, Vercel)
 - [ ] Showcase/case studies
 
 ### Phase 6: Advanced Features (Future)
+
 - [ ] Automated deployment (Vercel/Cloudflare/Netlify OAuth integration)
 - [ ] Built-in Hugo theme editor
 - [ ] Collaboration features (multi-user repos)
@@ -148,6 +162,7 @@
 ---
 
 ## Current Blockers / Questions
+
 - [ ] Stripe account setup complete?
 - [ ] Supabase project configured for production?
 - [ ] Which Stripe price tier structure: monthly-only or monthly + annual?
@@ -157,6 +172,7 @@
 ---
 
 ## Quick Wins (Can Do Anytime)
+
 - [ ] Add dark mode toggle (theme already supports it)
 - [ ] Improve error messages (humanized, helpful)
 - [ ] Add loading states for GitHub API calls

@@ -1,17 +1,23 @@
-import yaml from 'js-yaml'
-import { ThemeProfile, PostData, escapeYaml, mergeExistingFrontmatter } from './types'
+import yaml from "js-yaml";
+import {
+  ThemeProfile,
+  PostData,
+  escapeYaml,
+  mergeExistingFrontmatter,
+} from "./types";
 
 export const papermodProfile: ThemeProfile = {
-  id: 'papermod',
-  name: 'PaperMod',
-  repo: 'https://github.com/adityatelange/hugo-PaperMod.git',
-  description: 'Modern, fast, and feature-rich. Ideal for blogs and portfolios.',
+  id: "papermod",
+  name: "PaperMod",
+  repo: "https://github.com/adityatelange/hugo-PaperMod.git",
+  description:
+    "Modern, fast, and feature-rich. Ideal for blogs and portfolios.",
 
   frontmatter: {
-    featuredImageField: 'cover.image',
+    featuredImageField: "cover.image",
     featuredImageIsNested: true,
-    authorField: 'author',
-    summaryField: 'summary',
+    authorField: "author",
+    summaryField: "summary",
   },
 
   config: {
@@ -27,7 +33,7 @@ export const papermodProfile: ThemeProfile = {
   hidden = false
   hiddenInList = false
   hiddenInSingle = false`,
-    requiredSections: ['markup.goldmark.renderer'],
+    requiredSections: ["markup.goldmark.renderer"],
   },
 
   generateFrontmatter: (data: PostData): string => {
@@ -36,14 +42,14 @@ export const papermodProfile: ThemeProfile = {
       title: data.title,
       date: data.date,
       draft: data.draft,
-    }
+    };
 
     if (data.summary) {
-      managedFields.summary = data.summary
+      managedFields.summary = data.summary;
     }
 
     if (data.author) {
-      managedFields.author = data.author
+      managedFields.author = data.author;
     }
 
     if (data.featuredImage) {
@@ -51,48 +57,56 @@ export const papermodProfile: ThemeProfile = {
         image: data.featuredImage,
         alt: data.title,
         hidden: false,
-      }
+      };
     }
 
     if (data.tags && data.tags.length > 0) {
-      managedFields.tags = data.tags
+      managedFields.tags = data.tags;
     }
 
     if (data.categories && data.categories.length > 0) {
-      managedFields.categories = data.categories
+      managedFields.categories = data.categories;
     }
 
     // Merge with existing frontmatter to preserve unknown fields
-    const merged = mergeExistingFrontmatter(managedFields, data.existingFrontmatter)
+    const merged = mergeExistingFrontmatter(
+      managedFields,
+      data.existingFrontmatter,
+    );
 
     // Use js-yaml for proper serialization
     const yamlContent = yaml.dump(merged, {
       quotingType: '"',
       forceQuotes: false,
       lineWidth: -1,
-    })
+    });
 
-    return `---\n${yamlContent}---`
+    return `---\n${yamlContent}---`;
   },
 
   validateConfig: (config: string) => {
-    const errors: string[] = []
-    const warnings: string[] = []
+    const errors: string[] = [];
+    const warnings: string[] = [];
 
-    if (!config.includes('[params]')) {
-      errors.push('Missing [params] section')
+    if (!config.includes("[params]")) {
+      errors.push("Missing [params] section");
     }
-    if (!config.includes('unsafe = true')) {
-      warnings.push('Goldmark unsafe rendering not enabled - images may not display correctly')
+    if (!config.includes("unsafe = true")) {
+      warnings.push(
+        "Goldmark unsafe rendering not enabled - images may not display correctly",
+      );
     }
     if (config.includes('theme = "ananke"')) {
-      errors.push('Config has wrong theme - expected PaperMod')
+      errors.push("Config has wrong theme - expected PaperMod");
     }
 
-    return { valid: errors.length === 0, errors, warnings }
+    return { valid: errors.length === 0, errors, warnings };
   },
 
-  getDefaultConfig: (blogName = 'My Blog', baseURL = 'https://example.org/'): string => `baseURL = "${baseURL}"
+  getDefaultConfig: (
+    blogName = "My Blog",
+    baseURL = "https://example.org/",
+  ): string => `baseURL = "${baseURL}"
 languageCode = "en-us"
 title = "${escapeYaml(blogName)}"
 theme = "PaperMod"
@@ -114,5 +128,5 @@ theme = "PaperMod"
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
-`
-}
+`,
+};

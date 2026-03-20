@@ -158,6 +158,7 @@ npm run lint
 Local repository initialized at: `/Users/jmr/dev/staticpress/.git`
 
 To push to GitHub:
+
 ```bash
 gh repo create staticpress --public --source=. --remote=origin
 git push -u origin main

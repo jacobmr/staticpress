@@ -1,5 +1,5 @@
 ---
-description: 'Facilitate project brainstorming sessions by orchestrating the CIS brainstorming workflow with project-specific context and guidance.'
+description: "Facilitate project brainstorming sessions by orchestrating the CIS brainstorming workflow with project-specific context and guidance."
 ---
 
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS - while staying in character as the current agent persona you may have loaded:

@@ -53,6 +53,7 @@ ORDER BY table_name;
 ```
 
 You should see:
+
 - `users`
 - `repositories`
 - `usage_tracking`
@@ -108,15 +109,18 @@ If you already have users with repository configurations stored in cookies, they
 ## Database Schema
 
 ### Users Table
+
 - Stores GitHub user information
 - Tracks subscription tier (free/pro)
 - Links to Stripe customer/subscription IDs
 
 ### Repositories Table
+
 - Stores repository configuration for each user
 - One user can have multiple repositories (future feature)
 - Currently limited to one active repository per user
 
 ### Usage Tracking Table
+
 - Tracks post edit counts for free tier limits
 - Future: Can add more usage metrics here
