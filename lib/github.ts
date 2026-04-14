@@ -35,6 +35,11 @@ export class GitHubClient {
     return data;
   }
 
+  async getRepo(owner: string, repo: string) {
+    const { data } = await this.octokit.rest.repos.get({ owner, repo });
+    return data;
+  }
+
   async getRepoContents(owner: string, repo: string, path: string = "") {
     try {
       const { data } = await this.octokit.rest.repos.getContent({

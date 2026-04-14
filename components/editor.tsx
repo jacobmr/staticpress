@@ -62,6 +62,7 @@ interface EditorProps {
   onChange: (content: string) => void;
   placeholder?: string;
   onImageUploaded?: (base64: string, hugoUrl: string) => void;
+  onUploadingChange?: (uploading: boolean) => void;
   repoOwner: string;
   repoName: string;
 }
@@ -71,95 +72,136 @@ export function Editor({
   onChange,
   placeholder = "Write something...",
   onImageUploaded,
+  onUploadingChange,
   repoOwner,
   repoName,
 }: EditorProps) {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  useEffect(() => {
+    onUploadingChange?.(isUploading);
+  }, [isUploading, onUploadingChange]);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<ReturnType<typeof useEditor>>(null);
   // Track uploaded images: base64 src → hugo URL
   const uploadedImagesRef = useRef<Map<string, string>>(new Map());
 
-  // Handle pasting images from clipboard
-  const handlePastedImage = useCallback(async (file: File) => {
-    console.log("[PasteImage] Starting upload for:", file.name, file.size);
-    const currentEditor = editorRef.current;
-    if (!currentEditor) {
-      console.error("[PasteImage] No editor available!");
-      return;
-    }
-
-    // Validate file type
-    if (!file.type.startsWith("image/")) {
-      console.log("[PasteImage] Not an image:", file.type);
-      return;
-    }
-
-    // Validate file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      alert("Image must be smaller than 5MB");
-      return;
-    }
-
-    setIsUploading(true);
-
-    try {
-      // Convert file to base64
+  // Read a File as a data URL (base64), promise-wrapped.
+  const readFileAsDataURL = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
       const reader = new FileReader();
-      reader.onload = async (e) => {
-        const base64 = e.target?.result as string;
+      reader.onload = (e) => resolve(e.target?.result as string);
+      reader.onerror = () =>
+        reject(new Error("Failed to read image file from disk"));
+      reader.readAsDataURL(file);
+    });
 
-        // Insert base64 preview immediately (works for private repos)
+  // Remove an image node from the editor by its src attribute.
+  const removeImageBySrc = useCallback((src: string) => {
+    const currentEditor = editorRef.current;
+    if (!currentEditor) return;
+    const { state } = currentEditor;
+    const tr = state.tr;
+    let removed = false;
+    state.doc.descendants((node, pos) => {
+      if (!removed && node.type.name === "image" && node.attrs.src === src) {
+        tr.delete(pos, pos + node.nodeSize);
+        removed = true;
+        return false;
+      }
+      return true;
+    });
+    if (removed) {
+      currentEditor.view.dispatch(tr);
+    }
+  }, []);
+
+  // Upload a file to the repo and register the base64→hugoUrl mapping.
+  // Errors are surfaced to the caller so the UI can react (alert, remove preview).
+  const uploadImageFile = useCallback(
+    async (file: File, base64: string): Promise<string> => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("owner", repoOwner);
+      formData.append("repo", repoName);
+
+      const response = await fetch("/api/images/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        let message = `Upload failed (${response.status})`;
+        try {
+          const err = await response.json();
+          if (err?.error) message = err.error;
+          if (err?.message) message = `${message}: ${err.message}`;
+        } catch {
+          // response body was not JSON — keep status-based message
+        }
+        throw new Error(message);
+      }
+
+      const data = await response.json();
+      const hugoUrl = data?.url;
+      if (!hugoUrl) {
+        throw new Error("Upload succeeded but server did not return a URL");
+      }
+
+      uploadedImagesRef.current.set(base64, hugoUrl);
+      onImageUploaded?.(base64, hugoUrl);
+      return hugoUrl;
+    },
+    [repoOwner, repoName, onImageUploaded],
+  );
+
+  // Handle pasting images from clipboard
+  const handlePastedImage = useCallback(
+    async (file: File) => {
+      console.log("[PasteImage] Starting upload for:", file.name, file.size);
+      const currentEditor = editorRef.current;
+      if (!currentEditor) {
+        console.error("[PasteImage] No editor available!");
+        return;
+      }
+
+      if (!file.type.startsWith("image/")) {
+        console.log("[PasteImage] Not an image:", file.type);
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert("Image must be smaller than 5MB");
+        return;
+      }
+
+      setIsUploading(true);
+
+      let base64: string | null = null;
+      try {
+        base64 = await readFileAsDataURL(file);
         currentEditor.chain().focus().setImage({ src: base64 }).run();
         console.log("[PasteImage] Base64 preview inserted");
 
-        // Upload to GitHub in background via FormData (matches API expectation)
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("owner", repoOwner);
-        formData.append("repo", repoName);
-
-        const response = await fetch("/api/images/upload", {
-          method: "POST",
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Failed to upload image");
-        }
-
-        const data = await response.json();
-        const { url: hugoUrl } = data;
+        const hugoUrl = await uploadImageFile(file, base64);
         console.log("[PasteImage] Upload successful, Hugo URL:", hugoUrl);
-
-        // Store mapping for conversion when saving
-        uploadedImagesRef.current.set(base64, hugoUrl);
-
-        // Notify parent for conversion on save
-        if (onImageUploaded) {
-          onImageUploaded(base64, hugoUrl);
-        }
-
+      } catch (error) {
+        console.error("[PasteImage] Error:", error);
+        // Remove the broken preview so the user isn't stuck at publish time.
+        if (base64) removeImageBySrc(base64);
+        alert(
+          `Image upload failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        );
+      } finally {
         setIsUploading(false);
-      };
-
-      reader.onerror = () => {
-        console.error("[PasteImage] FileReader error");
-        alert("Failed to read image file");
-        setIsUploading(false);
-      };
-
-      reader.readAsDataURL(file);
-    } catch (error) {
-      console.error("[PasteImage] Error:", error);
-      alert(error instanceof Error ? error.message : "Failed to upload image");
-      setIsUploading(false);
-    }
-  }, []);
+      }
+    },
+    [uploadImageFile, removeImageBySrc],
+  );
 
   const editor = useEditor({
     extensions: [
@@ -324,57 +366,30 @@ export function Editor({
       const file = event.target.files?.[0];
       if (!file || !editor) return;
 
-      // Validate file type
       if (!file.type.startsWith("image/")) {
         alert("Please select an image file");
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert("Image must be smaller than 5MB");
         return;
       }
 
       setIsUploading(true);
-
+      let base64: string | null = null;
       try {
-        // Convert to base64 and upload
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-          const base64 = e.target?.result as string;
-
-          // Show preview
-          editor.chain().focus().setImage({ src: base64 }).run();
-
-          // Upload to GitHub
-          try {
-            const formData = new FormData();
-            formData.append("file", file);
-            formData.append("owner", repoOwner);
-            formData.append("repo", repoName);
-
-            const response = await fetch("/api/images/upload", {
-              method: "POST",
-              body: formData,
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              onImageUploaded?.(base64, data.url);
-            } else {
-              const error = await response.json();
-              throw new Error(error.error || "Failed to upload image");
-            }
-          } catch (err) {
-            console.error("Failed to upload image:", err);
-            alert("Failed to upload image to server. Please try again.");
-          }
-        };
-        reader.readAsDataURL(file);
+        base64 = await readFileAsDataURL(file);
+        editor.chain().focus().setImage({ src: base64 }).run();
+        await uploadImageFile(file, base64);
       } catch (error) {
         console.error("Image upload error:", error);
-        alert("Failed to upload image");
+        if (base64) removeImageBySrc(base64);
+        alert(
+          `Image upload failed: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`,
+        );
       } finally {
         setIsUploading(false);
         if (fileInputRef.current) {
@@ -382,7 +397,7 @@ export function Editor({
         }
       }
     },
-    [editor, onImageUploaded],
+    [editor, uploadImageFile, removeImageBySrc],
   );
 
   // Update editor content when content prop changes

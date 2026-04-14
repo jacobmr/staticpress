@@ -48,11 +48,16 @@ export function DashboardClient({
 
   // Track uploaded images: base64 → hugo URL
   const uploadedImagesRef = useRef<Map<string, string>>(new Map());
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   // Callback for when editor uploads an image
   const handleImageUploaded = useCallback((base64: string, hugoUrl: string) => {
     uploadedImagesRef.current.set(base64, hugoUrl);
     console.log("[Dashboard] Image uploaded, mapped base64 to:", hugoUrl);
+  }, []);
+
+  const handleUploadingChange = useCallback((uploading: boolean) => {
+    setIsUploadingImage(uploading);
   }, []);
 
   // Fetch remaining posts in background after initial render
@@ -102,11 +107,12 @@ export function DashboardClient({
   const reverseTransformImageUrls = (content: string): string => {
     let result = content;
 
-    // First, convert base64 images to their hugo URLs
+    // Convert base64 image previews to their committed hugo URLs. Use
+    // replaceAll with a literal needle — base64 strings can be 100KB+ and
+    // contain `+`, so compiling them into a RegExp is both unnecessary and
+    // noticeably slow.
     uploadedImagesRef.current.forEach((hugoUrl, base64) => {
-      // Need to escape special regex characters in base64
-      const escapedBase64 = base64.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      result = result.replace(new RegExp(escapedBase64, "g"), hugoUrl);
+      result = result.split(base64).join(hugoUrl);
     });
 
     // Then, convert GitHub raw URLs back to relative URLs
@@ -160,6 +166,16 @@ export function DashboardClient({
     setSaveMessage("");
     setSaveStatus("saving");
 
+    if (isUploadingImage) {
+      setSaveMessage(
+        "An image is still uploading. Please wait a moment and try again.",
+      );
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 4000);
+      setIsSaving(false);
+      return;
+    }
+
     const processedContent = reverseTransformImageUrls(content);
 
     // Check for base64 images which indicate failed uploads
@@ -206,6 +222,13 @@ export function DashboardClient({
       clearCachedPosts(repoKey);
 
       const newPath: string = result.path;
+      // /api/posts/publish always returns the exact markdown it committed.
+      // HugoPost.content is markdown (handleSelectPost feeds it to marked.parse),
+      // so we store that verbatim — re-selecting the post round-trips cleanly.
+      // Guarded in case a stale build of the API is deployed against a newer
+      // client: we clear caches below, so a full refresh recovers.
+      const canonicalMarkdown: string =
+        typeof result.markdown === "string" ? result.markdown : "";
       const newPost: HugoPost = {
         title: postTitle,
         date: new Date().toISOString(),
@@ -214,7 +237,7 @@ export function DashboardClient({
             .split("/")
             .pop()
             ?.replace(/\.(md|markdown)$/, "") || postTitle,
-        content,
+        content: canonicalMarkdown,
         path: newPath,
       };
 
@@ -245,6 +268,16 @@ export function DashboardClient({
     setIsSaving(true);
     setSaveMessage("");
     setSaveStatus("saving");
+
+    if (isUploadingImage) {
+      setSaveMessage(
+        "An image is still uploading. Please wait a moment and try again.",
+      );
+      setSaveStatus("error");
+      setTimeout(() => setSaveStatus("idle"), 4000);
+      setIsSaving(false);
+      return;
+    }
 
     const processedContent = reverseTransformImageUrls(content);
 
@@ -287,6 +320,13 @@ export function DashboardClient({
       clearCachedPosts(repoKey);
 
       const newPath: string = result.path;
+      // /api/posts/publish always returns the exact markdown it committed.
+      // HugoPost.content is markdown (handleSelectPost feeds it to marked.parse),
+      // so we store that verbatim — re-selecting the post round-trips cleanly.
+      // Guarded in case a stale build of the API is deployed against a newer
+      // client: we clear caches below, so a full refresh recovers.
+      const canonicalMarkdown: string =
+        typeof result.markdown === "string" ? result.markdown : "";
       const newPost: HugoPost = {
         title: postTitle,
         date: new Date().toISOString(),
@@ -295,7 +335,7 @@ export function DashboardClient({
             .split("/")
             .pop()
             ?.replace(/\.(md|markdown)$/, "") || postTitle,
-        content,
+        content: canonicalMarkdown,
         path: newPath,
       };
 
@@ -408,6 +448,7 @@ export function DashboardClient({
                   onChange={setContent}
                   placeholder="Start writing your post..."
                   onImageUploaded={handleImageUploaded}
+                  onUploadingChange={handleUploadingChange}
                   repoOwner={repoOwner}
                   repoName={repoName}
                 />

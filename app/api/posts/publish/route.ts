@@ -228,6 +228,7 @@ export async function POST(request: Request) {
       success: true,
       path: filePath,
       sha: result.content?.sha,
+      markdown: markdownContent,
     });
   } catch (error) {
     logger.error("Failed to publish post", {

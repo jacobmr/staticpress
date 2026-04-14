@@ -82,13 +82,11 @@ export async function POST(req: NextRequest) {
     const filename = `${originalName}-${timestamp}.webp`;
     const path = `static/images/${year}/${month}/${filename}`;
 
-    // Upload to GitHub
+    // Upload to GitHub. Not passing a branch → Octokit commits to the repo's
+    // default branch (which may be `main`, `master`, or anything else).
     const github = new GitHubClient(session.accessToken);
 
-    // Ensure the directory exists (GitHub API handles this implicitly if we specify the full path,
-    // but good to be aware. createOrUpdateFile handles it.)
-
-    await github.createOrUpdateFile(
+    const result = await github.createOrUpdateFile(
       repoOwner,
       repoName,
       path,
@@ -98,12 +96,19 @@ export async function POST(req: NextRequest) {
       true, // isAlreadyBase64
     );
 
-    // Construct URL
-    // For public repos, we can use raw.githubusercontent.com
-    // For private repos, this might be tricky without a proxy, but for now let's assume public or authenticated access context.
-    // Ideally, we'd use the GitHub Pages URL if available, but that requires a deploy.
-    // Raw URL is immediate.
-    const rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${path}`;
+    // Prefer the download_url returned by GitHub — it points to the correct
+    // default branch (e.g. master/main) instead of a hardcoded guess. Fall
+    // back to resolving the default branch explicitly if unavailable.
+    let rawUrl = result?.content?.download_url ?? "";
+    if (!rawUrl) {
+      try {
+        const repoInfo = await github.getRepo(repoOwner, repoName);
+        const branch = repoInfo?.default_branch || "main";
+        rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/${branch}/${path}`;
+      } catch {
+        rawUrl = `https://raw.githubusercontent.com/${repoOwner}/${repoName}/main/${path}`;
+      }
+    }
 
     return NextResponse.json({
       url: rawUrl,
@@ -112,8 +117,10 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("Image upload error:", error);
+    const message =
+      error instanceof Error ? error.message : "Unknown upload error";
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Image upload failed", message },
       { status: 500 },
     );
   }
