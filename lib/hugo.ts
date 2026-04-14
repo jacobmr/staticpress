@@ -139,21 +139,27 @@ export function extractFirstImageUrl(htmlContent: string): string | null {
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i;
   const match = htmlContent.match(imgRegex);
 
-  if (match) {
-    let imageUrl = match[1];
+  if (!match) return null;
 
-    // For GitHub raw URLs, convert to relative paths
-    if (imageUrl.includes("raw.githubusercontent.com")) {
-      const pathMatch = imageUrl.match(/\/main\/static(\/images\/.+)/);
-      if (pathMatch) {
-        imageUrl = pathMatch[1];
-      }
-    }
+  let imageUrl = match[1];
 
-    // Only return relative URLs (skip external images)
-    if (imageUrl.startsWith("/")) {
-      return imageUrl;
+  // For GitHub raw URLs (any branch — main, master, etc.), strip the
+  // /{owner}/{repo}/{branch}/static prefix to recover the Hugo-relative path.
+  // Previously this regex hardcoded `/main/`, which silently dropped the
+  // featured-image mapping for repos whose default branch was anything else.
+  if (imageUrl.includes("raw.githubusercontent.com")) {
+    const pathMatch = imageUrl.match(
+      /raw\.githubusercontent\.com\/[^/]+\/[^/]+\/[^/]+\/static(\/images\/[^?#]+)/i,
+    );
+    if (pathMatch) {
+      imageUrl = pathMatch[1];
     }
+  }
+
+  // Only return relative URLs (skip external images — they aren't served
+  // from the site's static/ dir so Hugo can't use them as featured images).
+  if (imageUrl.startsWith("/")) {
+    return imageUrl;
   }
 
   return null;
